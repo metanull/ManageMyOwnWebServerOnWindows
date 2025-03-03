@@ -15,7 +15,7 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$false,Position=0,ValueFromPipeline=$true)]
+    [Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true)]
     [Alias('Service')]
     [String]$Name = $null
 )
@@ -26,14 +26,14 @@ Begin {
 Process {
     try {
         # Check if the user is an administrator
-        if(-not (Test-IsAdministrator)) {
+        if (-not (Test-IsAdministrator)) {
             throw "You must be an administrator to call this function"
         }
 
         # Find the Apache Service (if not specified)
-        if(-not $Name) {
+        if (-not $Name) {
             $Apache = Get-Service -DisplayName '*apache*'
-            if($Apache.Count -gt 1) {
+            if ($Apache.Count -gt 1) {
                 throw "Multiple Apache services found: '$($Apache.Name -join "', '")', use -Name to specify which one to use"
             }
             $Name = $Apache.Name
@@ -41,7 +41,7 @@ Process {
 
         # Get details of the Apache service
         $ServiceWMI = (Get-WmiObject Win32_Service | Where-Object { $_.Name -eq $Name })
-        if($null -eq $ServiceWMI) {
+        if ($null -eq $ServiceWMI) {
             throw "No $Name service found"
         }
         $ServiceCommand = $ServiceWMI.PathName | Split-CommandLine
@@ -51,9 +51,9 @@ Process {
 
         # Find the Apache configuration file's location
         $HttpdConfPath = Join-Path (Split-Path -Parent $ServiceCommand.Command) '..\conf\httpd.conf'
-        for($i = 0; $i -lt ($ServiceCommand.Arguments.Count - 1); $i++) {
-            if($ServiceCommand.Arguments[$i] -eq '-f') {
-                $HttpdConfPath = $ServiceCommand.Arguments[$i+1]
+        for ($i = 0; $i -lt ($ServiceCommand.Arguments.Count - 1); $i++) {
+            if ($ServiceCommand.Arguments[$i] -eq '-f') {
+                $HttpdConfPath = $ServiceCommand.Arguments[$i + 1]
                 break
             }
         }
@@ -79,17 +79,18 @@ Process {
         $PhpIniDir = $HttpdConf | ApacheConfExtractValue -Statement 'PHPIniDir' | Select-Object -First 1 | ApacheConfReplaceConstant -Constants $HttpdConstants | ApacheConfResolvePath -ServerRoot $HttpdServerRoot
 
         @{
-            Service = $ServiceWMI
-            Binary = $Httpd.Source
-            Version = $Httpd.Version
-            HttpdConf = $HttpdConfPath
+            Service    = $ServiceWMI
+            Binary     = $Httpd.Source
+            Version    = $Httpd.Version
+            HttpdConf  = $HttpdConfPath
             ServerRoot = $HttpdServerRoot
-            ErrorLog = $HttpdErrorLog
-            AccessLog = $HttpdAccessLog
-            PhpIniDir = $PhpIniDir
-            Constants = $HttpdConstants
+            ErrorLog   = $HttpdErrorLog
+            AccessLog  = $HttpdAccessLog
+            PhpIniDir  = $PhpIniDir
+            Constants  = $HttpdConstants
         }
-    } finally {
+    }
+    finally {
         $ErrorActionPreference = $SavedErrorActionPreference
     }
 }

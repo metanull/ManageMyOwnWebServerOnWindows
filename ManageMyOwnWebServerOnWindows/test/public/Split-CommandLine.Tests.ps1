@@ -18,7 +18,7 @@ Describe "ApacheConfReplaceConstant" -Tag "UnitTest" {
         It "Should return the expected command" {
             $CommandLine = 'C:/Apache24/bin/httpd.exe -f conf/httpd.conf -k start'
             $ExpectedCommand = 'C:/Apache24/bin/httpd.exe'
-            $ExpectedParams = @('-f','conf/httpd.conf','-k','start')
+            $ExpectedParams = @('-f', 'conf/httpd.conf', '-k', 'start')
 
             $Result = $CommandLine | Split-CommandLine
             $Result.Command | Should -BeExactly $ExpectedCommand
@@ -26,7 +26,7 @@ Describe "ApacheConfReplaceConstant" -Tag "UnitTest" {
         It "Should return the expected parameters" {
             $CommandLine = 'C:/Apache24/bin/httpd.exe -f conf/httpd.conf -k start'
             $ExpectedCommand = 'C:/Apache24/bin/httpd.exe'
-            $ExpectedParams = @('-f','conf/httpd.conf','-k','start')
+            $ExpectedParams = @('-f', 'conf/httpd.conf', '-k', 'start')
 
             $Result = $CommandLine | Split-CommandLine
             $Result.Arguments | Should -BeExactly $ExpectedParams
@@ -36,7 +36,7 @@ Describe "ApacheConfReplaceConstant" -Tag "UnitTest" {
         It "Should return the expected command" {
             $CommandLine = '"C:/Apache24/bin/httpd.exe" -f conf/httpd.conf -k "start"'
             $ExpectedCommand = 'C:/Apache24/bin/httpd.exe'
-            $ExpectedParams = @('-f','conf/httpd.conf','-k','start')
+            $ExpectedParams = @('-f', 'conf/httpd.conf', '-k', 'start')
 
             $Result = $CommandLine | Split-CommandLine
             $Result.Command | Should -BeExactly $ExpectedCommand
@@ -44,7 +44,7 @@ Describe "ApacheConfReplaceConstant" -Tag "UnitTest" {
         It "Should return the expected parameters" {
             $CommandLine = '"C:/Apache24/bin/httpd.exe" -f conf/httpd.conf -k "start"'
             $ExpectedCommand = 'C:/Apache24/bin/httpd.exe'
-            $ExpectedParams = @('-f','conf/httpd.conf','-k','start')
+            $ExpectedParams = @('-f', 'conf/httpd.conf', '-k', 'start')
 
             $Result = $CommandLine | Split-CommandLine
             $Result.Arguments | Should -BeExactly $ExpectedParams

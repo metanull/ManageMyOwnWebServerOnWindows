@@ -28,7 +28,7 @@ param (
 Process {
     $tokens = [System.Management.Automation.PSParser]::Tokenize($commandLine, [ref]$null)
     return @{
-        Command = $tokens[0].Content
+        Command   = $tokens[0].Content
         Arguments = $tokens[1..($tokens.Count - 1)] | ForEach-Object {
             $_.Content
         }

@@ -13,16 +13,16 @@
 #>
 [CmdletBinding()]
 param(
-    [parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
+    [parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
     $Conf,
-    [parameter(Mandatory=$true,Position=1)]
+    [parameter(Mandatory = $true, Position = 1)]
     $Statement
 )
 Process {
     $Conf | Select-String "^\s*$Statement" | Foreach-Object {
-        if($_ -match "^\s*$Statement\s+(.*?)\s+(""?)([^""#]+?)\2\s*(#.*)?$") {
+        if ($_ -match "^\s*$Statement\s+(.*?)\s+(""?)([^""#]+?)\2\s*(#.*)?$") {
             @{
-                $Matches[1]=$Matches[3]
+                $Matches[1] = $Matches[3]
             } | Write-Output
         }
     }

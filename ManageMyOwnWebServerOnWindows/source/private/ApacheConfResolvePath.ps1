@@ -13,19 +13,20 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
     [AllowNull()]
     $Path,
-    [Parameter(Mandatory=$true,Position=1)]
+    [Parameter(Mandatory = $true, Position = 1)]
     $ServerRoot
 )
 Process {
-    if(-not $Path) {
+    if (-not $Path) {
         return $null
     }
-    if(-not ([System.IO.Path]::IsPathRooted($Path))) {
+    if (-not ([System.IO.Path]::IsPathRooted($Path))) {
         Join-Path $ServerRoot $Path | Write-Output
-    } else {
+    }
+    else {
         $Path | Write-Output
     }
 }

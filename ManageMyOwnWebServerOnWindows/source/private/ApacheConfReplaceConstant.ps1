@@ -13,17 +13,17 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
     $Value,
-    [Parameter(Mandatory=$true,Position=1)]
+    [Parameter(Mandatory = $true, Position = 1)]
     $Constants
 )
 Process {
-    while($Value -match '\$\{(.*?)\}') {
+    while ($Value -match '\$\{(.*?)\}') {
         if (-not $Constants.ContainsKey($Matches[1])) {
             break
         }
-        $Value = $Value.Replace($Matches[0],$Constants[$Matches[1]])
+        $Value = $Value.Replace($Matches[0], $Constants[$Matches[1]])
     }
     $Value | Write-Output
 }

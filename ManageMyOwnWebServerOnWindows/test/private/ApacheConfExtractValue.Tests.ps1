@@ -1,4 +1,4 @@
-Describe "ApacheConfExtractValue" -Tag "UnitTest"  {
+Describe "ApacheConfExtractValue" -Tag "UnitTest" {
     BeforeAll {
 
         $ScriptDirectory = Resolve-Path (Join-Path ($PSCommandPath | Split-Path) "..\..\source\private")

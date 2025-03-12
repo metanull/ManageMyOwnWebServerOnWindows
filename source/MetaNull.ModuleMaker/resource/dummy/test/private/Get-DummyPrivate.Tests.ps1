@@ -1,4 +1,4 @@
-Describe "Testing public module function Get-Dummy" -Tag "UnitTest" {
+Describe "Testing private module function Get-DummyPrivate" -Tag "UnitTest" {
     Context "A dummy unit test" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent

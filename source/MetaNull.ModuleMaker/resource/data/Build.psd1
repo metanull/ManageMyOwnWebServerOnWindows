@@ -3,7 +3,7 @@
     Source = './source'
 
     # Where to write the 'built' module
-    Destination = Join-Path ($PSScriptRoot | Split-Path -Parent | Split-Path -Parent) 'build/%%MODULE_NAME%%'
+    Destination = './build'
 
     # Name used to identify this module
     Name = '%%MODULE_NAME%%'

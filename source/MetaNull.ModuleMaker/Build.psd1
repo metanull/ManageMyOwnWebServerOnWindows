@@ -1,9 +1,9 @@
 ﻿@{
-    # Where the cod eis stored
+    # Where the code is stored
     Source = './source'
 
     # Where to write the 'built' module
-    Destination = Join-Path ($PSScriptRoot | Split-Path -Parent | Split-Path -Parent) 'build/MetaNull.ModuleMaker'
+    Destination = './build'
 
     # Name used to identify this module
     Name = 'MetaNull.ModuleMaker'
@@ -14,7 +14,9 @@
         'System.Management.Automation.PSCredential'
     )
     ModuleDependencies = @(
-        # 'PackageManagement'
+        'Microsoft.PowerShell.PSResourceGet'
+        'Microsoft.PowerShell.SecretManagement'
+        'Microsoft.PowerShell.SecretStore'
     )
 
     # Module Settings

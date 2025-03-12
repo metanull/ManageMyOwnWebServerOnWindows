@@ -1,20 +1,19 @@
 ﻿@{
-    # Where the code is stored
+    # Where the cod eis stored
     Source = './source'
 
     # Where to write the 'built' module
-    Destination = './ManageMyOwnWebServerOnWindows'
+    Destination = Join-Path ($PSScriptRoot | Split-Path -Parent | Split-Path -Parent) 'build/%%MODULE_NAME%%'
 
     # Name used to identify this module
-    Name = 'ManageMyOwnWebServerOnWindows'
+    Name = '%%MODULE_NAME%%'
 
     # Types & Dependencies
     AssemblyDependencies = @(
-        'System.Net.WebUtility'
-        'System.Management.Automation.PSCredential'
+        %%ASSEMBLY_DEPENDENCIES%%
     )
     ModuleDependencies = @(
-        #'SimplySQL'
+        %%MODULE_DEPENDENCIES%%
     )
 
     # Module Settings
@@ -31,22 +30,22 @@
         # ModuleVersion = '0.0.1'
 
         # ID used to uniquely identify this module
-        GUID              = '623a3455-396d-43bf-b0fa-1d65a35c88ff'
+        GUID              = '%%MODULE_GUID%%'
 
         # Project URI
-        ProjectUri        = 'https://github.com/metanull/ManageMyOwnWebServerOnWindows'
+        ProjectUri        = '%%MODULE_URI%%'
 
         # Author of this module
-        Author            = 'Pascal Havelange'
+        Author            = '%%MODULE_AUTHOR%%'
 
         # Company or vendor of this module
-        CompanyName       = ''
+        CompanyName       = '%%MODULE_VENDOR%%'
 
         # Copyright statement for this module
-        Copyright         = '(c) 2025'
+        Copyright         = '%%MODULE_COPYRIGHT%%'
 
         # Description of the functionality provided by this module
-        Description       = 'A module to manage you own Web Server on Windows'
+        Description       = '%%MODULE_DESCRIPTION%%'
 
         # Minimum version of the Windows PowerShell engine required by this module
         PowerShellVersion = '5.1'

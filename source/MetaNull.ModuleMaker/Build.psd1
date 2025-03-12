@@ -15,8 +15,6 @@
     )
     ModuleDependencies = @(
         'Microsoft.PowerShell.PSResourceGet'
-        'Microsoft.PowerShell.SecretManagement'
-        'Microsoft.PowerShell.SecretStore'
     )
 
     # Module Settings
@@ -36,13 +34,13 @@
         GUID              = 'dd79738c-9b6c-4c09-8ca3-6cad7dff370d'
 
         # Project URI
-        ProjectUri        = 'https://dev.azure.com/EESC-CoR/ARC/_git/psmodule-portfolio-confluence/source/'
+        ProjectUri        = 'https://github.com/metanull/ManageMyOwnWebServerOnWindows'
 
         # Author of this module
         Author            = 'Pascal Havelange'
 
         # Company or vendor of this module
-        CompanyName       = 'EESC-CoR'
+        CompanyName       = ''
 
         # Copyright statement for this module
         Copyright         = '(c) 2025'

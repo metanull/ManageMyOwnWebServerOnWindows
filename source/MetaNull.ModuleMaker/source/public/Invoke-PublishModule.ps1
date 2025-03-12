@@ -7,23 +7,13 @@ param(
     [Alias('Path','DataFile')]
     [string] $ModuleDefinitionPath,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'custom')]
-    [string] $RepositoryUri,
-
-    [Parameter(Mandatory = $true, ParameterSetName = 'custom')]
-    [string] $RepositoryName,
-
     [Parameter(Mandatory = $false)]
-    [string] $VaultName = 'MySecretVault',
+    [string] $RepositoryName = 'PSGallery',
 
-    [Parameter(Mandatory = $false)]
-    [string] $SecretName = 'PSGalleryCredential',
-
-    [Parameter(Mandatory = $false)]
-    [Switch] $PromptSecret,
-
-    [Parameter(Mandatory = $false)]
-    [Switch] $PersonalAccessTokenAsString
+    [Parameter(Mandatory)]
+    [System.Management.Automation.Credential()]
+    [System.Management.Automation.PSCredential]
+    $Credential
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference

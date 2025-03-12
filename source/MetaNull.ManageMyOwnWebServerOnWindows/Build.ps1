@@ -1,4 +1,21 @@
-﻿[CmdletBinding(DefaultParameterSetName = 'IncrementBuild')]
+﻿<#
+.SYNOPSIS
+    Build the module from the source code
+.DESCRIPTION
+    This script builds the module from the source code. It creates the module's manifest, the module's code file, the module's class file, and the module's init script file.
+    It also increments the build number.
+.PARAMETER IncrementMajor
+    If set, increment the major version number (and reset the minor and revision numbers); the build number is always incremented.
+    If set, IncrementMinor and IncrementRevision are ignored.
+.PARAMETER IncrementMinor
+    Increment the minor version number (and reset the revision number); the build number is always incremented.
+    If set, IncrementRevision is ignored.
+.PARAMETER IncrementRevision
+    Increment the revision number; the build number is always incremented.
+.OUTPUTS
+    The path where the module has been built
+#>
+[CmdletBinding(DefaultParameterSetName = 'IncrementBuild')]
 param(
     [switch] $IncrementMajor,
 

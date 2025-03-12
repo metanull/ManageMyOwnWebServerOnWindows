@@ -15,7 +15,7 @@ Process {
         $ScriptPath = Join-Path $ModulePath Build.ps1 -Resolve
         Push-Location (Split-Path $ScriptPath -Parent)
         
-        Invoke-Pester -Path . -OutputFile .\testresults.xml -OutputFormat NUnitXml -CodeCoverageOutputFile .\coverage.xml -PassThru
+        Invoke-Pester -Path .\test -OutputFile .\testresults.xml -OutputFormat NUnitXml -CodeCoverageOutputFile .\coverage.xml -PassThru
 
         $ModuleDefinitionPath  | Write-Output
     } finally {

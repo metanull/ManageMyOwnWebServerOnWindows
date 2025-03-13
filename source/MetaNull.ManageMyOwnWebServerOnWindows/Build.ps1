@@ -28,7 +28,7 @@ Begin {
     try {
         $ErrorActionPreference = 'Stop'
 
-        $BuildDefinition = (Join-Path -Path $PSScriptRoot -ChildPath '.\Build.psd1' -Resolve)
+        $BuildDefinition = (Join-Path -Path $PSScriptRoot -ChildPath '.\Blueprint.psd1' -Resolve)
 
         # 1. Load the Build Settings
         Write-Verbose "Loading Build settings from $BuildDefinition"

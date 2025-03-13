@@ -3,7 +3,7 @@
     Source = './source'
 
     # Where to write the 'built' module
-    Destination = './MetaNull.ManageMyOwnWebServerOnWindows'
+    Destination = './build'
 
     # Name used to identify this module
     Name = 'MetaNull.ManageMyOwnWebServerOnWindows'

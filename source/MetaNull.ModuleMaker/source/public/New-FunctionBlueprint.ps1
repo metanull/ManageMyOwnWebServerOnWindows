@@ -5,8 +5,8 @@
 .DESCRIPTION
     This function creates a new function in a module created by ModuleMaker. It creates a new function in the source directory and a new test file in the test directory.
 
-.PARAMETER ModuleDefinitionPath
-    The path to the module definition file (Build.psd1). This file is created by New-Module and contains the module's metadata.
+.PARAMETER BlueprintPath
+    The path to the module definition file (Blueprint.psd1). This file is created by New-Module and contains the module's metadata.
 
 .PARAMETER Name
     The name of the new function. This name must be a valid Powershell function name.
@@ -15,16 +15,16 @@
     If this switch is present, the function will be created in the private directory. Otherwise, it will be created in the public directory.
 
 .OUTPUTS
-    The path to the module definition file (Build.psd1) is returned.
+    The path to the module definition file (Blueprint.psd1) is returned.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory,ValueFromPipeline)]
     [ValidateScript({
-        Test-ModuleDefinition -ModuleDefinitionPath $_
+        Test-BlueprintPath -BlueprintPath $_
     })]
     [Alias('Path','DataFile')]
-    [string] $ModuleDefinitionPath,
+    [string] $BlueprintPath,
 
     [Parameter(Mandatory)]
     [ValidateScript({
@@ -40,8 +40,8 @@ Process {
     $ErrorActionPreference = 'Stop'
     try {
         $DummyName = "Get-Dummy"
-        $ModulePath = $ModuleDefinitionPath | Split-Path -Parent
-        $ResourcePath = Get-ResourceDirectory
+        $ModulePath = $BlueprintPath | Split-Path -Parent
+        $ResourcePath = Get-BlueprintResourcePath
 
         $Visibility = if($Private) { 'private' } else { 'public' }
         $TargetSourceDirectory = Join-Path (Join-Path $ModulePath source) $Visibility -Resolve
@@ -58,8 +58,6 @@ Process {
         Copy-Item -Path $TemplateTest -Destination $TargetTest | Out-Null
         $Content = Get-Content -LiteralPath $TemplateTest -Raw
         $Content -replace $DummyName, $Name | Set-Content -LiteralPath $TargetTest
-
-        $ModuleDefinitionPath  | Write-Output
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

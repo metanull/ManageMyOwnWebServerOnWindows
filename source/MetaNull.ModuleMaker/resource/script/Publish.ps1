@@ -43,7 +43,7 @@ Process {
 
         if(-not $Path) {
             "Loading the Build Settings" | Write-Verbose
-            $Build = Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath '.\Build.psd1' -Resolve)
+            $Build = Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath '.\Blueprint.psd1' -Resolve)
 
             $ModuleVersion = Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath '.\Version.psd1' -Resolve)
             $ModuleVersion = [version]::new("$($ModuleVersion.Major).$($ModuleVersion.Minor).$($ModuleVersion.Build).$($ModuleVersion.Revision)")

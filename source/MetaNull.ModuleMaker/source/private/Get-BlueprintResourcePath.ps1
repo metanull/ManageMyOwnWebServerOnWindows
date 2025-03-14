@@ -7,14 +7,15 @@
 #>
 [CmdletBinding()]
 [OutputType([PSCustomObject])]
-param()
+param(
+    [switch] $Test
+)
 Process {
-    if((Get-Variable INSIDE_MODULEMAKER_MODULE -ErrorAction SilentlyContinue)) {
-        #INSIDE_MODULEMAKER_MODULE is a constant defined in the module
-        #If it is set, then the script is run from a loaded module, PSScriptRoot = Directory of the psm1
+    if(-not $Test) {
+        # Running from within an installed module (PSScriptRoot is the path to the module's root directory)
         Get-Item (Join-Path $PSScriptRoot resource)
     } else {
-        #Otherwise, the script was probably called from the command line or from a test, PSScriptRoot = Directory /source/private
+        # Running from within a TEST (thus not from an installed module; PSScriptRoot is the path to the test script itself)
         Get-Item (Join-Path (Split-Path (Split-Path $PSScriptRoot)) resource)
     }
 }

@@ -171,7 +171,8 @@ Process {
         }
         Copy-Item $ResourceDirectory\script\*.ps1 $RootDirectory -Force:$NewItemForce
         Copy-Item $ResourceDirectory\data\*.psd1 $RootDirectory -Force:$NewItemForce
-        Copy-Item -Path $ResourceDirectory\dummy\* -Destination $RootDirectory -Recurse -Force:$NewItemForce
+        # For the dummy files, -Force is always enabled, as it overwrites existing directories source and test
+        Copy-Item -Path $ResourceDirectory\dummy\* -Destination $RootDirectory -Recurse -Force
 
         # Update Module's configuration
         $ManifestFile = Get-Item (Join-Path $RootDirectory Blueprint.psd1)

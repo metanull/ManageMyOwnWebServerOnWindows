@@ -1,4 +1,4 @@
-Describe "Testing public module function New-Task" -Tag "UnitTest" {
+Describe "Testing private module function Get-DummyPrivate" -Tag "UnitTest" {
     Context "A dummy unit test" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -16,7 +16,7 @@ Describe "Testing public module function New-Task" -Tag "UnitTest" {
         }
 
         It "Should return TRUE" {
-            $Result = Invoke-ModuleFunctionStub -Name 'NONE'
+            $Result = Invoke-ModuleFunctionStub
             $Result | Should -BeTrue
         }
     }

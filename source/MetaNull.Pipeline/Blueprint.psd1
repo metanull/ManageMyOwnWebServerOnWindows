@@ -6,12 +6,11 @@
     Destination = './build'
 
     # Name used to identify this module
-    Name = 'MetaNull.Queue'
+    Name = 'MetaNull.Pipeline'
 
     # Types & Dependencies
     AssemblyDependencies = @(
         'System.Management.Automation.PSCredential'
-        'System.Threading'
     )
     ModuleDependencies = @(
         
@@ -31,7 +30,7 @@
         # ModuleVersion = '0.0.1'
 
         # ID used to uniquely identify this module
-        GUID              = 'e26b1443-b1fa-4491-82b1-9d8360e8dd5e'
+        GUID              = 'adcc2761-aa67-4ec4-a6e9-3f009acb1cb4'
 
         # Project URI
         ProjectUri        = 'https://github.com/metanull/ManageMyOwnWebServerOnWindows'
@@ -46,7 +45,7 @@
         Copyright         = '© 2025. All rights reserved'
 
         # Description of the functionality provided by this module
-        Description       = 'Provides a basic task management and queuing for windowsr'
+        Description       = 'Provides a basic pipeline implementation for windows'
 
         # Minimum version of the Windows PowerShell engine required by this module
         PowerShellVersion = '5.1'

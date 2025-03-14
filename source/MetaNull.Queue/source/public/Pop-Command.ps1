@@ -1,8 +1,8 @@
 <#
     .SYNOPSIS
-        Returns the list of Queues
+        Get (and remove) the Command at the end of a queue
 #>
-[CmdletBinding(DefaultParameterSetName = 'Default')]
+[CmdletBinding(DefaultParameterSetName = 'Name')]
 [OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory = $false)]
@@ -31,10 +31,7 @@ Process {
             throw "Failed to obtain the Mutex within the timeout period."
         }
 
-        if($pscmdlet.ParameterSetName -eq 'Default') {
-            $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues"
-            $Items = Get-ChildItem -Path $Path
-        } elseif($pscmdlet.ParameterSetName -eq 'GUID') {
+        if($pscmdlet.ParameterSetName -eq 'GUID') {
             $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues" 
             $Items = Get-ChildItem -Path $Path | Where-Object { 
                 ($_ | Get-ItemProperty -Name 'Id' -ErrorAction SilentlyContinue) -and ($_ | Get-ItemPropertyValue -Name 'Id') -eq $Id 
@@ -44,11 +41,23 @@ Process {
             $Items = ,(Get-Item -Path $Path)
         }
         $Items | ForEach-Object {
-            $Properties = Get-RegistryKeyProperties -RegistryKey $_
-            [PSCustomObject]@{
-                Name = $_ | Split-Path -Leaf
-                Id = $Properties['Id']
-                Properties = $Properties
+            Write-Verbose "Removing Command from $Path"
+            $Path = Join-Path -Path $_.PSPath $ChildPath 'Commands' -Resolve
+            # Find the last command by its number
+            Get-ChildItem -Path $Path | Sort-Object -Descending {
+               [int](($_.Name | Split-Path -Leaf) -replace '\D')
+            } | Select-Object -First 1 | ForEach-Object {
+                $Properties = Get-RegistryKeyProperties -RegistryKey $_
+                # Remove the command
+                Write-Verbose "Removing Command $($_.Name)"
+                $_ | Remove-Item | Out-Null
+                # Return the command
+                [PSCustomObject]@{
+                    Name = $_ | Split-Path -Leaf
+                    Number = [int](($_.Name | Split-Path -Leaf) -replace '\D')
+                    Command = $Properties['Command']
+                    Properties = $Properties
+                } | Write-Output
             }
         }
     } finally {

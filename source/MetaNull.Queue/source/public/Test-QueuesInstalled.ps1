@@ -5,15 +5,18 @@
 [CmdletBinding()]
 [OutputType([bool])]
 param(
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory = $false)]
     [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope
+    [string] $Scope = 'AllUsers'
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $Initialized = Get-Item -Path (Get-RegistryPath -Scope $Scope -ChildPath 'Initialized')
+        $Path = Get-RegistryPath -Scope $Scope -ChildPath 'Initialized'
+        Write-verbose "Checking registry key $Path"
+        $Initialized = Get-Item -Path $Path
+        Write-Verbose "Checking registry key's Initialized property"
         $InitializedValue = $Initialized | Get-ItemPropertyValue -Name 'Initialized'
         return $InitializedValue -eq 1
     } catch {

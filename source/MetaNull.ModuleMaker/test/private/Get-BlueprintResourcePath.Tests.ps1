@@ -14,10 +14,9 @@
                 . $FunctionPath @args | write-Output
             }
         }
-
         It "Should return the path to the resource directory" {
             $Expected = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'resource'
-            $Result = Invoke-ModuleFunctionStub
+            $Result = Invoke-ModuleFunctionStub -Test
             $Result | Should -Be $Expected
         }
     }

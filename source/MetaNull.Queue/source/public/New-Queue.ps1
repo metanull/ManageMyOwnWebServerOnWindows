@@ -20,11 +20,16 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
+
+    $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName"
+    if(Test-Path -Path $Path) {
+        throw "Queue $QueueName already exists"
+    }
+
     $Mutex = $null
     try {
         Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
 
-        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName"
         $Guid = [guid]::NewGuid().ToString()
         $Item = New-Item -Path $Path
         $Item | New-ItemProperty -Name Id -Value $Guid -PropertyType String | Out-Null
@@ -43,15 +48,9 @@ Process {
         $Item | New-ItemProperty -Name Version -Value ([version]::new(0,0,0,0)|ConvertTo-JSon -Compress) -PropertyType String | Out-Null
         
         $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName\Commands"
-        $Item = New-Item -Path $Path
+        $CommandItem = New-Item -Path $Path
 
-        $Guid | Write-Output
-        [PSCustomObject]@{
-            QueueId = $Guid
-            Name = $QueueName
-            Properties = (Get-RegistryKeyProperties -RegistryKey $Item)
-            RegistryKey = $Item
-        }
+        return $Guid
     } finally {
         Unlock-ModuleMutex -Mutex ([ref]$Mutex)
         $ErrorActionPreference = $BackupErrorActionPreference

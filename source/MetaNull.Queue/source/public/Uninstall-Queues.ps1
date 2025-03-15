@@ -3,7 +3,7 @@
     Remove the module's configuration from the Windows Registry
 #>
 [CmdletBinding()]
-[OutputType()]
+[OutputType([void])]
 param(
     [Parameter(Mandatory = $false)]
     [ValidateSet('AllUsers', 'CurrentUser')]

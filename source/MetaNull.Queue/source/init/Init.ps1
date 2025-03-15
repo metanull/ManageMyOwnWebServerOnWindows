@@ -13,7 +13,4 @@ Set-Variable METANULL_QUEUE_CONSTANTS -Option ReadOnly -Scope script -Value @{
         }
     }
 }
-Set-Variable METANULL_QUEUE_LOCKS -Scope script -Value @{
-    QueueReadWrite = New-Object Object
-    QueuesSetup = New-Object Object
-}
+Set-Variable METANULL_QUEUE_ATOMIC_OBJECT -Scope script -Value (New-Object Object)

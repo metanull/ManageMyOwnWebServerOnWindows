@@ -3,19 +3,18 @@
         Returns the list of Queues
 #>
 [CmdletBinding()]
-[OutputType([PSCustomObject])]
+[OutputType([void])]
 param(
     [Parameter(Mandatory = $false)]
     [ValidateSet('AllUsers', 'CurrentUser')]
     [string] $Scope = 'AllUsers',
 
-    [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
+    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ValidateScript({ 
         $ref = [guid]::Empty
-        return $null -eq $_ -or ([guid]::TryParse($_, [ref]$ref))
+        return ([guid]::TryParse($_, [ref]$ref))
     })]
-    [Alias('QueueId')]
-    [string] $Id,
+    [string] $QueueId,
 
     [Parameter(Mandatory = $false)]
     [switch] $Force
@@ -25,20 +24,19 @@ Process {
     $ErrorActionPreference = 'Stop'
     $DoForce = $Force.IsPresent -and $Force
     try {
-        $QueueToRemove = Find-Queue -Scope $Scope -Name * | Where-Object { 
-            $_.Id -eq $Id
+        $Queue = Get-Queue -QueueId $QueueId
+        if(-not $Queue) {
+            throw  "Queue $QueueId not found"
         }
 
-        if($QueueToRemove) {
-            try {
-                Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
-                $QueueToRemove | ForEach-Object {
-                    $_.RegistryKey | Remove-Item -Force:$DoForce
-                }
-            } finally {
-                Unlock-ModuleMutex -Mutex ([ref]$Mutex)
-            }
+        # Remove the queue
+        try {
+            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+            $Queue.RegistryKey | Remove-Item -Recurse -Force:$DoForce
+        } finally {
+            Unlock-ModuleMutex -Mutex ([ref]$Mutex)
         }
+        
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

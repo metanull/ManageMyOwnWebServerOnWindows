@@ -10,22 +10,20 @@ param(
     [string] $Scope = 'AllUsers',
 
     [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
+    [AllowNull()]
+    [AllowEmptyString()]
     [ValidateScript({ 
         $ref = [guid]::Empty
-        return $null -eq $_ -or ([guid]::TryParse($_, [ref]$ref))
+        return $null -eq $_ -or $_ -eq [string]::empty -or ([guid]::TryParse($_, [ref]$ref))
     })]
-    [string] $QueueId
+    [string] $QueueId = $null
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
         Find-Queue -Scope $Scope -Name * | Where-Object { 
-            if($QueueId) {
-                $_.QueueId -eq $QueueId
-            } else {
-                $true
-            }
+            $null -eq $QueueId -or $QueueId -eq [string]::empty -or $_.QueueId -eq $QueueId
         } | Write-Output
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

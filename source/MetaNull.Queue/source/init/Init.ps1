@@ -7,7 +7,6 @@ Set-Variable METANULL_QUEUE_CONSTANTS -Option ReadOnly -Scope script -Value @{
     }
     Mutex = @{
         QueueReadWrite = @{
-            Lock = New-Object Object
             MutexName = 'MetaNull.Queue.QueueReadWrite'
             Timeout = 60
         }

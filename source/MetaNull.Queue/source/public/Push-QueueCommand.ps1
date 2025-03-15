@@ -32,14 +32,14 @@ Process {
     $ErrorActionPreference = 'Stop'
     
     try {
-        $Queue = Get-Queue -QueueId $QueueId
+        $Queue = Get-Queue -QueueId $QueueId -Scope $Scope
         if(-not $Queue) {
             throw  "Queue $QueueId not found"
         }
         
         if($Unique.IsPresent -and $Unique) {
             $ExistingCommand = $Queue.Commands | Where-Object { 
-                $Queue.Command -eq $Command 
+                $_.Command -eq $Command 
             }
             if($ExistingCommand) {
                 Write-Warning "Command already present in queue $QueueId ($($ExistingCommand.Index) - $($ExistingCommand.Name))"
@@ -51,11 +51,10 @@ Process {
         # Add the new command
         $CommandIndex = $Queue.LastCommandIndex + 1
         Write-Verbose "Adding command with index $CommandIndex to queue $QueueId"
-        $Path = Join-Path -Path $_.RegistryKey.PSPath $ChildPath 'Commands' -Resolve
+        $Path = Join-Path -Path $_.RegistryKey.PSPath -ChildPath 'Commands' -Resolve
 
-        $Mutex = $null
+        [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
         try {
-            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
             $Item = New-Item -Path $Path -Name "$($CommandIndex)"
             $Item | New-ItemProperty -Name Name -Value $Name -PropertyType String | Out-Null
             $Item | New-ItemProperty -Name Command -Value $Command -PropertyType String | Out-Null
@@ -64,7 +63,7 @@ Process {
             # Return the command
             return $CommandIndex
         } finally {
-            Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
+            [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

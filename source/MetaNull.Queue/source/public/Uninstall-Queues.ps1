@@ -14,9 +14,8 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    $Mutex = $null
+    [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
 
         if(-not (Test-QueuesInstalled -Scope $Scope) -eq $true -and -not ($Force.IsPresent -and $Force)) {
             # Not initialized
@@ -29,7 +28,8 @@ Process {
         Write-Verbose "Removing registry key $RootPath"
         Remove-Item -Path $RootPath -Recurse -Force:$Force
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
+        [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
+
         $ErrorActionPreference = $BackupErrorActionPreference
     }    
 }

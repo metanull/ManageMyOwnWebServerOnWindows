@@ -10,7 +10,7 @@ param(
     [string] $Scope = 'AllUsers',
 
     [Parameter(Mandatory)]
-    [string] $QueueName,
+    [string] $Name,
 
     [Parameter(Mandatory=$false)]
     [AllowNull()]
@@ -21,15 +21,13 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
 
-    $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName"
+    $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name"
     if(Test-Path -Path $Path) {
-        throw "Queue $QueueName already exists"
+        throw "Queue $Name already exists"
     }
 
-    $Mutex = $null
+    [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
-
         $Guid = [guid]::NewGuid().ToString()
         $Item = New-Item -Path $Path
         $Item | New-ItemProperty -Name Id -Value $Guid -PropertyType String | Out-Null
@@ -47,12 +45,12 @@ Process {
         $Item | New-ItemProperty -Name LastFinishedDate -Value $null -PropertyType String | Out-Null
         $Item | New-ItemProperty -Name Version -Value ([version]::new(0,0,0,0)|ConvertTo-JSon -Compress) -PropertyType String | Out-Null
         
-        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName\Commands"
+        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name\Commands"
         $CommandItem = New-Item -Path $Path -Force | Out-Null
 
         return $Guid
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
+        [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

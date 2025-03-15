@@ -23,7 +23,7 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        Get-Queue -QueueId $QueueId | Select-Object -ExpandProperty Commands | Where-Object { 
+        Get-Queue -QueueId $QueueId -Scope $Scope | Select-Object -ExpandProperty Commands | Where-Object { 
             $null -eq $Name -or $_.Name -like $Name
         } | Write-Output
     } finally {

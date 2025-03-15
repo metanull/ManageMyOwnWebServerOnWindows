@@ -1,5 +1,4 @@
 Describe "Uninstall-Queues" -Tag "UnitTest" {
-
     
     Context "When calling Uninstall-Queues" {
         
@@ -31,7 +30,7 @@ Describe "Uninstall-Queues" -Tag "UnitTest" {
             }
         }
         BeforeEach {
-            $I = New-Item -Path "HKCU:\SOFTWARE\MetaNull\Tests\PowerShell\MetaNull.Queue\Initialized" -Force | Out-Null
+            $I = New-Item -Path "HKCU:\SOFTWARE\MetaNull\Tests\PowerShell\MetaNull.Queue\Initialized" -Force
             $I | New-ItemProperty -Name 'Initialized' -Value 1 -PropertyType 'DWord' | Out-Null
             
             Invoke-ModuleFunctionStub -Force

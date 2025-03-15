@@ -24,17 +24,17 @@ Process {
     $ErrorActionPreference = 'Stop'
     $DoForce = $Force.IsPresent -and $Force
     try {
-        $Queue = Get-Queue -QueueId $QueueId
+        $Queue = Get-Queue -QueueId $QueueId -Scope $Scope
         if(-not $Queue) {
             throw  "Queue $QueueId not found"
         }
 
         # Remove the queue
+        [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
         try {
-            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
             $Queue.RegistryKey | Remove-Item -Recurse -Force:$DoForce
         } finally {
-            Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
+            [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
         }
         
     } finally {

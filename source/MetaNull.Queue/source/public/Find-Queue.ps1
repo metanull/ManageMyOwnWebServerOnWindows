@@ -39,18 +39,16 @@ param(
     [string] $Scope = 'AllUsers',
 
     [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)]
-    [Alias('QueueName')]
     [string] $Name = '*'
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    $Mutex = $null
+    [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
-
         $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name"
-        Get-ChildItem -Path $Path | ForEach-Object {
+        "Finding in $Path" | Write-Debug
+        Get-Item -Path $Path | ForEach-Object {
             $Properties = Get-RegistryKeyProperties -RegistryKey $_
             $Queue = [PSCustomObject]@{
                 QueueId = $Properties['Id']
@@ -62,7 +60,8 @@ Process {
                 RegistryKey = $_
             }
 
-            $CommandPath = Join-Path -Path $_.PSPath $ChildPath 'Commands'
+            $CommandPath = Join-Path -Path $_.PSPath -ChildPath 'Commands'
+
             $Queue.Commands = Get-ChildItem -Path $CommandPath | Sort-Object -Descending {
                     [int](($_.Name | Split-Path -Leaf) -replace '\D')
                 } | ForEach-Object {
@@ -81,9 +80,11 @@ Process {
                         RegistryKey = $_
                     }
                 }
+
+            $Queue | Write-Output
         }
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
+        [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

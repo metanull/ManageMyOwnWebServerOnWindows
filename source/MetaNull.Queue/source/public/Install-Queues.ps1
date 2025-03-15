@@ -14,10 +14,8 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    $Mutex = $null
+    [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
-
         if((Test-QueuesInstalled -Scope $Scope) -eq $true -and -not ($Force.IsPresent -and $Force)) {
             # Already initialized
             Write-Verbose "Registry already initialized for $Scope"
@@ -49,7 +47,8 @@ Process {
         # Add a property to indicate the registry was initialized
         $Initialized | New-ItemProperty -Name 'Initialized' -Value 1 -PropertyType 'DWord' -Force:$Force | Out-Null
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
+        [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
+        
         $ErrorActionPreference = $BackupErrorActionPreference
     }    
 }

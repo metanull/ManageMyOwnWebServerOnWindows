@@ -16,7 +16,7 @@ Process {
     $ErrorActionPreference = 'Stop'
     $Mutex = $null
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
 
         if((Test-QueuesInstalled -Scope $Scope) -eq $true -and -not ($Force.IsPresent -and $Force)) {
             # Already initialized
@@ -44,13 +44,12 @@ Process {
         $Initialized = New-Item -Path $ChildPath -Force:$Force
 
         $Initialized | New-ItemProperty -Name 'Date' -Value (Get-Date|ConvertTo-Json) -PropertyType 'String' -Force:$Force | Out-Null
-        $Initialized | New-ItemProperty -Name 'Version' -Value $Constants.Version -PropertyType 'String' -Force:$Force | Out-Null
         $Initialized | New-ItemProperty -Name 'Author' -Value $env:USERNAME -PropertyType 'String' -Force:$Force | Out-Null
 
         # Add a property to indicate the registry was initialized
         $Initialized | New-ItemProperty -Name 'Initialized' -Value 1 -PropertyType 'DWord' -Force:$Force | Out-Null
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
         $ErrorActionPreference = $BackupErrorActionPreference
     }    
 }

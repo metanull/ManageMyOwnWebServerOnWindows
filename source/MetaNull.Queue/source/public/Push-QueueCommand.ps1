@@ -55,7 +55,7 @@ Process {
 
         $Mutex = $null
         try {
-            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
             $Item = New-Item -Path $Path -Name "$($CommandIndex)"
             $Item | New-ItemProperty -Name Name -Value $Name -PropertyType String | Out-Null
             $Item | New-ItemProperty -Name Command -Value $Command -PropertyType String | Out-Null
@@ -64,7 +64,7 @@ Process {
             # Return the command
             return $CommandIndex
         } finally {
-            Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+            Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

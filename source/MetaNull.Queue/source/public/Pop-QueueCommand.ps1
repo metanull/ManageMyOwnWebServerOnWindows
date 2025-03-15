@@ -23,7 +23,7 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $Commands = Get-Command -Scope $Scope -QueueId $QueueId -Name '*' | Sort-Object -Property Index
+        $Commands = Get-QueueCommand -Scope $Scope -QueueId $QueueId -Name '*' | Sort-Object -Property Index
         if($Unshift.IsPresent -and $Unshift) {
             $Command = $Commands | Select-Object -First 1
         } else {
@@ -39,10 +39,10 @@ Process {
         Write-Verbose "Removing command with index $($Command.Index) from queue $QueueId"
         $Mutex = $null
         try {
-            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
             $Command.RegistryKey | Remove-Item -Force
         } finally {
-            Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+            Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
         }
 
         # Return the command 

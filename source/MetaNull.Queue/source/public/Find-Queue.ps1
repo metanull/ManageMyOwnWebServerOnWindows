@@ -47,7 +47,7 @@ Process {
     $ErrorActionPreference = 'Stop'
     $Mutex = $null
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
 
         $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name"
         Get-ChildItem -Path $Path | ForEach-Object {
@@ -83,7 +83,7 @@ Process {
                 }
         }
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

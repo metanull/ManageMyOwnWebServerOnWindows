@@ -28,7 +28,7 @@ Process {
 
     $Mutex = $null
     try {
-        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
 
         $Guid = [guid]::NewGuid().ToString()
         $Item = New-Item -Path $Path
@@ -41,18 +41,18 @@ Process {
         $Item | New-ItemProperty -Name FailureCount -Value 0 -PropertyType DWord | Out-Null
         $Item | New-ItemProperty -Name Disabled -Value 0 -PropertyType DWord | Out-Null
         $Item | New-ItemProperty -Name Suspended -Value 0 -PropertyType DWord | Out-Null
-        $Item | New-ItemProperty -Name DisabledDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
-        $Item | New-ItemProperty -Name SuspendedDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
-        $Item | New-ItemProperty -Name LastStartedDate -Value 0 -PropertyType DWord | Out-Null
+        $Item | New-ItemProperty -Name DisabledDate -Value $null -PropertyType String | Out-Null
+        $Item | New-ItemProperty -Name SuspendedDate -Value $null -PropertyType String | Out-Null
+        $Item | New-ItemProperty -Name LastStartedDate -Value $null -PropertyType String | Out-Null
         $Item | New-ItemProperty -Name LastFinishedDate -Value $null -PropertyType String | Out-Null
         $Item | New-ItemProperty -Name Version -Value ([version]::new(0,0,0,0)|ConvertTo-JSon -Compress) -PropertyType String | Out-Null
         
         $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName\Commands"
-        $CommandItem = New-Item -Path $Path
+        $CommandItem = New-Item -Path $Path -Force | Out-Null
 
         return $Guid
     } finally {
-        Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+        Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

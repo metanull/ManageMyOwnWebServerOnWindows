@@ -1,0 +1,129 @@
+Describe "Remove-Queue" -Tag "UnitTest" {
+    Context "When queue does not exist" {
+        
+        BeforeAll {
+            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
+            $ScriptName = $PSCommandPath | Split-Path -Leaf
+            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
+            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
+            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
+
+            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
+
+            # Create a Stub for the module function to test
+            Function Invoke-ModuleFunctionStub {
+                . $FunctionPath @args | write-Output
+            }
+            Function Get-RegistryPath {
+                param([string] $ChildPath)
+                return "HKCU:\SOFTWARE\MetaNull\Tests\PowerShell\MetaNull.Queue\$ChildPath"
+            }
+            Function Test-QueuesInstalled {
+                return $false
+            }
+            Function Lock-ModuleMutex {
+                return $true
+            }
+            Function Unlock-ModuleMutex {
+                return $true
+            }
+            Function Get-Queue {
+                return $null
+            }
+        }
+
+        It "Should throw an error" {
+            {Invoke-ModuleFunctionStub -Id (New-GUID) -Scope AllUsers} | Should -Throw
+        }
+    }
+
+    Context "When queue exists" {
+        
+        BeforeAll {
+            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
+            $ScriptName = $PSCommandPath | Split-Path -Leaf
+            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
+            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
+            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
+
+            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
+
+            # Create a Stub for the module function to test
+            Function Invoke-ModuleFunctionStub {
+                param([string]$QueueId)
+                . $FunctionPath @args | write-Output
+            }
+            Function Get-RegistryPath {
+                param([string] $ChildPath)
+                return "HKCU:\SOFTWARE\MetaNull\Tests\PowerShell\MetaNull.Queue\$ChildPath"
+            }
+            Function Test-QueuesInstalled {
+                return $false
+            }
+            Function Lock-ModuleMutex {
+                return $true
+            }
+            Function Unlock-ModuleMutex {
+                return $true
+            }
+            Function Get-Queue {
+                return $null
+            }
+        }
+        BeforeEach {
+            $QueueName = (New-Guid).ToString()
+            
+            $Path = Get-RegistryPath -ChildPath 'Initialized'
+            $I = New-Item -Path $Path -Force | Out-Null
+            $I | New-ItemProperty -Name 'Initialized' -Value 1 -PropertyType 'DWord' | Out-Null
+            
+            $Path = Get-RegistryPath -ChildPath 'Queues'
+            $I = New-Item -Path $Path -Force | Out-Null
+            
+            $QueueName = (New-Guid).ToString()
+            $Path = Get-RegistryPath -ChildPath "Queues\$QueueName"
+            $Item = New-Item -Path $Path -Force | Out-Null
+            $Item | New-ItemProperty -Name Id -Value $QueueName -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name Description -Value $QueueName -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name Status -Value 'Iddle' -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name CreatedDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name ModifiedDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name StartCount -Value 0 -PropertyType DWord | Out-Null
+            $Item | New-ItemProperty -Name FailureCount -Value 0 -PropertyType DWord | Out-Null
+            $Item | New-ItemProperty -Name Disabled -Value 0 -PropertyType DWord | Out-Null
+            $Item | New-ItemProperty -Name Suspended -Value 0 -PropertyType DWord | Out-Null
+            $Item | New-ItemProperty -Name DisabledDate -Value $null -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name SuspendedDate -Value $null -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name LastStartedDate -Value $null -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name LastFinishedDate -Value $null -PropertyType String | Out-Null
+            $Item | New-ItemProperty -Name Version -Value ([version]::new(0,0,0,0)|ConvertTo-JSon -Compress) -PropertyType String | Out-Null
+            
+            $Path = Get-RegistryPath -ChildPath "Queues\$QueueName\Commands"
+            $I = New-Item -Path $Path -Force | Out-Null
+        }
+        AfterEach {
+            Remove-Item -Force -Recurse -Path (Get-RegistryPath) -ErrorAction SilentlyContinue
+        }
+
+        It "Should not throw" {
+            {Invoke-ModuleFunctionStub -QueueId $QueueName} | Should -Throw
+        }
+        It "Should not return anything" {
+            Invoke-ModuleFunctionStub -QueueId $QueueName | Should -BeNullOrEmpty
+        }
+        It "Queue's Registry key should not exist anymore" {
+            Invoke-ModuleFunctionStub -QueueId $QueueName
+
+            $Path = Get-RegistryPath -ChildPath "Queues\$QueueName"
+            { Get-Item -Path $Path} | Should -Throw
+        }
+        It "Queue's Parent Registry key should exist" {
+            $Path = Get-RegistryPath -ChildPath "Queues"
+            { Get-Item -Path $Path} | Should -Not -Throw
+        }
+        It "Queue's Parent Registry key should have no children" {
+            $Path = Get-RegistryPath -ChildPath "Queues"
+            Get-ChildItem -Path $Path | Should -BeNullOrEmpty
+        }
+    }
+}

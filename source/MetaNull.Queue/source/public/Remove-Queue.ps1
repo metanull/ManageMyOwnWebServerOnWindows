@@ -31,10 +31,10 @@ Process {
 
         # Remove the queue
         try {
-            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+            Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex) | Out-Null
             $Queue.RegistryKey | Remove-Item -Recurse -Force:$DoForce
         } finally {
-            Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+            Unlock-ModuleMutex -Mutex ([ref]$Mutex) | Out-Null
         }
         
     } finally {

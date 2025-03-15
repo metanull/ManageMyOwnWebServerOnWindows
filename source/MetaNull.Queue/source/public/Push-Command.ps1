@@ -2,72 +2,64 @@
     .SYNOPSIS
         Add a new Command at the end of a queue
 #>
-[CmdletBinding(DefaultParameterSetName = 'Name')]
+[CmdletBinding()]
 [OutputType([int])]
 param(
     [Parameter(Mandatory = $false)]
     [ValidateSet('AllUsers', 'CurrentUser')]
     [string] $Scope = 'AllUsers',
 
-    [Parameter(Mandatory, ParameterSetName = 'GUID')]
+    [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ValidateScript({ 
         $ref = [guid]::Empty
         return [guid]::TryParse($_, [ref]$ref)
     })]
-    [string] $Id,
+    [string] $QueueId,
 
-    [Parameter(Mandatory, ParameterSetName = 'Name')]
+    [Parameter(Mandatory, Position = 1)]
+    [string] $Command,
+
+    [Parameter(Mandatory = $false, Position = 2)]
+    [AllowEmptyString()]
+    [AllowNull()]
     [string] $Name,
-
-    [Parameter(Mandatory)]
-    [string] $Command
+    
+    [Parameter(Mandatory = $false)]
+    [switch] $Unique
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-
     try {
-        $Constants = Get-ModuleConstant
-        $Constants | Write-Debug
-        Write-Debug "Obtaining Mutex for $($Constants.Synch.Queue.MutexName)"
-        $Mutex = [System.Threading.Mutex]::new($false, $Constants.Synch.Queue.MutexName)
-        if (-not ($Mutex.WaitOne(([int]$Constants.Synch.Queue.MutexNameTimeout)))) {
-            throw "Failed to obtain the Mutex within the timeout period."
-        }
+        Get-Queue -QueueId $QueueId | ForEach-Object {
+            if($Unique.IsPresent -and $Unique) {
+                $ExistingCommand = $_.Commands | Where-Object { 
+                        $_.Command -eq $Command 
+                    }
+                if($ExistingCommand) {
+                    Write-Warning "Command already present in queue $QueueId ($($ExistingCommand.Index) - $($ExistingCommand.Name))"
+                    return
+                }
+            }
 
-        if($pscmdlet.ParameterSetName -eq 'GUID') {
-            $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues" 
-            $Items = Get-ChildItem -Path $Path | Where-Object { 
-                ($_ | Get-ItemProperty -Name 'Id' -ErrorAction SilentlyContinue) -and ($_ | Get-ItemPropertyValue -Name 'Id') -eq $Id 
-            }
-        } elseif($pscmdlet.ParameterSetName -eq 'Name') {
-            $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name"
-            $Items = ,(Get-Item -Path $Path)
-        }
-        $Items | ForEach-Object {
-            $Path = Join-Path -Path $_.PSPath $ChildPath 'Commands' -Resolve
-            Write-Verbose "Adding Command to $Path"
-            # Find the next command number
-            $Number = 1
-            Get-ChildItem -Path $Path | Sort-Object -Descending {
-               [int](($_.Name | Split-Path -Leaf) -replace '\D')
-             } | Select-Object -First 1 | ForEach-Object {
-               $Number = ([int](($_.Name | Split-Path -Leaf) -replace '\D')) + 1
-            }
             # Add the new command
-            Write-Verbose "Command number is $Number"
-            $Item = New-Item -Path $Path -Name "$Number"
-            $Item | New-ItemProperty -Name Command -Value $Command -PropertyType String | Out-Null
-            $Item | New-ItemProperty -Name CreatedDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
-            # Return the command number
-            $Number | Write-Output
+            $CommandIndex = $_.LastCommandIndex + 1
+            Write-Verbose "Adding command with index $CommandIndex to queue $QueueId"
+            $Path = Join-Path -Path $_.RegistryKey.PSPath $ChildPath 'Commands' -Resolve
+            $Mutex = $null
+            try {
+                Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+                $Item = New-Item -Path $Path -Name "$CommandIndex"
+                $Item | New-ItemProperty -Name Name -Value $Name -PropertyType String | Out-Null
+                $Item | New-ItemProperty -Name Command -Value $Command -PropertyType String | Out-Null
+                $Item | New-ItemProperty -Name CreatedDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
+            } finally {
+                Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+            }
+            # Return the command index
+            $CommandIndex | Write-Output
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
-        if($Mutex) {
-            Write-Debug "Releasing Mutex"
-            $Mutex.ReleaseMutex()
-            $Mutex.Dispose()
-        }
     }
 }

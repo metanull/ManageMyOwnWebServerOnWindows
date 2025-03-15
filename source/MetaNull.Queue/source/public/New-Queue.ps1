@@ -10,7 +10,7 @@ param(
     [string] $Scope = 'AllUsers',
 
     [Parameter(Mandatory)]
-    [string] $Name,
+    [string] $QueueName,
 
     [Parameter(Mandatory=$false)]
     [AllowNull()]
@@ -20,15 +20,11 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
+    $Mutex = $null
     try {
-        $Constants = Get-ModuleConstant
-        Write-Debug "Obtaining Mutex for $($Constants.Synch.Queue.MutexName)"
-        $Mutex = [System.Threading.Mutex]::new($false, $Constants.Synch.Queue.MutexName)
-        if (-not ($Mutex.WaitOne(([int]$Constants.Synch.Queue.MutexNameTimeout)))) {
-            throw "Failed to obtain the Mutex within the timeout period."
-        }
+        Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
 
-        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name"
+        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName"
         $Guid = [guid]::NewGuid().ToString()
         $Item = New-Item -Path $Path
         $Item | New-ItemProperty -Name Id -Value $Guid -PropertyType String | Out-Null
@@ -46,16 +42,18 @@ Process {
         $Item | New-ItemProperty -Name LastFinishedDate -Value $null -PropertyType String | Out-Null
         $Item | New-ItemProperty -Name Version -Value ([version]::new(0,0,0,0)|ConvertTo-JSon -Compress) -PropertyType String | Out-Null
         
-        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name\Commands"
+        $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$QueueName\Commands"
         $Item = New-Item -Path $Path
 
         $Guid | Write-Output
-    } finally {
-        $ErrorActionPreference = $BackupErrorActionPreference
-        if($Mutex) {
-            Write-Debug "Releasing Mutex"
-            $Mutex.ReleaseMutex()
-            $Mutex.Dispose()
+        [PSCustomObject]@{
+            QueueId = $Guid
+            Name = $QueueName
+            Properties = (Get-RegistryKeyProperties -RegistryKey $Item)
+            RegistryKey = $Item
         }
+    } finally {
+        Unlock-ModuleMutex -Mutex ([ref]$Mutex)
+        $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

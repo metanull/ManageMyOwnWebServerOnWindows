@@ -14,19 +14,31 @@ param(
         $ref = [guid]::Empty
         return $null -eq $_ -or ([guid]::TryParse($_, [ref]$ref))
     })]
-    [string] $QueueId
+    [Alias('QueueId')]
+    [string] $Id,
+
+    [Parameter(Mandatory = $false)]
+    [switch] $Force
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
+    $DoForce = $Force.IsPresent -and $Force
     try {
-        Find-Queue -Scope $Scope -Name * | Where-Object { 
-            if($QueueId) {
-                $_.QueueId -eq $QueueId
-            } else {
-                $true
+        $QueueToRemove = Find-Queue -Scope $Scope -Name * | Where-Object { 
+            $_.Id -eq $Id
+        }
+
+        if($QueueToRemove) {
+            try {
+                Lock-ModuleMutex -Name 'QueueReadWrite' -Mutex ([ref]$Mutex)
+                $QueueToRemove | ForEach-Object {
+                    $_.RegistryKey | Remove-Item -Force:$DoForce
+                }
+            } finally {
+                Unlock-ModuleMutex -Mutex ([ref]$Mutex)
             }
-        } | Write-Output
+        }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

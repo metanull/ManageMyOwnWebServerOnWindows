@@ -22,9 +22,9 @@ Process {
     try {
         $Constants = Get-ModuleConstant
         if($Scope -eq 'CurrentUser') {
-            $Path = Join-Path -Path 'HKCU:' -ChildPath $Constants.Registry.Path
+            $Path = Join-Path -Path 'HKCU:' -ChildPath $Constants.Registry
         } else {
-            $Path = Join-Path -Path 'HKLM:' -ChildPath $Constants.Registry.Path
+            $Path = Join-Path -Path 'HKLM:' -ChildPath $Constants.Registry
         }
         if($ChildPath) {
             $Path = Join-Path -Path $Path -ChildPath $ChildPath

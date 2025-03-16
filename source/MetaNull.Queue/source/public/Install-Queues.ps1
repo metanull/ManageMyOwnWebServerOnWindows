@@ -37,7 +37,7 @@ Process {
         New-Item -Path $ChildPath -Force:$Force | Out-Null
         
         # Create a sub-key for the initialization status
-        $ChildPath = Join-Path -Path $RootPath -ChildPath 'Initialized'
+        $ChildPath = Join-Path -Path $RootPath -ChildPath 'Install'
         Write-Verbose "Creating registry key $ChildPath"
         $Initialized = New-Item -Path $ChildPath -Force:$Force
 
@@ -45,7 +45,7 @@ Process {
         $Initialized | New-ItemProperty -Name 'Author' -Value $env:USERNAME -PropertyType 'String' -Force:$Force | Out-Null
 
         # Add a property to indicate the registry was initialized
-        $Initialized | New-ItemProperty -Name 'Initialized' -Value 1 -PropertyType 'DWord' -Force:$Force | Out-Null
+        $Initialized | New-ItemProperty -Name 'Done' -Value 1 -PropertyType 'DWord' -Force:$Force | Out-Null
     } finally {
         [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
         

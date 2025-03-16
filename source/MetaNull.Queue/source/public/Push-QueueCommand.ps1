@@ -5,16 +5,12 @@
 [CmdletBinding()]
 [OutputType([int])]
 param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope = 'AllUsers',
-
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ValidateScript({ 
         $ref = [guid]::Empty
         return [guid]::TryParse($_, [ref]$ref)
     })]
-    [string] $QueueId,
+    [string] $Id,
 
     [Parameter(Mandatory, Position = 1)]
     [string] $Command,
@@ -32,38 +28,41 @@ Process {
     $ErrorActionPreference = 'Stop'
     
     try {
-        $Queue = Get-Queue -QueueId $QueueId -Scope $Scope
+        # Find the queue
+        $Queue = Get-Queue -Id $Id
         if(-not $Queue) {
-            throw  "Queue $QueueId not found"
+            throw  "Queue $Id not found"
         }
-        
+        # Check if the command is already present
         if($Unique.IsPresent -and $Unique) {
             $ExistingCommand = $Queue.Commands | Where-Object { 
                 $_.Command -eq $Command 
             }
             if($ExistingCommand) {
-                Write-Warning "Command already present in queue $QueueId ($($ExistingCommand.Index) - $($ExistingCommand.Name))"
+                Write-Warning "Command already present in queue $Id ($($ExistingCommand.Index) - $($ExistingCommand.Name))"
                 # Return the command index
                 return $ExistingCommand.Index
             }
         }
 
         # Add the new command
-        $CommandIndex = $Queue.LastCommandIndex + 1
-        Write-Verbose "Adding command with index $CommandIndex to queue $QueueId"
-        $Path = Join-Path -Path $_.RegistryKey.PSPath -ChildPath 'Commands' -Resolve
-
-        [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
+        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
-            $Item = New-Item -Path $Path -Name "$($CommandIndex)"
-            $Item | New-ItemProperty -Name Name -Value $Name -PropertyType String | Out-Null
-            $Item | New-ItemProperty -Name Command -Value $Command -PropertyType String | Out-Null
-            $Item | New-ItemProperty -Name CreatedDate -Value (Get-Date|ConvertTo-Json) -PropertyType String | Out-Null
-
+            $CommandIndex = $Queue.LastCommandIndex + 1
+            $Item = New-Item -Path $Path -Name MetaNull.Queue.Command.$CommandIndex -Force
+            $Properties = @{
+                Index = $CommandIndex
+                Command = $Command
+                Name = $Name
+                CreatedDate = (Get-Date|ConvertTo-Json)
+            }
+            $Properties.GetEnumerator() | ForEach-Object {
+                $Item | New-ItemProperty -Name $_.Key -Value $_.Value -PropertyType $_.Value.GetType().Name | Out-Null
+            }
             # Return the command
             return $CommandIndex
         } finally {
-            [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
+            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

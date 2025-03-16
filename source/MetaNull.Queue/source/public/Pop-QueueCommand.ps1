@@ -5,16 +5,12 @@
 [CmdletBinding()]
 [OutputType([pscustomobject])]
 param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope = 'AllUsers',
-
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ValidateScript({ 
         $ref = [guid]::Empty
         return [guid]::TryParse($_, [ref]$ref)
     })]
-    [string] $QueueId,
+    [string] $Id,
     
     [Parameter(Mandatory = $false)]
     [switch] $Unshift
@@ -23,25 +19,31 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $Commands = Get-QueueCommand -QueueId $QueueId -Scope $Scope -Name '*' | Sort-Object -Property Index
+        # Find the queue
+        $Queue = Get-Queue -Id $Id
+        if(-not $Queue) {
+            throw  "Queue $Id not found"
+        }
+        $Commands = $Queue.Commands
+        if(-not $Command) {
+            Write-Warning "No command found in queue $Id"
+            return
+        }
+
+        # Select which to remove
         if($Unshift.IsPresent -and $Unshift) {
             $Command = $Commands | Select-Object -First 1
         } else {
             $Command = $Commands | Select-Object -Last 1
         }
-
-        if(-not $Command) {
-            Write-Warning "No command found in queue $QueueId"
-            return
-        }
         
         # Remove the command
-        Write-Verbose "Removing command with index $($Command.Index) from queue $QueueId"
-        [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
+        Write-Verbose "Removing command with index $($Command.Index) from queue $Id"
+        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
             $Command.RegistryKey | Remove-Item -Force
         } finally {
-            [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
+            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
 
         # Return the command 

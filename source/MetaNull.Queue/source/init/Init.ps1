@@ -1,16 +1,29 @@
 ﻿# Module Constants
 
-Set-Variable METANULL_QUEUE_CONSTANTS -Option ReadOnly -Scope script -Value @{
-    Registry = 'SOFTWARE\MetaNull\PowerShell\MetaNull.Queue'
-    Lock = New-Object Object
-    Drive = 'MetaNullQueue'
+
+$User = [Security.Principal.WindowsIdentity]::GetCurrent()
+$Principal = [Security.Principal.WindowsPrincipal]::new($User)
+$Role = [Security.Principal.WindowsBuiltInRole]::Administrator
+if($Principal.IsInRole($Role)) {
+    # Current use is Administrator
+    $PSDriveRoot = 'HKLM:\SOFTWARE\MetaNull\PowerShell\MetaNull.Queue'
+} else {
+    # Current user is not Administrator
+    $PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell\MetaNull.Queue'
 }
 
-# New-PSDrive -Name CurrentUserQueue -PSProvider Registry -Root (Join-Path -Path HKCU: -ChildPath $METANULL_QUEUE_CONSTANTS.Registry) | Out-Null
-# New-PSDrive -Name AllUsersQueue -PSProvider Registry -Root (Join-Path -Path HKCU: -ChildPath $METANULL_QUEUE_CONSTANTS.Registry) | Out-Null
+if(-not (Test-Path $PSDriveRoot)) {
+    New-Item -Path $PSDriveRoot -Force | Out-Null
+}
 
-if(Test-IsAdministrator) {
-    New-PSDrive -Name $METANULL_QUEUE_CONSTANTS.Drive -Scope Script -PSProvider Registry -Root (Join-Path -Path HKLM: -ChildPath $METANULL_QUEUE_CONSTANTS.Registry) | Out-Null
-} else {
-    New-PSDrive -Name $METANULL_QUEUE_CONSTANTS.Drive -Scope Script -PSProvider Registry -Root (Join-Path -Path HKCU: -ChildPath $METANULL_QUEUE_CONSTANTS.Registry) | Out-Null
+New-Variable MetaNull -Scope script -Value @{
+    Queue = @{
+        PSDriveRoot = $PSDriveRoot
+        Lock = New-Object Object
+        Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
+    }
+}
+
+if(-not (Test-Path MetaNull:\Queues)) {
+    New-Item -Path MetaNull:\Queues -Force | Out-Null
 }

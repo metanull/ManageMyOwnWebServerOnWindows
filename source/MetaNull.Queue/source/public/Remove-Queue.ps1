@@ -5,16 +5,12 @@
 [CmdletBinding()]
 [OutputType([void])]
 param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope = 'AllUsers',
-
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ValidateScript({ 
         $ref = [guid]::Empty
         return ([guid]::TryParse($_, [ref]$ref))
     })]
-    [string] $QueueId,
+    [string] $Id,
 
     [Parameter(Mandatory = $false)]
     [switch] $Force
@@ -24,19 +20,18 @@ Process {
     $ErrorActionPreference = 'Stop'
     $DoForce = $Force.IsPresent -and $Force
     try {
-        $Queue = Get-Queue -QueueId $QueueId -Scope $Scope
+        # Find the queue
+        $Queue = Get-Queue -Id $Id
         if(-not $Queue) {
-            throw  "Queue $QueueId not found"
+            throw  "Queue $Id not found"
         }
-
         # Remove the queue
-        [System.Threading.Monitor]::Enter($METANULL_QUEUE_CONSTANTS.Lock)
+        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
             $Queue.RegistryKey | Remove-Item -Recurse -Force:$DoForce
         } finally {
-            [System.Threading.Monitor]::Exit($METANULL_QUEUE_CONSTANTS.Lock)
+            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
-        
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

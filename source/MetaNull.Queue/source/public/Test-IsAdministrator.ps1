@@ -1,27 +1,13 @@
 <#
     .SYNOPSIS
-        Tests if the registry was initialized
+        Tests if the current user has Administrative rights
 #>
 [CmdletBinding()]
 [OutputType([bool])]
-param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope = 'AllUsers'
-)
+param()
 Process {
-    $BackupErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'Stop'
-    try {
-        $Path = Get-RegistryPath -Scope $Scope -ChildPath 'Initialized'
-        Write-verbose "Checking registry key $Path"
-        $Initialized = Get-Item -Path $Path
-        Write-Verbose "Checking registry key's 'Initialized' property"
-        $InitializedValue = $Initialized | Get-ItemPropertyValue -Name 'Initialized'
-        return $InitializedValue -eq 1
-    } catch {
-        return $false
-    } finally {
-        $ErrorActionPreference = $BackupErrorActionPreference
-    }
+    $User = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $Principal = [Security.Principal.WindowsPrincipal]::new($User)
+    $Role = [Security.Principal.WindowsBuiltInRole]::Administrator
+    return $Principal.IsInRole($Role)
 }

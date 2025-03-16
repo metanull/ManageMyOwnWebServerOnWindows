@@ -5,10 +5,6 @@
 [CmdletBinding()]
 [OutputType([PSCustomObject])]
 param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope = 'AllUsers',
-
     [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [AllowNull()]
     [AllowEmptyString()]
@@ -16,15 +12,21 @@ param(
         $ref = [guid]::Empty
         return $null -eq $_ -or $_ -eq [string]::empty -or ([guid]::TryParse($_, [ref]$ref))
     })]
-    [string] $QueueId = $null
+    [string] $Id = $null
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        Find-Queue -Scope $Scope -Name * | Where-Object { 
-            $null -eq $QueueId -or $QueueId -eq [string]::empty -or $_.QueueId -eq $QueueId
-        } | Write-Output
+        $StrId = '*'
+        if($Id) {
+            $StrId = $Id
+        }
+        "MetaNull:\Queues\$StrId" | Write-Debug
+        Get-Item -Path "MetaNull:\Queues\$StrId" | ConvertFrom-QueueRegistry | Foreach-Object {
+            $_.Commands = Get-ChildItem "MetaNull:\Queues\$($_.Id)\Commands" | ConvertFrom-CommandRegistry
+            $_ | write-output
+        }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

@@ -17,12 +17,12 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
 
+    if(Find-Queue -Name $Name) {
+        throw "Queue '$Name' already exists"
+    }
+
     [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
-        if(Test-Path -Path "MetaNull:\Queues\$Name") {
-            throw "Queue $Name already exists"
-        }
-
         $Guid = [guid]::NewGuid().ToString()
         $Item = New-Item -Path "MetaNull:\Queues\$Guid" -Force
         $Commands = New-Item -Path "MetaNull:\Queues\$Guid\Commands" -Force

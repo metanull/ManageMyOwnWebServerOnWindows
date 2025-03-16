@@ -2,28 +2,35 @@ Describe "New-Queue" -Tag "UnitTest" {
 
     Context "When Install-Queues was not called" {
         
+        AfterAll {
+            # Cleanup
+            $PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell.Tests\MetaNull.Queue'
+            Remove-Item -Force -Recurse -Path $PSDriveRoot -ErrorAction SilentlyContinue  | Out-Null
+            Remove-PSDrive -Name 'MetaNull' -Scope Script -ErrorAction SilentlyContinue
+        }
         BeforeAll {
+            # Mock Module Initialization
+            $PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell.Tests\MetaNull.Queue'
+            New-Item -Force -Path $PSDriveRoot\Queues -ErrorAction SilentlyContinue  | Out-Null
+            $MetaNull = @{
+                Queue = @{
+                    PSDriveRoot = $PSDriveRoot
+                    Lock = New-Object Object
+                    Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
+                }
+            }
+
+            # Initialize tests (get references to Module Function's Code)
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
             $ScriptName = $PSCommandPath | Split-Path -Leaf
             $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
             $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
             $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
 
-            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
-
             # Create a Stub for the module function to test
+            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
             Function Invoke-ModuleFunctionStub {
                 . $FunctionPath @args | write-Output
-            }
-            Function Get-RegistryPath {
-                param([string] $ChildPath)
-                return "HKCU:\SOFTWARE\MetaNull\Tests\PowerShell\MetaNull.Queue\$ChildPath"
-            }
-            Function Lock-ModuleMutex {
-                return $true
-            }
-            Function Unlock-ModuleMutex {
-                return $true
             }
         }
 

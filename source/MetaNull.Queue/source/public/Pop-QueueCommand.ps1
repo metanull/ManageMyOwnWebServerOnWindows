@@ -25,7 +25,7 @@ Process {
             throw  "Queue $Id not found"
         }
         $Commands = $Queue.Commands
-        if(-not $Command) {
+        if(-not $Commands) {
             Write-Warning "No command found in queue $Id"
             return
         }
@@ -37,6 +37,8 @@ Process {
             $Command = $Commands | Select-Object -Last 1
         }
         
+        $Command.RegistryKey | Write-Warning
+
         # Remove the command
         Write-Verbose "Removing command with index $($Command.Index) from queue $Id"
         [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)

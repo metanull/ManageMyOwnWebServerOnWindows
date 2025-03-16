@@ -44,12 +44,13 @@ Process {
                 return $ExistingCommand.Index
             }
         }
+        $LastCommandIndex = ($Queue.Commands | Sort-Object -Property Index | Select-Object -Last 1 | Select-Object -ExpandProperty Index)
 
         # Add the new command
         [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
-            $CommandIndex = $Queue.LastCommandIndex + 1
-            $Item = New-Item -Path $Path -Name MetaNull.Queue.Command.$CommandIndex -Force
+            $CommandIndex = $LastCommandIndex + 1
+            $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands" -Name $CommandIndex -Force
             $Properties = @{
                 Index = $CommandIndex
                 Command = $Command
@@ -57,7 +58,7 @@ Process {
                 CreatedDate = (Get-Date|ConvertTo-Json)
             }
             $Properties.GetEnumerator() | ForEach-Object {
-                $Item | New-ItemProperty -Name $_.Key -Value $_.Value -PropertyType $_.Value.GetType().Name | Out-Null
+                $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
             }
             # Return the command
             return $CommandIndex

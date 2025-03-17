@@ -1,62 +1,76 @@
 <#
     .SYNOPSIS
         Returns the list of Queues
+
+    .DESCRIPTION
+        Returns the list of Queues
+
+    .PARAMETER Id
+        The Id of the Queue to return
+
+    .PARAMETER Name
+        The filter to apply on the name of the Queues
+        Filter supports wildcards
+
+    .EXAMPLE
+        # Get all the Queues
+        Get-Queue
+
+    .EXAMPLE
+        # Get the Queue with the Id '00000000-0000-0000-0000-000000000000'
+        Get-Queue -Id '00000000-0000-0000-0000-000000000000'
+
+    .EXAMPLE
+        # Get the Queues with the name starting with 'Queue'
+        Get-Queue -Name 'Queue*'
+
 #>
-[CmdletBinding(DefaultParameterSetName = 'Default')]
+[CmdletBinding()]
 [OutputType([PSCustomObject])]
 param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('AllUsers', 'CurrentUser')]
-    [string] $Scope = 'AllUsers',
+    [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
+    [guid] $Id = [guid]::Empty,
 
-    [Parameter(Mandatory, ParameterSetName = 'GUID')]
-    [ValidateScript({ 
-        $ref = [guid]::Empty
-        return [guid]::TryParse($_, [ref]$ref)
-    })]
-    [string] $Id,
-
-    [Parameter(Mandatory, ParameterSetName = 'Name')]
-    [string] $Name
+    [Parameter(Mandatory = $false, Position = 1)]
+    [string] $Name = '*'
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
 
     try {
-        $Constants = Get-ModuleConstant
-        Write-Debug "Obtaining Mutex for $($Constants.Synch.Queue.MutexName)"
-        $Mutex = [System.Threading.Mutex]::new($false, $Constants.Synch.Queue.MutexName)
-        if (-not ($Mutex.WaitOne(([int]$Constants.Synch.Queue.MutexNameTimeout)))) {
-            throw "Failed to obtain the Mutex within the timeout period."
+        # Set the filter to '*' or the 'Id'
+        $Filter = '*'
+        if($Id -ne [guid]::Empty) {
+            $Filter = $Id.ToString()
         }
 
-        if($pscmdlet.ParameterSetName -eq 'Default') {
-            $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues"
-            $Items = Get-ChildItem -Path $Path
-        } elseif($pscmdlet.ParameterSetName -eq 'GUID') {
-            $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues" 
-            $Items = Get-ChildItem -Path $Path | Where-Object { 
-                ($_ | Get-ItemProperty -Name 'Id' -ErrorAction SilentlyContinue) -and ($_ | Get-ItemPropertyValue -Name 'Id') -eq $Id 
+        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
+        try {
+            # Get the queue(s)
+            Get-Item -Path "MetaNull:\Queues\$Filter" | Foreach-Object {
+                $Queue = $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS* 
+                $Queue | Add-Member -MemberType NoteProperty -Name 'RegistryKey' -Value $RegistryKey
+                $Queue | Add-Member -MemberType NoteProperty -Name 'Commands' -Value @()
+                # Return the queue object
+                $Queue | Write-Output
+            } | Where-Object {
+                # Filter the queue(s) by 'Name'
+                $_.Name -like $Name
+            } | ForEach-Object {
+                # Add command(s) to the queue object
+                $_.Commands = Get-ChildItem "MetaNull:\Queues\$($_.Id)\Commands" | Foreach-Object {
+                    $Command = $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS*
+                    $Command | Add-Member -MemberType NoteProperty -Name 'RegistryKey' -Value $RegistryKey
+                    $Command | Write-Output
+                }
+                # Return the Queue object
+                $_ | write-output
             }
-        } elseif($pscmdlet.ParameterSetName -eq 'Name') {
-            $Path = Get-RegistryPath -Scope $Scope -ChildPath "Queues\$Name"
-            $Items = ,(Get-Item -Path $Path)
-        }
-        $Items | ForEach-Object {
-            $Properties = Get-RegistryKeyProperties -RegistryKey $_
-            [PSCustomObject]@{
-                Name = $_ | Split-Path -Leaf
-                Id = $Properties['Id']
-                Properties = $Properties
-            }
+        } finally {
+            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
-        if($Mutex) {
-            Write-Debug "Releasing Mutex"
-            $Mutex.ReleaseMutex()
-            $Mutex.Dispose()
-        }
     }
 }

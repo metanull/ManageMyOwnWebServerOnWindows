@@ -1,4 +1,4 @@
-Describe "New-Queue" -Tag "Functional","BeforeBuild" {
+Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
 
     Context "When the function is called" {
         
@@ -64,53 +64,36 @@ Describe "New-Queue" -Tag "Functional","BeforeBuild" {
             }
         }
         It "Should not throw an exception" {
-            {Invoke-ModuleFunctionStub -Name 'Test-44'} | Should -Not -Throw
-        }
-        It "Should modify the registry" {
-            Invoke-ModuleFunctionStub -Name 'Test-47'
-            Get-ChildItem -Path MetaNull:\Queues | Should -Not -BeNullOrEmpty
-        }
-        It "Should add the queue to the registry" {
-            Invoke-ModuleFunctionStub -Name 'Test-51'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-51'
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                {$Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-66' -Command 'Test-66'} | Should -Not -Throw
             }
-            $Item | Should -Not -BeNullOrEmpty
         }
-        It "Should add the queue to the registry with an empty Description" {
-            Invoke-ModuleFunctionStub -Name 'Test-58'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-58'
+        It "Should add the command to the registry" {
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-72' -Command 'Test-72'
+                $Index | Should -Not -BeNullOrEmpty
+                $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
+                $Item | Should -Not -BeNullOrEmpty
+                $Item | Get-ItemPropertyValue -Name 'Command' | Should -Be 'Test-72'
+                $Item | Get-ItemPropertyValue -Name 'Index' | Should -Be $Index
             }
-            $Item | Get-ItemPropertyValue -Name 'Description' | Should -BeNullOrEmpty
         }
-        It "Should add the queue to the registry with an 'iddle' Status" {
-            Invoke-ModuleFunctionStub -Name 'Test-66'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-66'
+        It "Should increment the Index automatically" {
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                $Index1 = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-85.1' -Command 'Test-85.1'
+                $Index2 = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-85.2' -Command 'Test-85.2'
+                $Index3 = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-85.3' -Command 'Test-85.3'
+                $Index1 | Should -Not -BeNullOrEmpty
+                $Index2 | Should -Not -BeNullOrEmpty
+                $Index3 | Should -Not -BeNullOrEmpty
+                $Index1 | Should -Not -Be $Index3
+                $Index2 | Should -Be ($Index1 + 1)
+                $Index3 | Should -Be ($Index2 + 1)
             }
-            $Item | Get-ItemPropertyValue -Name 'Status' | Should -Be 'Iddle'
         }
-        It "Should add the queue to the registry with the right Description" {
-            Invoke-ModuleFunctionStub -Name 'Test-72' -Description 'Test Description'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-72'
-            }
-            $Item | Get-ItemPropertyValue -Name 'Description' | Should -Be 'Test Description'
-        }
-        It "Should add the queue to the registry with the right Description" {
-            Invoke-ModuleFunctionStub -Name 'Test-80' -Status 'Disabled'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-80'
-            }
-            $Item | Get-ItemPropertyValue -Name 'Status' | Should -Be 'Disabled'
-        }
-        It "Should add the queue to the registry with the right children" {
-            Invoke-ModuleFunctionStub -Name 'Test-86' -Status 'Disabled'
-            $Id = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-86'
-            } | Get-ItemProperty | Select-Object -ExpandProperty Id
-            Test-Path "MetaNull:\Queues\$Id\Commands" | Should -BeTrue
-        }
+        
     }
 }

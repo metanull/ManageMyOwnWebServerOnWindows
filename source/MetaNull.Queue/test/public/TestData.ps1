@@ -1,3 +1,13 @@
+# Mock Module Initialization, create the test registry key
+$PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell.Tests\MetaNull.Queue'
+New-Item -Force -Path $PSDriveRoot\Queues -ErrorAction SilentlyContinue  | Out-Null
+$MetaNull = @{
+    Queue = @{
+        PSDriveRoot = $PSDriveRoot
+        Lock = New-Object Object
+        Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
+    }
+}
 # Generate TestData
 $TestData = @(
     @{

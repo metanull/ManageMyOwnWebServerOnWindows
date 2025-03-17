@@ -3,16 +3,9 @@ Describe "Clear-Queue" -Tag "Functional","BeforeBuild" {
     Context "When the function is called" {
         
         BeforeAll {
-            # Mock Module Initialization, create the test registry key
-            $PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell.Tests\MetaNull.Queue'
-            New-Item -Force -Path $PSDriveRoot\Queues -ErrorAction SilentlyContinue  | Out-Null
-            $MetaNull = @{
-                Queue = @{
-                    PSDriveRoot = $PSDriveRoot
-                    Lock = New-Object Object
-                    Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
-                }
-            }
+            # Load TestData
+            . (Join-Path (Split-Path $PSCommandPath) "TestData.ps1")
+
             # Initialize tests (get references to Module Function's Code)
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
             $ScriptName = $PSCommandPath | Split-Path -Leaf
@@ -25,9 +18,6 @@ Describe "Clear-Queue" -Tag "Functional","BeforeBuild" {
             Function Invoke-ModuleFunctionStub {
                 . $FunctionPath @args | write-Output
             }
-
-            # Load TestData
-            . (Join-Path (Split-Path $PSCommandPath) "TestData.ps1")
         }
         AfterAll {
             # Cleanup (remove the whole test registry key)

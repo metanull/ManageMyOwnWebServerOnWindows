@@ -6,7 +6,7 @@
 [OutputType([void])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [uid] $Id,
+    [guid] $Id,
 
     [Parameter(Mandatory = $false)]
     [switch] $Force
@@ -15,9 +15,8 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        # Find the queue
-        $Queue = Get-Queue -Id $Id
-        if(-not $Queue) {
+        # Test if the queue exists
+        if(-not "$Id" -or -not (Test-Path "MetaNull:\Queues\$Id")) {
             throw  "Queue $Id not found"
         }
 
@@ -25,7 +24,7 @@ Process {
         [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
             $DoForce = $Force.IsPresent -and $Force
-            $Queue.RegistryKey | Remove-Item -Recurse -Force:$DoForce
+            Remove-Item "MetaNull:\Queues\$Id" -Recurse -Force:$DoForce
         } finally {
             [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }

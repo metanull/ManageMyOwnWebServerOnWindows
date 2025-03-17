@@ -1,11 +1,11 @@
-Describe "New-Queue" -Tag "Functional","BeforeBuild" {
+Describe "Get-Queue" -Tag "Functional","BeforeBuild" {
 
     Context "When the function is called" {
         
         BeforeAll {
             # Mock Module Initialization, create the test registry key
             $PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell.Tests\MetaNull.Queue'
-            New-Item -Force -Path "$PSDriveRoot\Queues" -ErrorAction SilentlyContinue  | Out-Null
+            New-Item -Force -Path $PSDriveRoot\Queues -ErrorAction SilentlyContinue  | Out-Null
             $MetaNull = @{
                 Queue = @{
                     PSDriveRoot = $PSDriveRoot
@@ -73,54 +73,28 @@ Describe "New-Queue" -Tag "Functional","BeforeBuild" {
                 }
             }
         }
-        It "Should not throw an exception" {
-            {Invoke-ModuleFunctionStub -Name 'Test-44'} | Should -Not -Throw
-        }
-        It "Should modify the registry" {
-            Invoke-ModuleFunctionStub -Name 'Test-47'
-            Get-ChildItem -Path MetaNull:\Queues | Should -Not -BeNullOrEmpty
-        }
-        It "Should add the queue to the registry" {
-            Invoke-ModuleFunctionStub -Name 'Test-51'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-51'
+        It "Should not throw an exception - by Id" {
+            $TestData | Foreach-Object {
+                {Invoke-ModuleFunctionStub -Id $_.Queue.Id} | Should -Not -Throw
             }
-            $Item | Should -Not -BeNullOrEmpty
         }
-        It "Should add the queue to the registry with an empty Description" {
-            Invoke-ModuleFunctionStub -Name 'Test-58'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-58'
+        It "Should return two Queues when no Id is provided" {
+            $Result = Invoke-ModuleFunctionStub
+            $Result.Count | Should -Be $TestData.Queue.Count
+        }
+        It "Should return the expected when the Id is provided" {
+            $TestData | Foreach-Object {
+                $CurrentTest = $_
+                $Result = Invoke-ModuleFunctionStub -Id $CurrentTest.Queue.Id
+                $Result | Should -BeOfType [PSCustomObject]
+                $Result.Id | Should -Be $CurrentTest.Queue.Id
+                $Result.Name | Should -Be $CurrentTest.Queue.Name
+                $Result.Description | Should -Be $CurrentTest.Queue.Description
+                $Result.Status | Should -Be $CurrentTest.Queue.Status
             }
-            $Item | Get-ItemPropertyValue -Name 'Description' | Should -BeNullOrEmpty
         }
-        It "Should add the queue to the registry with an 'iddle' Status" {
-            Invoke-ModuleFunctionStub -Name 'Test-66'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-66'
-            }
-            $Item | Get-ItemPropertyValue -Name 'Status' | Should -Be 'Iddle'
-        }
-        It "Should add the queue to the registry with the right Description" {
-            Invoke-ModuleFunctionStub -Name 'Test-72' -Description 'Test Description'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-72'
-            }
-            $Item | Get-ItemPropertyValue -Name 'Description' | Should -Be 'Test Description'
-        }
-        It "Should add the queue to the registry with the right Description" {
-            Invoke-ModuleFunctionStub -Name 'Test-80' -Status 'Disabled'
-            $Item = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-80'
-            }
-            $Item | Get-ItemPropertyValue -Name 'Status' | Should -Be 'Disabled'
-        }
-        It "Should add the queue to the registry with the right children" {
-            Invoke-ModuleFunctionStub -Name 'Test-86' -Status 'Disabled'
-            $Id = Get-ChildItem -Path MetaNull:\Queues | Where-Object {
-                ($_ | Get-ItemProperty | Select-Object -ExpandProperty Name) -eq 'Test-86'
-            } | Get-ItemProperty | Select-Object -ExpandProperty Id
-            Test-Path "MetaNull:\Queues\$Id\Commands" | Should -BeTrue
+        It "Should throw when the Id is not found" {
+            {Invoke-ModuleFunctionStub -Id (New-Guid)} | Should -Throw
         }
     }
 }

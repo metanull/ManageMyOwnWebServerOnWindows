@@ -14,39 +14,30 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
+    [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
-        # Find the queue
-        $Queue = Get-Queue -Id $Id
-        if(-not $Queue) {
-            throw  "Queue $Id not found"
-        }
+        # Collect the existing commands
+        $Commands = Get-ChildItem "MetaNull:\Queues\$Id\Commands" | Foreach-Object {
+            $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS* | Write-Output
+        } | Sort-Object -Property Index
 
-        # Select which to remove
+        # Select which command to remove
         if($Unshift.IsPresent -and $Unshift) {
-            $Command = $Queue.Commands | Select-Object -First 1
+            $Command = $Commands | Select-Object -First 1
         } else {
-            $Command = $Queue.Commands | Select-Object -Last 1
+            $Command = $Commands | Select-Object -Last 1
+        }
+        if(-not $Command -or -not $Command.Index) {
+            return
         }
 
-        # Find the commands
-        if(-not $Command) {
-            throw "No command found in queue $Id"
-        }
+        # Remove the command from the registry
+        Remove-Item -Force -Recurse "MetaNull:\Queues\$Id\Commands\$($Command.Index)"
 
-        # Remove the command
-        Write-Verbose "Removing command with index $($Command.Index) from queue $Id"
-        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
-        try {
-            $Command.RegistryKey | Remove-Item -Force
-        } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
-        }
-
-        # Return the command (without the registry key, as it was deleted)
-        $Command.RegistryKey = $null
+        # Return the popped/unshifted command
         $Command | Write-Output
-        
     } finally {
+        [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

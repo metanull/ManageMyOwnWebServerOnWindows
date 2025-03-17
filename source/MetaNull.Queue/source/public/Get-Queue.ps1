@@ -29,8 +29,7 @@
 [OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [AllowNull()]
-    [guid] $Id = $null,
+    [guid] $Id = [guid]::Empty,
 
     [Parameter(Mandatory = $false, Position = 1)]
     [string] $Name = '*'
@@ -42,7 +41,7 @@ Process {
     try {
         # Set the filter to '*' or the 'Id'
         $Filter = '*'
-        if($null -ne $Id -and $Id -ne [guid]::Empty) {
+        if($Id -ne [guid]::Empty) {
             $Filter = $Id.ToString()
         }
 

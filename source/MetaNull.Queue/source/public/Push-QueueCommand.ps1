@@ -6,7 +6,7 @@
 [OutputType([int])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [uid] $Id,
+    [guid] $Id,
 
     [Parameter(Mandatory, Position = 1)]
     [string] $Command,
@@ -23,20 +23,20 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     
+    [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
-        # Find the queue
-        $Queue = Get-Queue -Id $Id
-        if(-not $Queue) {
-            throw  "Queue $Id not found"
-        }
+        # Collect the existing commands
+        $Commands = Get-ChildItem "MetaNull:\Queues\$Id\Commands" -ErrorAction SilentlyContinue | Foreach-Object {
+            $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS* | Write-Output
+        } | Sort-Object -Property Index
 
         # Check if the command is already present
-        if($Unique.IsPresent -and $Unique -and ($Queue.Commands | Where-Object { $_.Command -eq $Command })) {
+        if($Unique.IsPresent -and $Unique -and ($Commands | Where-Object { $_.Command -eq $Command })) {
             throw "Command already present in queue $Id"
         }
 
         # Find the last command index
-        $LastCommandIndex = ($Queue.Commands | Sort-Object -Property Index | Select-Object -Last 1 | Select-Object -ExpandProperty Index) + 1
+        $LastCommandIndex = ($Commands | Select-Object -Last 1 | Select-Object -ExpandProperty Index) + 1
 
         # Create the new command
         $Properties = @{
@@ -46,18 +46,15 @@ Process {
         }
 
         # Add the new command to the registry
-        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
-        try {
-            $Item = New-Item "MetaNull:\Queues\$Id\Commands\$LastCommandIndex" -Force
-            $Properties.GetEnumerator() | ForEach-Object {
-                $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-            }
-            # Return the command
-            return $CommandIndex
-        } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
+        $Item = New-Item "MetaNull:\Queues\$Id\Commands\$LastCommandIndex" -Force
+        $Properties.GetEnumerator() | ForEach-Object {
+            $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
         }
+
+        # Return the command Index
+        return $LastCommandIndex
     } finally {
+        [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

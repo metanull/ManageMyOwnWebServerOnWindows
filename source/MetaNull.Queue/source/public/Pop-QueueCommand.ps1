@@ -6,11 +6,7 @@
 [OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ValidateScript({ 
-        $ref = [guid]::Empty
-        return [guid]::TryParse($_, [ref]$ref)
-    })]
-    [string] $Id,
+    [guid] $Id,
     
     [Parameter(Mandatory = $false)]
     [switch] $Unshift
@@ -24,20 +20,18 @@ Process {
         if(-not $Queue) {
             throw  "Queue $Id not found"
         }
-        $Commands = $Queue.Commands
-        if(-not $Commands) {
-            Write-Warning "No command found in queue $Id"
-            return
-        }
 
         # Select which to remove
         if($Unshift.IsPresent -and $Unshift) {
-            $Command = $Commands | Select-Object -First 1
+            $Command = $Queue.Commands | Select-Object -First 1
         } else {
-            $Command = $Commands | Select-Object -Last 1
+            $Command = $Queue.Commands | Select-Object -Last 1
         }
-        
-        $Command.RegistryKey | Write-Warning
+
+        # Find the commands
+        if(-not $Command) {
+            throw "No command found in queue $Id"
+        }
 
         # Remove the command
         Write-Verbose "Removing command with index $($Command.Index) from queue $Id"
@@ -48,7 +42,7 @@ Process {
             [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
 
-        # Return the command 
+        # Return the command (without the registry key, as it was deleted)
         $Command.RegistryKey = $null
         $Command | Write-Output
         

@@ -1,15 +1,12 @@
 <#
     .SYNOPSIS
-        Returns the list of Queues
+        Remove all Commands from the queue
 #>
 [CmdletBinding()]
-[OutputType([void])]
+[OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [uid] $Id,
-
-    [Parameter(Mandatory = $false)]
-    [switch] $Force
+    [guid] $Id
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
@@ -21,13 +18,18 @@ Process {
             throw  "Queue $Id not found"
         }
 
-        # Remove the queue
+        # Remove the command
         [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
-            $DoForce = $Force.IsPresent -and $Force
-            $Queue.RegistryKey | Remove-Item -Recurse -Force:$DoForce
+            $Queue.Commands.RegistryKey | Remove-Item -Force
         } finally {
             [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
+        }
+
+        # Return the commands (without the registry key, as it was deleted)
+        $Queue.Commands | ForEach-Object {
+            $_.RegistryKey = $null
+            $_ | Write-Output
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

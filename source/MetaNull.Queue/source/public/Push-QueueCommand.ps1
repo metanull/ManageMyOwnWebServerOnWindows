@@ -6,11 +6,7 @@
 [OutputType([int])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ValidateScript({ 
-        $ref = [guid]::Empty
-        return [guid]::TryParse($_, [ref]$ref)
-    })]
-    [string] $Id,
+    [uid] $Id,
 
     [Parameter(Mandatory, Position = 1)]
     [string] $Command,
@@ -33,30 +29,26 @@ Process {
         if(-not $Queue) {
             throw  "Queue $Id not found"
         }
-        # Check if the command is already present
-        if($Unique.IsPresent -and $Unique) {
-            $ExistingCommand = $Queue.Commands | Where-Object { 
-                $_.Command -eq $Command 
-            }
-            if($ExistingCommand) {
-                Write-Warning "Command already present in queue $Id ($($ExistingCommand.Index) - $($ExistingCommand.Name))"
-                # Return the command index
-                return $ExistingCommand.Index
-            }
-        }
-        $LastCommandIndex = ($Queue.Commands | Sort-Object -Property Index | Select-Object -Last 1 | Select-Object -ExpandProperty Index)
 
-        # Add the new command
+        # Check if the command is already present
+        if($Unique.IsPresent -and $Unique -and ($Queue.Commands | Where-Object { $_.Command -eq $Command })) {
+            throw "Command already present in queue $Id"
+        }
+
+        # Find the last command index
+        $LastCommandIndex = ($Queue.Commands | Sort-Object -Property Index | Select-Object -Last 1 | Select-Object -ExpandProperty Index) + 1
+
+        # Create the new command
+        $Properties = @{
+            Index = $LastCommandIndex
+            Command = $Command
+            Name = $Name
+        }
+
+        # Add the new command to the registry
         [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
-            $CommandIndex = $LastCommandIndex + 1
-            $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands" -Name $CommandIndex -Force
-            $Properties = @{
-                Index = $CommandIndex
-                Command = $Command
-                Name = $Name
-                CreatedDate = (Get-Date|ConvertTo-Json)
-            }
+            $Item = New-Item "MetaNull:\Queues\$Id\Commands\$LastCommandIndex" -Force
             $Properties.GetEnumerator() | ForEach-Object {
                 $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
             }

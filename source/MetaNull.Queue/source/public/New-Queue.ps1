@@ -11,45 +11,39 @@ param(
     [Parameter(Mandatory=$false)]
     [AllowNull()]
     [AllowEmptyString()]
-    [string] $Description
+    [string] $Description,
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet('Iddle','Running','Disabled','Suspended')]
+    [string] $Status = 'Iddle'
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
 
-    if(Find-Queue -Name $Name) {
-        throw "Queue '$Name' already exists"
-    }
-
-    [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
+        # Create the queue object
         $Guid = [guid]::NewGuid().ToString()
-        $Item = New-Item -Path "MetaNull:\Queues\$Guid" -Force
-        $Commands = New-Item -Path "MetaNull:\Queues\$Guid\Commands" -Force
         $Properties = @{
-            Name = $Name
             Id = $Guid
+            Name = $Name
             Description = $Description
-            Status = 'Iddle'
-            CreatedDate = (Get-Date|ConvertTo-Json)
-            ModifiedDate = (Get-Date|ConvertTo-Json)
-            StartCount = 0
-            FailureCount = 0
-            Disabled = 0
-            Suspended = 0
-            DisabledDate = $null
-            SuspendedDate = $null
-            LastStartedDate = $null
-            LastFinishedDate = $null
-            Version = ([version]::new(0,0,0,0)|ConvertTo-JSon -Compress)
+            Status = $Status
         }
-        $Properties.GetEnumerator() | ForEach-Object {
-            $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
+
+        # Store the queue into the registry
+        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
+        try {
+            $Item = New-Item -Path "MetaNull:\Queues\$Guid" -Force
+            New-Item -Path "MetaNull:\Queues\$Guid\Commands" -Force | Out-Null
+            $Properties.GetEnumerator() | ForEach-Object {
+                $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
+            }
+            return $Guid
+        } finally {
+            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
-        $Item | Write-Warning
-        return $Guid
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

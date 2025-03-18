@@ -47,21 +47,8 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
             Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
         }
 
-        It "Test environment PSDrive should be initialized" {
-            $MetaNull.Queue.Drive | Should -Not -BeNullOrEmpty
-            {Get-PSDrive -Name 'MetaNull'} | Should -Not -Throw
-            Get-PSDrive -Name 'MetaNull' | Should -Not -BeNullOrEmpty
-            Test-Path MetaNull:\Queues | Should -BeTrue
-        }
-        It "Test environment should be initialized and test queue exists" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
-                Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands" | Should -BeTrue
-                (Get-ChildItem "MetaNull:\Queues\$($Queue.Id)\Commands").Count | Should -Be $($_.Commands.Count)
-                $_.Commands | Foreach-Object {
-                    Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)" | Should -BeTrue
-                }
-            }
+        It "TestData is initialized" {
+            ValidateTestData -TestData $TestData | Should -BeTrue
         }
         It "Should not throw an exception" {
             $TestData | Foreach-Object {
@@ -94,6 +81,43 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
                 $Index3 | Should -Be ($Index2 + 1)
             }
         }
-        
+        It "Should support Type String" {
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-97' -Command 'Test-97'
+                $Index | Should -Not -BeNullOrEmpty
+                $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
+                $Item | Should -Not -BeNullOrEmpty
+                $Item | Get-ItemPropertyValue -Name 'Command' | Should -Be 'Test-97'
+                $Item | Get-ItemPropertyValue -Name 'Index' | Should -Be $Index
+            }
+        }
+        It "Should support Type ExpandString" {
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-108' -ExpandableCommand '%USERNAME%'
+                $Index | Should -Not -BeNullOrEmpty
+                $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
+                $Item | Should -Not -BeNullOrEmpty
+                $Item | Get-ItemPropertyValue -Name 'Command' | Should -Be $env:USERNAME
+                $Item | Get-ItemPropertyValue -Name 'Index' | Should -Be $Index
+            }
+        }
+        It "Should support Type MultiString" {
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-119' -Commands 'Hello','World','42'
+                $Index | Should -Not -BeNullOrEmpty
+                $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
+                $Item | Should -Not -BeNullOrEmpty
+                $Item | Get-ItemPropertyValue -Name 'Index' | Should -Be $Index
+                $Item | Get-ItemPropertyValue -Name 'Command' | Should -BeOfType [System.Array]
+                ($Item | Get-ItemPropertyValue -Name 'Command').Count | Should -Be 3
+                ($Item | Get-ItemPropertyValue -Name 'Command')[0] | Should -Be 'Hello'
+                ($Item | Get-ItemPropertyValue -Name 'Command')[1] | Should -Be 'World'
+                ($Item | Get-ItemPropertyValue -Name 'Command')[2] | Should -Be '42'
+                
+            }
+        }
     }
 }

@@ -47,21 +47,8 @@ Describe "Pop-QueueCommand" -Tag "Functional","BeforeBuild" {
             Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
         }
 
-        It "Test environment PSDrive should be initialized" {
-            $MetaNull.Queue.Drive | Should -Not -BeNullOrEmpty
-            {Get-PSDrive -Name 'MetaNull'} | Should -Not -Throw
-            Get-PSDrive -Name 'MetaNull' | Should -Not -BeNullOrEmpty
-            Test-Path MetaNull:\Queues | Should -BeTrue
-        }
-        It "Test environment should be initialized and test queue exists" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
-                Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands" | Should -BeTrue
-                (Get-ChildItem "MetaNull:\Queues\$($Queue.Id)\Commands").Count | Should -Be $($_.Commands.Count)
-                $_.Commands | Foreach-Object {
-                    Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)" | Should -BeTrue
-                }
-            }
+        It "TestData is initialized" {
+            ValidateTestData -TestData $TestData | Should -BeTrue
         }
         It "Should not throw an exception" {
             $TestData | Foreach-Object {
@@ -88,10 +75,10 @@ Describe "Pop-QueueCommand" -Tag "Functional","BeforeBuild" {
         It "Should return the popped command from the registry" {
             $TestData | Foreach-Object {
                 $Queue = $_.Queue
-                $Index = $_.Commands.Index | Select-Object -First 1
+                $FirstCommand = $_.Commands | Select -First 1
                 $Command = Invoke-ModuleFunctionStub -Id $Queue.Id -Unshift
-                $Command.Index | Should -Be $Index
-                $Command.Command | Should -Be ($_.Commands | Where-Object { $_.Index -eq $Index} | Select-Object -ExpandProperty Command) 
+                $Command.Index | Should -Be $FirstCommand.Index
+                $Command.Command | Should -Be $FirstCommand.Command
             }
         }
     }

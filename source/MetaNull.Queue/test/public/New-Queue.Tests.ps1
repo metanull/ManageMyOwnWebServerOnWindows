@@ -47,22 +47,10 @@ Describe "New-Queue" -Tag "Functional","BeforeBuild" {
             Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
         }
 
-        It "Test environment PSDrive should be initialized" {
-            $MetaNull.Queue.Drive | Should -Not -BeNullOrEmpty
-            {Get-PSDrive -Name 'MetaNull'} | Should -Not -Throw
-            Get-PSDrive -Name 'MetaNull' | Should -Not -BeNullOrEmpty
-            Test-Path MetaNull:\Queues | Should -BeTrue
+        It "TestData is initialized" {
+            ValidateTestData -TestData $TestData | Should -BeTrue
         }
-        It "Test environment should be initialized and test queue exists" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
-                Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands" | Should -BeTrue
-                (Get-ChildItem "MetaNull:\Queues\$($Queue.Id)\Commands").Count | Should -Be $($_.Commands.Count)
-                $_.Commands | Foreach-Object {
-                    Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)" | Should -BeTrue
-                }
-            }
-        }
+        
         It "Should not throw an exception" {
             {Invoke-ModuleFunctionStub -Name 'Test-44'} | Should -Not -Throw
         }

@@ -56,3 +56,54 @@ $TestData = @(
         )
     }
 )
+
+Function ValidateTestData {
+    param($TestData)
+    
+    $BackupErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Stop'
+    try {
+        if( -not (Get-PSDrive -Name 'MetaNull')) {
+            throw 'PSDrive MetaNull: is not defined'
+        }
+        if( -not (Test-Path MetaNull:\Queues)) {
+            throw 'Path MetaNull:\Queues was not found'
+        }
+        $ix = -1
+        $TestData | Foreach-Object {
+            $ix += 1
+            if(-not ($_.Queue)) {
+                throw "TestData[$ix].Queue was empty"
+            }
+            if(-not ($_.Commands)) {
+                throw "TestData[$ix].Commands was empty"
+            }
+            $Queue = $_.Queue
+            if(-not (Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands")) {
+                throw "Path MetaNull:\Queues\$($Queue.Id)\Commands was not found"
+            }
+            if((Get-ChildItem "MetaNull:\Queues\$($Queue.Id)\Commands").Count -ne $($_.Commands.Count)) {
+                throw "Path MetaNull:\Queues\$($Queue.Id)\Commands doesn't contain $($_.Commands.Count) elements"
+            }
+            $_.Commands | Foreach-Object {
+                if( -not (Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)")) {
+                    throw "Path MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)"
+                }
+                $Item = Get-Item "MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)"
+                if(-not ($Item)) {
+                    throw "Couldn't get item at MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)"
+                }
+                $Command = $Item | Get-ItemProperty | Select-Object -ExpandProperty 'Command'
+                if(-not ($command)) {
+                    throw "Couldn't get the Command property of MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)"
+                }
+            }
+        }
+        return $true
+    } catch {
+        Write-Warning $_.Exception.ToString()
+        return $false
+    } finally {
+        $ErrorActionPreference = $BackupErrorActionPreference
+    }
+}

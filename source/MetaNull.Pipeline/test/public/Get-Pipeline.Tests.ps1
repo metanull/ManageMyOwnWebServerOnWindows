@@ -1,5 +1,6 @@
-Describe "Testing public module function Get-Dummy" -Tag "UnitTest" {
-    Context "A dummy unit test" {
+Describe "Get-Pipeline" -Tag "Functional","BeforeBuild" {
+
+    Context "When the function is called" {
         BeforeAll {
             # Load TestData
             . (Join-Path (Split-Path $PSCommandPath) "TestData.ps1")
@@ -35,9 +36,30 @@ Describe "Testing public module function Get-Dummy" -Tag "UnitTest" {
             ValidateTestData -TestData $TestData | Should -BeTrue
         }
 
-        It "Should return TRUE" {
+        It "Should not throw an exception when Id is given" {
+            $TestData.Pipelines | Foreach-Object {
+                $Pipeline = $_
+                {Invoke-ModuleFunctionStub -Id $Pipeline.Id} | Should -Not -Throw
+            }
+        }
+        It "Should return all pipelines when no Id is provided" {
             $Result = Invoke-ModuleFunctionStub
-            $Result | Should -BeTrue
+            $Result.Count | Should -Be $TestData.Pipelines.Count
+        }
+        It "Should return the expected data when the Id is provided" {
+            $TestData.Pipelines | Foreach-Object {
+                $Pipeline = $_
+                $Result = Invoke-ModuleFunctionStub -Id $Pipeline.Id
+                $Result | Should -BeOfType [PSCustomObject]
+                $Result.Id | Should -Be $Pipeline.Id
+                $Result.Name | Should -Be $Pipeline.Name
+                $Result.Description | Should -Be $Pipeline.Description
+                $Result.Stages | Should -Not -BeNullOrEmpty
+                $Result.Stages.Count | Should -Be $Pipeline.Stages.Count
+            }
+        }
+        It "Should throw when the Id is not found" {
+            {Invoke-ModuleFunctionStub -Id (New-Guid)} | Should -Throw
         }
     }
 }

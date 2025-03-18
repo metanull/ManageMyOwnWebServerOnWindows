@@ -1,6 +1,28 @@
 <#
     .SYNOPSIS
         Remove a Command from the top or bottom of the queue
+
+    .DESCRIPTION
+        Remove a Command from the top or bottom of the queue
+
+    .PARAMETER Id
+        The Id of the queue
+
+    .PARAMETER Unshift
+        If set, removes the command from the top of the queue
+
+    .OUTPUTS
+        [pscustomobject]
+
+    .EXAMPLE
+        $Command = Pop-QueueCommand -Id $Id
+        $ScriptBlock = $Command.ToScriptBlock()
+        $ScriptBlock.Invoke()
+
+    .EXAMPLE
+        Pop-QueueCommand -Id $Id -Unshift
+        $ScriptBlock = $Command.ToScriptBlock()
+        $ScriptBlock.Invoke()
 #>
 [CmdletBinding()]
 [OutputType([pscustomobject])]
@@ -43,6 +65,13 @@ Process {
         Remove-Item -Force -Recurse "MetaNull:\Queues\$Id\Commands\$($Command.Index)"
 
         # Return the popped/unshifted command
+        $Command | Add-Member -MemberType ScriptMethod -Name ToScriptBlock -Value {
+            try {
+                return [System.Management.Automation.ScriptBlock]::Create($this.Command -join "`n")
+            } catch {
+                return $null
+            }
+        }
         $Command | Write-Output
     } finally {
         [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)

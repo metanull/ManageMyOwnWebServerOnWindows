@@ -1,6 +1,30 @@
 <#
     .SYNOPSIS
         Add a new Command at the end of a queue
+
+    .DESCRIPTION
+        Add a new Command at the end of a queue
+
+    .PARAMETER Id
+        The Id of the queue
+
+    .PARAMETER Commands
+        An array of commands to add to the queue
+
+    .PARAMETER Command
+        A command to add to the queue
+
+    .PARAMETER ExpandableCommand
+        An expandable command to add to the queue (environment variables are expanded at runtime)
+
+    .PARAMETER Name
+        The name of the command
+
+    .PARAMETER Unique
+        If set, the command is only added if it is not already present in the queue
+
+    .EXAMPLE
+        Push-QueueCommand -Id $Id -Commands 'Get-Process', 'Get-Service'
 #>
 [CmdletBinding(DefaultParameterSetName='REG_MULTI_SZ')]
 [OutputType([int])]
@@ -45,7 +69,7 @@ Process {
         } | Sort-Object -Property Index)
 
         # Check if the command is already present
-        if($Unique.IsPresent -and $Unique -and ($Commands | Where-Object { $_.Command -eq $Command })) {
+        if($Unique.IsPresent -and $Unique -and ($Commands | Where-Object { ($_.Command -join "`n") -eq ($Command -join "`n") })) {
             throw "Command already present in queue $Id"
         }
 

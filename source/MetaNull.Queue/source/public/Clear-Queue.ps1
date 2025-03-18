@@ -1,6 +1,15 @@
 <#
     .SYNOPSIS
         Remove all Commands from the queue
+
+    .DESCRIPTION
+        Remove all Commands from the queue
+
+    .PARAMETER Id
+        The Id of the queue
+        
+    .EXAMPLE
+        Clear-Queue -Id $Id
 #>
 [CmdletBinding()]
 [OutputType([pscustomobject])]

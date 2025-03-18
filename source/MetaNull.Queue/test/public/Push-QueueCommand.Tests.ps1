@@ -36,7 +36,8 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
                 }
                 $_.Commands | Foreach-Object {
                     $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands\$($_.Index)" -Force
-                    $_.GetEnumerator() | ForEach-Object {
+                    $MultiString = $Item.MultiString
+                    $_.GetEnumerator() | Where-Object { $_.Key -notin 'Output'} | ForEach-Object {
                         $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
                     }
                 }

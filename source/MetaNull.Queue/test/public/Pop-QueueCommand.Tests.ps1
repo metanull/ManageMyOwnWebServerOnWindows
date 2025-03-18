@@ -75,10 +75,19 @@ Describe "Pop-QueueCommand" -Tag "Functional","BeforeBuild" {
         It "Should return the popped command from the registry" {
             $TestData | Foreach-Object {
                 $Queue = $_.Queue
-                $FirstCommand = $_.Commands | Select -First 1
+                $FirstCommand = $_.Commands | Select-Object -First 1
                 $Command = Invoke-ModuleFunctionStub -Id $Queue.Id -Unshift
                 $Command.Index | Should -Be $FirstCommand.Index
                 $Command.Command | Should -Be $FirstCommand.Command
+            }
+        }
+        It "Should provide a ToScriptblock ScriptMethod" {
+            $TestData | Foreach-Object {
+                $Queue = $_.Queue
+                $FirstCommand = $_.Commands | Select-Object -First 1
+                $Command = Invoke-ModuleFunctionStub -Id $Queue.Id -Unshift
+                $Command.ToScriptBlock() | Should -BeOfType [System.Management.Automation.ScriptBlock]
+                $Command.ToScriptBlock().Invoke() | Should -Be $FirstCommand.Output
             }
         }
     }

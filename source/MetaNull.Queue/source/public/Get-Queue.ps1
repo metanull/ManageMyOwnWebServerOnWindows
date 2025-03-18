@@ -32,6 +32,16 @@ param(
     [guid] $Id = [guid]::Empty,
 
     [Parameter(Mandatory = $false, Position = 1)]
+    [SupportsWildcards()]
+    <#[ArgumentCompleter( {
+            param ( $commandName,
+                    $parameterName,
+                    $wordToComplete,
+                    $commandAst,
+                    $fakeBoundParameters )
+            $NameList = Get-ChildItem -Path "MetaNull:\Queues" | Get-ItemProperty | Select-Object Name | Select-Object -ExpandProperty Name
+            $NameList -like $_
+        } )]#>
     [string] $Name = '*'
 )
 Process {

@@ -116,7 +116,6 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
                 ($Item | Get-ItemPropertyValue -Name 'Command')[0] | Should -Be 'Hello'
                 ($Item | Get-ItemPropertyValue -Name 'Command')[1] | Should -Be 'World'
                 ($Item | Get-ItemPropertyValue -Name 'Command')[2] | Should -Be '42'
-                
             }
         }
     }

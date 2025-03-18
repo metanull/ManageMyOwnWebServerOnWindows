@@ -17,5 +17,6 @@ Process {
     } else {
         # Running from within a TEST (thus not from an installed module; PSScriptRoot is the path to the test script itself)
         Get-Item (Join-Path (Split-Path (Split-Path $PSScriptRoot)) resource)
+ 
     }
 }

@@ -29,19 +29,26 @@
 [OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [guid] $Id = [guid]::Empty,
-
-    [Parameter(Mandatory = $false, Position = 1)]
-    [SupportsWildcards()]
-    <#[ArgumentCompleter( {
+    [ArgumentCompleter( {
             param ( $commandName,
                     $parameterName,
                     $wordToComplete,
                     $commandAst,
                     $fakeBoundParameters )
-            $NameList = Get-ChildItem -Path "MetaNull:\Queues" | Get-ItemProperty | Select-Object Name | Select-Object -ExpandProperty Name
-            $NameList -like $_
-        } )]#>
+            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
+        } )]
+    [guid] $Id = [guid]::Empty,
+
+    [Parameter(Mandatory = $false, Position = 1)]
+    [SupportsWildcards()]
+    [ArgumentCompleter( {
+            param ( $commandName,
+                    $parameterName,
+                    $wordToComplete,
+                    $commandAst,
+                    $fakeBoundParameters )
+            Get-ChildItem -Path "MetaNull:\Queues" | Get-ItemProperty | Select-Object -ExpandProperty Name | Where-Object {$_ -like "$wordToComplete*"}
+        } )]
     [string] $Name = '*'
 )
 Process {

@@ -1,6 +1,22 @@
 <#
     .SYNOPSIS
         Create a Queue
+
+    .DESCRIPTION
+        Create a Queue
+
+    .PARAMETER Name
+        The name of the Queue
+
+    .PARAMETER Description
+        The description of the Queue
+        
+    .PARAMETER Status
+        The status of the Queue (Iddle, Running, Disabled, Suspended)
+
+    .EXAMPLE
+        New-Queue -Name 'Queue1' -Description 'Queue 1' -Status 'Running'
+
 #>
 [CmdletBinding()]
 [OutputType([guid])]

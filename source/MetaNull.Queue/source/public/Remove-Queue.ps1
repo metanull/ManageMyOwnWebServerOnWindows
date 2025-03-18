@@ -1,6 +1,15 @@
 <#
     .SYNOPSIS
-        Returns the list of Queues
+        Removes a Queue
+
+    .DESCRIPTION
+        Removes a Queue, and all its commands
+
+    .PARAMETER Id
+        The Id of the Queue to remove
+
+    .PARAMETER Force
+        Force the removal of the Queue
 #>
 [CmdletBinding()]
 [OutputType([void])]

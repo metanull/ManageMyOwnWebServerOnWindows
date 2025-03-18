@@ -21,12 +21,14 @@ $TestData = @(
             @{
                 Index = 1
                 Name = 'Test-Command:1#1'
-                Command = 'Hello'
+                Command = "'Hello' | Write-Output"
+                Output = 'Hello'
             }
             @{
                 Index = 2
                 Name = 'Test-Command:1#2'
-                Command = 'World'
+                Command = "'World' | Write-Output"
+                Output = 'World'
             }
         )
     }
@@ -41,17 +43,20 @@ $TestData = @(
             @{
                 Index = 1
                 Name = 'Test-Command:2#1'
-                Command = 'Hello'
+                Command = "'Hello' | Write-Output"
+                Output = 'Hello'
             }
             @{
                 Index = 2
                 Name = 'Test-Command:2#2'
-                Command = 'World'
+                Command = "'World' | Write-Output"
+                Output = 'World'
             }
             @{
                 Index = 3
                 Name = 'Test-Command:2#3'
-                Command = '!'
+                Command = "'!' | Write-Output"
+                Output = '!'
             }
         )
     }

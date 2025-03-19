@@ -36,7 +36,10 @@ Describe "Get-Pipeline" -Tag "Functional","BeforeBuild" {
             ValidateTestData -TestData $TestData | Should -BeTrue
         }
 
-        It "Should not throw an exception when Id is given" {
+        It "Should throw when the Id is not found" {
+            {Invoke-ModuleFunctionStub -Id (New-Guid)} | Should -Throw
+        }
+        It "Should not throw an exception when Id is given and valid" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
                 {Invoke-ModuleFunctionStub -Id $Pipeline.Id} | Should -Not -Throw
@@ -57,9 +60,6 @@ Describe "Get-Pipeline" -Tag "Functional","BeforeBuild" {
                 $Result.Stages | Should -Not -BeNullOrEmpty
                 $Result.Stages.Count | Should -Be $Pipeline.Stages.Count
             }
-        }
-        It "Should throw when the Id is not found" {
-            {Invoke-ModuleFunctionStub -Id (New-Guid)} | Should -Throw
         }
     }
 }

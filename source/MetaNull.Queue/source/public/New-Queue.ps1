@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Create a Queue
 
@@ -10,7 +10,7 @@
 
     .PARAMETER Description
         The description of the Queue
-        
+
     .PARAMETER Status
         The status of the Queue (Iddle, Running, Disabled, Suspended)
 
@@ -18,7 +18,7 @@
         New-Queue -Name 'Queue1' -Description 'Queue 1' -Status 'Running'
 
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
 [OutputType([guid])]
 param(
     [Parameter(Mandatory)]

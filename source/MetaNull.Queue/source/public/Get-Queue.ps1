@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Returns the list of Queues
 
@@ -25,30 +25,16 @@
         Get-Queue -Name 'Queue*'
 
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'None')]
 [OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueId @args} )]
     [guid] $Id = [guid]::Empty,
 
     [Parameter(Mandatory = $false, Position = 1)]
     [SupportsWildcards()]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Get-ItemProperty | Select-Object -ExpandProperty Name | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueName @args} )]
     [string] $Name = '*'
 )
 Process {
@@ -66,7 +52,7 @@ Process {
         try {
             # Get the queue(s)
             Get-Item -Path "MetaNull:\Queues\$Filter" | Foreach-Object {
-                $Queue = $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS* 
+                $Queue = $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS*
                 $Queue | Add-Member -MemberType NoteProperty -Name 'RegistryKey' -Value $RegistryKey
                 $Queue | Add-Member -MemberType NoteProperty -Name 'Commands' -Value @()
                 # Return the queue object

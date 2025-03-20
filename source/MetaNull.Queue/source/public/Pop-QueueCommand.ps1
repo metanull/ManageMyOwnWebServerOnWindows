@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Remove a Command from the top or bottom of the queue
 
@@ -24,27 +24,19 @@
         $ScriptBlock = $Command.ToScriptBlock()
         $ScriptBlock.Invoke()
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
 [OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueId @args} )]
     [guid] $Id,
-    
+
     [Parameter(Mandatory = $false)]
     [switch] $Unshift
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
         # Collect the existing commands
         $Commands = Get-ChildItem "MetaNull:\Queues\$Id\Commands" | Foreach-Object {
@@ -74,7 +66,6 @@ Process {
         }
         $Command | Write-Output
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

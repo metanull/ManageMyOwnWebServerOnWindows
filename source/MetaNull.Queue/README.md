@@ -5,3 +5,12 @@ Multiple queues can be executed in parallel. Commands in a queue are executed in
 
 Queue
 +- Command
+
+```
+[System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
+try {
+    # Do domsething 
+} finally {
+    [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
+}
+```

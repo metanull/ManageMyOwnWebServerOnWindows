@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Remove all Commands from the queue
 
@@ -7,22 +7,15 @@
 
     .PARAMETER Id
         The Id of the queue
-        
+
     .EXAMPLE
         Clear-Queue -Id $Id
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Medium')]
 [OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueId @args} )]
     [guid] $Id
 )
 Process {
@@ -35,12 +28,7 @@ Process {
         }
 
         # Remove the command
-        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
-        try {
-            Remove-Item "MetaNull:\Queues\$Id\Commands\*" -Force -Recurse
-        } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
-        }
+        Remove-Item "MetaNull:\Queues\$Id\Commands\*" -Force -Recurse
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

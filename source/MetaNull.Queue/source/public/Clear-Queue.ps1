@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Remove all Commands from the queue
 
@@ -7,7 +7,7 @@
 
     .PARAMETER Id
         The Id of the queue
-        
+
     .EXAMPLE
         Clear-Queue -Id $Id
 #>
@@ -15,14 +15,7 @@
 [OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueId @args} )]
     [guid] $Id
 )
 Process {

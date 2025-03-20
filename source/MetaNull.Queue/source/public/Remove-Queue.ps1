@@ -15,14 +15,7 @@
 [OutputType([void])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueId @args} )]
     [guid] $Id,
 
     [Parameter(Mandatory = $false)]

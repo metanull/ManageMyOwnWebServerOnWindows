@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Add a new Command at the end of a queue
 
@@ -30,14 +30,7 @@
 [OutputType([int])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-    [ArgumentCompleter( {
-            param ( $commandName,
-                    $parameterName,
-                    $wordToComplete,
-                    $commandAst,
-                    $fakeBoundParameters )
-            Get-ChildItem -Path "MetaNull:\Queues" | Split-Path -Leaf | Where-Object {$_ -like "$wordToComplete*"}
-        } )]
+    [ArgumentCompleter( {Resolve-QueueId @args} )]
     [guid] $Id,
 
     [Parameter(Mandatory, Position = 1, ParameterSetName = 'REG_MULTI_SZ')]
@@ -53,7 +46,7 @@ param(
     [AllowEmptyString()]
     [AllowNull()]
     [string] $Name,
-    
+
     [Parameter(Mandatory = $false)]
     [switch] $Unique
 )

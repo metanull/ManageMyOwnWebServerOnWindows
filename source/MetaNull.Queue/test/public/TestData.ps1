@@ -13,7 +13,7 @@ $TestData = @(
     @{
         Queue = @{
             Id = (New-Guid)
-            Name = 'NAME:1'
+            Name = 'NAME:1-7346C3F01B4E97608D24523623B77EC4'
             Description = 'DESCRIPTION:1'
             Status = 'Iddle'
         }
@@ -35,7 +35,7 @@ $TestData = @(
     @{
         Queue = @{
             Id = (New-Guid)
-            Name = 'NAME:2'
+            Name = 'NAME:2-C79157071A0AC0A363BE15A1ED29FD7A'
             Description = 'DESCRIPTION:2'
             Status = 'Iddle'
         }

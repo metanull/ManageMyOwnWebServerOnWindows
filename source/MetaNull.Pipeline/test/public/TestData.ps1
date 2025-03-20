@@ -9,289 +9,286 @@ $MetaNull = @{
     }
 }
 
-$TestData = @(
-    @{
-        Pipelines = @(
-            @{
-                Id = (New-Guid)
-                Name = 'PIPELINE:1'
+$TestData = @{
+    Pipelines = @(
+        @{
+            Id = (New-Guid)
+            Name = 'PIPELINE:1'
 
-                Stages = @(
-                    @{
-                        Index = 1
-                        Name = 'STAGE:1.1'
+            Stages = @(
+                @{
+                    Index = 1
+                    Name = 'STAGE:1.1'
 
-                        Jobs = @(
-                            @{
-                                Index = 1
-                                Name = 'JOB:1.1.1'
+                    Jobs = @(
+                        @{
+                            Index = 1
+                            Name = 'JOB:1.1.1'
 
-                                Tasks = @(
-                                    @{
-                                        Index = 1
-                                        Name = 'TASK:1.1.1.1'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "One"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'One'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:1.1.1.2'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Two"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Two'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:1.1.1.3'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Three"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Three'
-                                        )
-                                    }
-                                )
-                            }
-                            @{
-                                Index = 2
-                                Name = 'JOB:1.1.2'
+                            Tasks = @(
+                                @{
+                                    Index = 1
+                                    Name = 'TASK:1.1.1.1'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "One"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'One'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:1.1.1.2'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Two"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Two'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:1.1.1.3'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Three"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Three'
+                                    )
+                                }
+                            )
+                        }
+                        @{
+                            Index = 2
+                            Name = 'JOB:1.1.2'
 
-                                Tasks = @(
-                                    @{
-                                        Index = 1
-                                        Name = 'TASK:1.1.2.1'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Four"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Four'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:1.1.2.2'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Five"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Five'
-                                        )
-                                    }
-                                )
-                            }
-                        )
-                    }
-                    @{
-                        Index = 2
-                        Name = 'STAGE:1.2'
+                            Tasks = @(
+                                @{
+                                    Index = 1
+                                    Name = 'TASK:1.1.2.1'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Four"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Four'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:1.1.2.2'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Five"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Five'
+                                    )
+                                }
+                            )
+                        }
+                    )
+                }
+                @{
+                    Index = 2
+                    Name = 'STAGE:1.2'
 
-                        Jobs = @(
-                            @{
-                                Index = 1
-                                Name = 'JOB:1.2.1'
+                    Jobs = @(
+                        @{
+                            Index = 1
+                            Name = 'JOB:1.2.1'
 
-                                Tasks = @(
-                                    @{
-                                        Index = 1
-                                        Name = 'TASK:1.2.1.1'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Six"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Six'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:1.2.1.2'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Seven"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Seven'
-                                        )
-                                    }
-                                    @{
-                                        Index = 3
-                                        Name = 'TASK:1.2.1.3'
-                                        Commands = @(
-                                            'Write-Output "Hello"'
-                                            'Write-Output "Eight"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'Eight'
-                                        )
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-            }
-            @{
-                Id = (New-Guid)
-                Name = 'PIPELINE:2'
-    
-                Stages = @(
-                    @{
-                        Index = 1
-                        Name = 'STAGE:2.1'
-    
-                        Jobs = @(
-                            @{
-                                Index = 1
-                                Name = 'JOB:2.1.1'
-    
-                                Tasks = @(
-                                    @{
-                                        Index = 1
-                                        Name = 'TASK:2.1.1.1'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "One"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'One'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:2.1.1.2'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Two"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Two'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:2.1.1.3'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Three"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Three'
-                                        )
-                                    }
-                                )
-                            }
-                            @{
-                                Index = 2
-                                Name = 'JOB:2.1.2'
-    
-                                Tasks = @(
-                                    @{
-                                        Index = 1
-                                        Name = 'TASK:2.1.2.1'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Four"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Four'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:2.1.2.2'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Five"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Five'
-                                        )
-                                    }
-                                )
-                            }
-                        )
-                    }
-                    @{
-                        Index = 2
-                        Name = 'STAGE:2.2'
-    
-                        Jobs = @(
-                            @{
-                                Index = 1
-                                Name = 'JOB:2.2.1'
-    
-                                Tasks = @(
-                                    @{
-                                        Index = 1
-                                        Name = 'TASK:2.2.1.1'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Six"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Six'
-                                        )
-                                    }
-                                    @{
-                                        Index = 2
-                                        Name = 'TASK:2.2.1.2'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Seven"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Seven'
-                                        )
-                                    }
-                                    @{
-                                        Index = 3
-                                        Name = 'TASK:2.2.1.3'
-                                        Commands = @(
-                                            'Write-Output "World"'
-                                            'Write-Output "Eight"'
-                                        )
-                                        Output = @(
-                                            'World'
-                                            'Eight'
-                                        )
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-            }
-        )
-    }
-    
-)
+                            Tasks = @(
+                                @{
+                                    Index = 1
+                                    Name = 'TASK:1.2.1.1'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Six"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Six'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:1.2.1.2'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Seven"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Seven'
+                                    )
+                                }
+                                @{
+                                    Index = 3
+                                    Name = 'TASK:1.2.1.3'
+                                    Commands = @(
+                                        'Write-Output "Hello"'
+                                        'Write-Output "Eight"'
+                                    )
+                                    Output = @(
+                                        'Hello'
+                                        'Eight'
+                                    )
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+        @{
+            Id = (New-Guid)
+            Name = 'PIPELINE:2'
+
+            Stages = @(
+                @{
+                    Index = 1
+                    Name = 'STAGE:2.1'
+
+                    Jobs = @(
+                        @{
+                            Index = 1
+                            Name = 'JOB:2.1.1'
+
+                            Tasks = @(
+                                @{
+                                    Index = 1
+                                    Name = 'TASK:2.1.1.1'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "One"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'One'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:2.1.1.2'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Two"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Two'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:2.1.1.3'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Three"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Three'
+                                    )
+                                }
+                            )
+                        }
+                        @{
+                            Index = 2
+                            Name = 'JOB:2.1.2'
+
+                            Tasks = @(
+                                @{
+                                    Index = 1
+                                    Name = 'TASK:2.1.2.1'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Four"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Four'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:2.1.2.2'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Five"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Five'
+                                    )
+                                }
+                            )
+                        }
+                    )
+                }
+                @{
+                    Index = 2
+                    Name = 'STAGE:2.2'
+
+                    Jobs = @(
+                        @{
+                            Index = 1
+                            Name = 'JOB:2.2.1'
+
+                            Tasks = @(
+                                @{
+                                    Index = 1
+                                    Name = 'TASK:2.2.1.1'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Six"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Six'
+                                    )
+                                }
+                                @{
+                                    Index = 2
+                                    Name = 'TASK:2.2.1.2'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Seven"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Seven'
+                                    )
+                                }
+                                @{
+                                    Index = 3
+                                    Name = 'TASK:2.2.1.3'
+                                    Commands = @(
+                                        'Write-Output "World"'
+                                        'Write-Output "Eight"'
+                                    )
+                                    Output = @(
+                                        'World'
+                                        'Eight'
+                                    )
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    )
+}
 
 Function DestroyTestData {
     Remove-Item -Force -Recurse -Path MetaNull:\ -ErrorAction SilentlyContinue  | Out-Null

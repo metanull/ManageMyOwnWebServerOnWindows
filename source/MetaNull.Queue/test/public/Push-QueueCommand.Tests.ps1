@@ -21,45 +21,30 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
         }
         AfterAll {
             # Cleanup (remove the whole test registry key)
-            Remove-Item -Force -Recurse -Path MetaNull:\ -ErrorAction SilentlyContinue  | Out-Null
-            Remove-PSDrive -Name MetaNull -Scope Script -ErrorAction SilentlyContinue
+            DestroyTestData
         }
         BeforeEach {
             # Adding test data to the registry
-            $TestData | Foreach-Object {
-                $Id = $_.Queue.Id
-                $Properties = $_.Queue
-                New-Item "MetaNull:\Queues\$Id\Commands" -Force | Out-Null
-                $Item = Get-Item "MetaNull:\Queues\$Id"
-                $Properties.GetEnumerator() | ForEach-Object {
-                    $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                }
-                $_.Commands | Foreach-Object {
-                    $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands\$($_.Index)" -Force
-                    $MultiString = $Item.MultiString
-                    $_.GetEnumerator() | Where-Object { $_.Key -notin 'Output'} | ForEach-Object {
-                        $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                    }
-                }
-            }
+            InsertTestData -TestData $TestData
         }
         AfterEach {
             # Cleanup (remove all queues)
-            Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
+            RemoveTestData
         }
 
         It "TestData is initialized" {
             ValidateTestData -TestData $TestData | Should -BeTrue
         }
+
         It "Should not throw an exception" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 {$Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-66' -Command 'Test-66'} | Should -Not -Throw
             }
         }
         It "Should add the command to the registry" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-72' -Command 'Test-72'
                 $Index | Should -Not -BeNullOrEmpty
                 $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
@@ -69,8 +54,8 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
             }
         }
         It "Should increment the Index automatically" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index1 = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-85.1' -Command 'Test-85.1'
                 $Index2 = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-85.2' -Command 'Test-85.2'
                 $Index3 = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-85.3' -Command 'Test-85.3'
@@ -83,8 +68,8 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
             }
         }
         It "Should support Type String" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-97' -Command 'Test-97'
                 $Index | Should -Not -BeNullOrEmpty
                 $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
@@ -94,8 +79,8 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
             }
         }
         It "Should support Type ExpandString" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-108' -ExpandableCommand '%USERNAME%'
                 $Index | Should -Not -BeNullOrEmpty
                 $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"
@@ -105,8 +90,8 @@ Describe "Push-QueueCommand" -Tag "Functional","BeforeBuild" {
             }
         }
         It "Should support Type MultiString" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index = Invoke-ModuleFunctionStub -Id $Queue.Id -Name 'Test-119' -Commands 'Hello','World','42'
                 $Index | Should -Not -BeNullOrEmpty
                 $Item = Get-Item -Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index"

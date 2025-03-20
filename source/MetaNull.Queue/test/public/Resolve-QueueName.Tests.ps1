@@ -21,30 +21,15 @@ Describe "Resolve-QueueName" -Tag "Functional","BeforeBuild" {
         }
         AfterAll {
             # Cleanup (remove the whole test registry key)
-            Remove-Item -Force -Recurse -Path MetaNull:\ -ErrorAction SilentlyContinue  | Out-Null
-            Remove-PSDrive -Name MetaNull -Scope Script -ErrorAction SilentlyContinue
+            DestroyTestData
         }
         BeforeEach {
             # Adding test data to the registry
-            $TestData | Foreach-Object {
-                $Id = $_.Queue.Id
-                $Properties = $_.Queue
-                New-Item "MetaNull:\Queues\$Id\Commands" -Force | Out-Null
-                $Item = Get-Item "MetaNull:\Queues\$Id"
-                $Properties.GetEnumerator() | ForEach-Object {
-                    $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                }
-                $_.Commands | Foreach-Object {
-                    $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands\$($_.Index)" -Force
-                    $_.GetEnumerator() | ForEach-Object {
-                        $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                    }
-                }
-            }
+            InsertTestData -TestData $TestData
         }
         AfterEach {
             # Cleanup (remove all queues)
-            Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
+            RemoveTestData
         }
 
         It "TestData is initialized" {
@@ -53,20 +38,20 @@ Describe "Resolve-QueueName" -Tag "Functional","BeforeBuild" {
         
         It "Completion Should return all Queues when PartialName is *" {
             $Result = Invoke-ModuleFunctionStub -PartialName '*'
-            $Result.Count | Should -Be $TestData.Queue.Count
+            $Result.Count | Should -Be $TestData.Queues.Count
         }
         It "Completion Should return the expected Name when exact value provided" {
-            $TestData | Foreach-Object {
+            $TestData.Queues | Foreach-Object {
                 $CurrentTest = $_
-                $Result = Invoke-ModuleFunctionStub -PartialName $CurrentTest.Queue.Name
-                $Result | Should -Be $CurrentTest.Queue.Name
+                $Result = Invoke-ModuleFunctionStub -PartialName $CurrentTest.Name
+                $Result | Should -Be $CurrentTest.Name
             }
         }
         It "Completion Should return the expected Name when partial value provided" {
-            $TestData | Foreach-Object {
+            $TestData.Queues | Foreach-Object {
                 $CurrentTest = $_
-                $Result = Invoke-ModuleFunctionStub -PartialName ($CurrentTest.Queue.Name -replace '...$','*')
-                $Result | Should -Be $CurrentTest.Queue.Name
+                $Result = Invoke-ModuleFunctionStub -PartialName ($CurrentTest.Name -replace '...$','*')
+                $Result | Should -Be $CurrentTest.Name
             }
         }
         It "Should return nothing when Name is not found" {

@@ -21,60 +21,46 @@ Describe "Pop-QueueCommand" -Tag "Functional","BeforeBuild" {
         }
         AfterAll {
             # Cleanup (remove the whole test registry key)
-            Remove-Item -Force -Recurse -Path MetaNull:\ -ErrorAction SilentlyContinue  | Out-Null
-            Remove-PSDrive -Name MetaNull -Scope Script -ErrorAction SilentlyContinue
+            DestroyTestData
         }
         BeforeEach {
             # Adding test data to the registry
-            $TestData | Foreach-Object {
-                $Id = $_.Queue.Id
-                $Properties = $_.Queue
-                New-Item "MetaNull:\Queues\$Id\Commands" -Force | Out-Null
-                $Item = Get-Item "MetaNull:\Queues\$Id"
-                $Properties.GetEnumerator() | ForEach-Object {
-                    $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                }
-                $_.Commands | Foreach-Object {
-                    $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands\$($_.Index)" -Force
-                    $_.GetEnumerator() | ForEach-Object {
-                        $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                    }
-                }
-            }
+            InsertTestData -TestData $TestData
         }
         AfterEach {
             # Cleanup (remove all queues)
-            Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
+            RemoveTestData
         }
 
         It "TestData is initialized" {
             ValidateTestData -TestData $TestData | Should -BeTrue
         }
+
         It "Should not throw an exception" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 {$Command = Invoke-ModuleFunctionStub -Id $Queue.Id} | Should -Not -Throw
             }
         }
         It "Should pop the last command from the registry" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index = $_.Commands.Index | Select-Object -Last 1
                 $Command = Invoke-ModuleFunctionStub -Id $Queue.Id
                 Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index" | Should -BeFalse
             }
         }
         It "Should unshift the first command from the registry" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $Index = $_.Commands.Index | Select-Object -First 1
                 $Command = Invoke-ModuleFunctionStub -Id $Queue.Id -Unshift
                 Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$Index" | Should -BeFalse
             }
         }
         It "Should return the popped command from the registry" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $FirstCommand = $_.Commands | Select-Object -First 1
                 $Command = Invoke-ModuleFunctionStub -Id $Queue.Id -Unshift
                 $Command.Index | Should -Be $FirstCommand.Index
@@ -82,8 +68,8 @@ Describe "Pop-QueueCommand" -Tag "Functional","BeforeBuild" {
             }
         }
         It "Should provide a ToScriptblock ScriptMethod" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $FirstCommand = $_.Commands | Select-Object -First 1
                 $Command = Invoke-ModuleFunctionStub -Id $Queue.Id -Unshift
                 $Command.ToScriptBlock() | Should -BeOfType [System.Management.Automation.ScriptBlock]

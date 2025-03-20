@@ -21,30 +21,15 @@ Describe "Clear-Queue" -Tag "Functional","BeforeBuild" {
         }
         AfterAll {
             # Cleanup (remove the whole test registry key)
-            Remove-Item -Force -Recurse -Path MetaNull:\ -ErrorAction SilentlyContinue  | Out-Null
-            Remove-PSDrive -Name MetaNull -Scope Script -ErrorAction SilentlyContinue
+            DestroyTestData
         }
         BeforeEach {
             # Adding test data to the registry
-            $TestData | Foreach-Object {
-                $Id = $_.Queue.Id
-                $Properties = $_.Queue
-                New-Item "MetaNull:\Queues\$Id\Commands" -Force | Out-Null
-                $Item = Get-Item "MetaNull:\Queues\$Id"
-                $Properties.GetEnumerator() | ForEach-Object {
-                    $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                }
-                $_.Commands | Foreach-Object {
-                    $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands\$($_.Index)" -Force
-                    $_.GetEnumerator() | ForEach-Object {
-                        $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                    }
-                }
-            }
+            InsertTestData -TestData $TestData
         }
         AfterEach {
             # Cleanup (remove all queues)
-            Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
+            RemoveTestData
         }
 
         It "TestData is initialized" {
@@ -52,19 +37,19 @@ Describe "Clear-Queue" -Tag "Functional","BeforeBuild" {
         }
         
         It "Should not throw an exception" {
-            $TestData | Foreach-Object {
-                {Invoke-ModuleFunctionStub -Id $_.Queue.Id} | Should -Not -Throw
+            $TestData.Queues | Foreach-Object {
+                {Invoke-ModuleFunctionStub -Id $_.Id} | Should -Not -Throw
             }
         }
         It "Should not remove the 'Commands' directory from the registry" {
-            $TestData | Foreach-Object {
-                Invoke-ModuleFunctionStub -Id $_.Queue.Id
-                Test-Path "MetaNull:\Queues\$($_.Queue.Id)\Commands" | Should -BeTrue
+            $TestData.Queues | Foreach-Object {
+                Invoke-ModuleFunctionStub -Id $_.Id
+                Test-Path "MetaNull:\Queues\$($_.Id)\Commands" | Should -BeTrue
             }
         }
         It "Should remove each individual Command from the registry" {
-            $TestData | Foreach-Object {
-                $Queue = $_.Queue
+            $TestData.Queues | Foreach-Object {
+                $Queue = $_
                 $_.Commands | Foreach-Object {
                     Invoke-ModuleFunctionStub -Id $Queue.Id
                     Test-Path "MetaNull:\Queues\$($Queue.Id)\Commands\$($_.Index)" | Should -BeFalse

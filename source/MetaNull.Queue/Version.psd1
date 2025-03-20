@@ -1,6 +1,6 @@
 @{
   Major = 1
-  Minor = 0
+  Minor = 1
   Revision = 0
-  Build = 96
+  Build = 97
 }

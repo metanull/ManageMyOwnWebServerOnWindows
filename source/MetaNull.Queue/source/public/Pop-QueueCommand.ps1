@@ -24,7 +24,7 @@
         $ScriptBlock = $Command.ToScriptBlock()
         $ScriptBlock.Invoke()
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
 [OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
@@ -44,7 +44,6 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
         # Collect the existing commands
         $Commands = Get-ChildItem "MetaNull:\Queues\$Id\Commands" | Foreach-Object {
@@ -74,7 +73,6 @@ Process {
         }
         $Command | Write-Output
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

@@ -25,7 +25,7 @@
         Get-Queue -Name 'Queue*'
 
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'None')]
 [OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory = $false, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]

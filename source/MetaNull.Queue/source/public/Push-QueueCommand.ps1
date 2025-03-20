@@ -26,7 +26,7 @@
     .EXAMPLE
         Push-QueueCommand -Id $Id -Commands 'Get-Process', 'Get-Service'
 #>
-[CmdletBinding(DefaultParameterSetName='REG_MULTI_SZ')]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low',DefaultParameterSetName='REG_MULTI_SZ')]
 [OutputType([int])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
@@ -60,8 +60,6 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    
-    [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
     try {
         # Collect the existing commands
         $CommandList = [object[]](Get-ChildItem "MetaNull:\Queues\$Id\Commands" -ErrorAction SilentlyContinue | Foreach-Object {
@@ -103,7 +101,6 @@ Process {
         # Return the command Index
         return $LastCommandIndex
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

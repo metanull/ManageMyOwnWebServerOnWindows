@@ -11,7 +11,7 @@
     .EXAMPLE
         Clear-Queue -Id $Id
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Medium')]
 [OutputType([pscustomobject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
@@ -35,12 +35,7 @@ Process {
         }
 
         # Remove the command
-        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
-        try {
-            Remove-Item "MetaNull:\Queues\$Id\Commands\*" -Force -Recurse
-        } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
-        }
+        Remove-Item "MetaNull:\Queues\$Id\Commands\*" -Force -Recurse
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }

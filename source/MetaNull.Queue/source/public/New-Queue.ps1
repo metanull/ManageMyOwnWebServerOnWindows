@@ -18,7 +18,7 @@
         New-Queue -Name 'Queue1' -Description 'Queue 1' -Status 'Running'
 
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
 [OutputType([guid])]
 param(
     [Parameter(Mandatory)]

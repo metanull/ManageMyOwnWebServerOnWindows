@@ -1,9 +1,28 @@
 ﻿<#
     .SYNOPSIS
         Lookup for valid Queue Names, and provides Auto Completion for partial Names
+
+    .PARAMETER $PartialName
+        A partial Queue Name
+
+    .EXAMPLE
+        # Direct use
+        $IDs = Resolve-QueueName -PartialName 'Queue*'
+
+    .EXAMPLE
+        # Use as a Parameter Argument Completer
+        Function MyFunction {
+            param(
+                [Parameter(Mandatory)]
+                [SupportsWildcards()]
+                [ArgumentCompleter( {Resolve-QueueName @args} )]
+                [string] $Name
+            )
+            "Autocompleted Name: $Name"
+        }
 #>
 [CmdletBinding(DefaultParameterSetName = 'ArgumentCompleter')]
-param (
+param ( 
     [Parameter(Mandatory,ParameterSetName = 'ArgumentCompleter')]
     $commandName,
 
@@ -17,7 +36,7 @@ param (
     $commandAst,
 
     [Parameter(Mandatory,ParameterSetName = 'ArgumentCompleter')]
-    $fakeBoundParameters,
+    $fakeBoundParameters, 
 
     [Parameter(Mandatory,ParameterSetName = 'Lookup')]
     [SupportsWildcards()]

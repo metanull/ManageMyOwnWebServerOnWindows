@@ -21,30 +21,15 @@ Describe "Get-Queue" -Tag "Functional","BeforeBuild" {
         }
         AfterAll {
             # Cleanup (remove the whole test registry key)
-            Remove-Item -Force -Recurse -Path MetaNull:\ -ErrorAction SilentlyContinue  | Out-Null
-            Remove-PSDrive -Name MetaNull -Scope Script -ErrorAction SilentlyContinue
+            DestroyTestData
         }
         BeforeEach {
             # Adding test data to the registry
-            $TestData | Foreach-Object {
-                $Id = $_.Queue.Id
-                $Properties = $_.Queue
-                New-Item "MetaNull:\Queues\$Id\Commands" -Force | Out-Null
-                $Item = Get-Item "MetaNull:\Queues\$Id"
-                $Properties.GetEnumerator() | ForEach-Object {
-                    $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                }
-                $_.Commands | Foreach-Object {
-                    $Item = New-Item -Path "MetaNull:\Queues\$Id\Commands\$($_.Index)" -Force
-                    $_.GetEnumerator() | ForEach-Object {
-                        $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
-                    }
-                }
-            }
+            InsertTestData -TestData $TestData
         }
         AfterEach {
             # Cleanup (remove all queues)
-            Remove-Item -Force -Recurse -Path MetaNull:\Queues\* -ErrorAction SilentlyContinue  | Out-Null
+            RemoveTestData
         }
 
         It "TestData is initialized" {
@@ -52,23 +37,23 @@ Describe "Get-Queue" -Tag "Functional","BeforeBuild" {
         }
         
         It "Should not throw an exception - by Id" {
-            $TestData | Foreach-Object {
-                {Invoke-ModuleFunctionStub -Id $_.Queue.Id} | Should -Not -Throw
+            $TestData.Queues | Foreach-Object {
+                {Invoke-ModuleFunctionStub -Id $_.Id} | Should -Not -Throw
             }
         }
-        It "Should return two Queues when no Id is provided" {
+        It "Should return all  Queues when no Id is provided" {
             $Result = Invoke-ModuleFunctionStub
-            $Result.Count | Should -Be $TestData.Queue.Count
+            $Result.Count | Should -Be $TestData.Queues.Count
         }
         It "Should return the expected when the Id is provided" {
-            $TestData | Foreach-Object {
+            $TestData.Queues | Foreach-Object {
                 $CurrentTest = $_
-                $Result = Invoke-ModuleFunctionStub -Id $CurrentTest.Queue.Id
+                $Result = Invoke-ModuleFunctionStub -Id $CurrentTest.Id
                 $Result | Should -BeOfType [PSCustomObject]
-                $Result.Id | Should -Be $CurrentTest.Queue.Id
-                $Result.Name | Should -Be $CurrentTest.Queue.Name
-                $Result.Description | Should -Be $CurrentTest.Queue.Description
-                $Result.Status | Should -Be $CurrentTest.Queue.Status
+                $Result.Id | Should -Be $CurrentTest.Id
+                $Result.Name | Should -Be $CurrentTest.Name
+                $Result.Description | Should -Be $CurrentTest.Description
+                $Result.Status | Should -Be $CurrentTest.Status
             }
         }
         It "Should throw when the Id is not found" {

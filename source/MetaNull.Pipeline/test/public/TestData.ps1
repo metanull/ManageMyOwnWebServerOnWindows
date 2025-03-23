@@ -10,6 +10,9 @@ $MetaNull = @{
 }
 
 $TestData = @{
+    ExportParameters = @{
+        OutputDirectory = "$($env:TEMP)\MetaNull.Pipeline\Output"
+    }
     Pipelines = @(
         @{
             Id = (New-Guid)

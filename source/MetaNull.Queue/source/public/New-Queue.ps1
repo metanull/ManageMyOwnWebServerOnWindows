@@ -48,7 +48,7 @@ Process {
         }
 
         # Store the queue into the registry
-        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
+        #[System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
             $Item = New-Item -Path "MetaNull:\Queues\$Guid" -Force
             New-Item -Path "MetaNull:\Queues\$Guid\Commands" -Force | Out-Null
@@ -57,7 +57,7 @@ Process {
             }
             return $Guid
         } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
+            #[System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

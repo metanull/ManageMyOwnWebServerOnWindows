@@ -48,7 +48,7 @@ Process {
             $Filter = $Id.ToString()
         }
 
-        [System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
+        #[System.Threading.Monitor]::Enter($MetaNull.Queue.Lock)
         try {
             # Get the queue(s)
             Get-Item -Path "MetaNull:\Queues\$Filter" | Foreach-Object {
@@ -71,7 +71,7 @@ Process {
                 $_ | write-output
             }
         } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
+            #[System.Threading.Monitor]::Exit($MetaNull.Queue.Lock)
         }
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference

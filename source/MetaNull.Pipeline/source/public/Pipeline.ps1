@@ -85,7 +85,6 @@ function task_1 {
         $sb_task = [scriptblock]::Create($commands -join "`n")
         
         do {
-            $retryCountOnTaskFailure --
             $timer = [System.Diagnostics.Stopwatch]::StartNew()
             try {
                 $job = Start-Job -ScriptBlock $sb_task -ArgumentList @($taskInput.args) -InitializationScript $sb_init 
@@ -102,13 +101,13 @@ function task_1 {
                 Receive-Job -Job $job
                 break
             } catch {
-                Write-Warning "Task '$displayName' failed because of an Exception: $_.Exception.Message"
+                Write-Warning "Task '$displayName' failed because of an Exception: $($_.Exception.Message)"
             } finally {
                 if($job) {
                     Remove-Job -Job $job | Out-Null
                 }
             }
-        } while($retryCountOnTaskFailure -gt 0);
+        } while(($retryCountOnTaskFailure --) -gt 0);
 
         #return $jobResult
     } finally {
@@ -132,7 +131,7 @@ $TaskParams = @{
     enabled = $true
     env = @{WHOAMI = $env:USERNAME; CWD = (Resolve-Path .)}
     timeoutInMinutes = 1
-    retryCountOnTaskFailure = 0
+    retryCountOnTaskFailure = 2
     commands = @(
             '$d = get-date'
             '"##[section]Hello $($env:WHOAMI), it is $($d), working in $($env:TASK_CWD)" | write-output'

@@ -13,7 +13,7 @@
         '##[section]Start of the section' | Expand-VsoFormatString
 #>
 [CmdletBinding()]
-[OutputType([hashtable])]
+[OutputType([object])]
 param(
     [Parameter(Mandatory, ValueFromPipeline)]
     [string] $line
@@ -29,9 +29,8 @@ Process {
     $vso = $vso_regex.Match($line)
     if(-not ($vso.Success)) {
         # VSO Command not recognized
-        return
+        return $line
     }
-
     return @{
         Format = $vso.Groups['format'].Value
         Message = $vso.Groups['line'].Value

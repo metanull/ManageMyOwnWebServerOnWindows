@@ -1,4 +1,4 @@
-Describe "Get-Stages" -Tag "Functional","BeforeBuild" {
+Describe "Get-Stage" -Tag "Functional","BeforeBuild" {
 
     Context "When the function is called" {
         BeforeAll {

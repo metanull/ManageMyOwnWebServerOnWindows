@@ -28,10 +28,10 @@ $TestData = @{
                             Index = 1
                             Name = 'JOB:1.1.1'
 
-                            Tasks = @(
+                            Steps = @(
                                 @{
                                     Index = 1
-                                    Name = 'TASK:1.1.1.1'
+                                    Name = 'STEP:1.1.1.1'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "One"'
@@ -43,7 +43,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:1.1.1.2'
+                                    Name = 'STEP:1.1.1.2'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Two"'
@@ -55,7 +55,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:1.1.1.3'
+                                    Name = 'STEP:1.1.1.3'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Three"'
@@ -71,10 +71,10 @@ $TestData = @{
                             Index = 2
                             Name = 'JOB:1.1.2'
 
-                            Tasks = @(
+                            Steps = @(
                                 @{
                                     Index = 1
-                                    Name = 'TASK:1.1.2.1'
+                                    Name = 'STEP:1.1.2.1'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Four"'
@@ -86,7 +86,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:1.1.2.2'
+                                    Name = 'STEP:1.1.2.2'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Five"'
@@ -109,10 +109,10 @@ $TestData = @{
                             Index = 1
                             Name = 'JOB:1.2.1'
 
-                            Tasks = @(
+                            Steps = @(
                                 @{
                                     Index = 1
-                                    Name = 'TASK:1.2.1.1'
+                                    Name = 'STEP:1.2.1.1'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Six"'
@@ -124,7 +124,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:1.2.1.2'
+                                    Name = 'STEP:1.2.1.2'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Seven"'
@@ -136,7 +136,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 3
-                                    Name = 'TASK:1.2.1.3'
+                                    Name = 'STEP:1.2.1.3'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Eight"'
@@ -166,10 +166,10 @@ $TestData = @{
                             Index = 1
                             Name = 'JOB:2.1.1'
 
-                            Tasks = @(
+                            Steps = @(
                                 @{
                                     Index = 1
-                                    Name = 'TASK:2.1.1.1'
+                                    Name = 'STEP:2.1.1.1'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "One"'
@@ -181,7 +181,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:2.1.1.2'
+                                    Name = 'STEP:2.1.1.2'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Two"'
@@ -193,7 +193,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:2.1.1.3'
+                                    Name = 'STEP:2.1.1.3'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Three"'
@@ -209,10 +209,10 @@ $TestData = @{
                             Index = 2
                             Name = 'JOB:2.1.2'
 
-                            Tasks = @(
+                            Steps = @(
                                 @{
                                     Index = 1
-                                    Name = 'TASK:2.1.2.1'
+                                    Name = 'STEP:2.1.2.1'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Four"'
@@ -224,7 +224,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:2.1.2.2'
+                                    Name = 'STEP:2.1.2.2'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Five"'
@@ -247,10 +247,10 @@ $TestData = @{
                             Index = 1
                             Name = 'JOB:2.2.1'
 
-                            Tasks = @(
+                            Steps = @(
                                 @{
                                     Index = 1
-                                    Name = 'TASK:2.2.1.1'
+                                    Name = 'STEP:2.2.1.1'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Six"'
@@ -262,7 +262,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 2
-                                    Name = 'TASK:2.2.1.2'
+                                    Name = 'STEP:2.2.1.2'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Seven"'
@@ -274,7 +274,7 @@ $TestData = @{
                                 }
                                 @{
                                     Index = 3
-                                    Name = 'TASK:2.2.1.3'
+                                    Name = 'STEP:2.2.1.3'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Eight"'
@@ -337,19 +337,19 @@ Function InsertTestData {
                     $Job = $_
                     $Item = New-Item -Path "MetaNull:\Pipelines\$Id\Stages\$($Stage.Index)\Jobs\$($Job.Index)" -Force
                     $_.GetEnumerator() | Where-Object {
-                        $_.Key -ne 'Tasks'
+                        $_.Key -ne 'Steps'
                     } | ForEach-Object {
                         $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
                     }
-                    $_.Tasks | Foreach-Object {
-                        $Task = $_
-                        $Item = New-Item -Path "MetaNull:\Pipelines\$Id\Stages\$($Stage.Index)\Jobs\$($Job.Index)\Tasks\$($Task.Index)" -Force
+                    $_.Steps | Foreach-Object {
+                        $Step = $_
+                        $Item = New-Item -Path "MetaNull:\Pipelines\$Id\Stages\$($Stage.Index)\Jobs\$($Job.Index)\Steps\$($Step.Index)" -Force
                         $_.GetEnumerator() | Where-Object {
                             $_.Key -notin 'Commands','Output'
                         } | ForEach-Object {
                             $Item | New-ItemProperty -Name $_.Key -Value $_.Value | Out-Null
                         }
-                        $Item | New-ItemProperty -Name 'Commands' -Value $Task.Commands -Type MultiString | Out-Null
+                        $Item | New-ItemProperty -Name 'Commands' -Value $Step.Commands -Type MultiString | Out-Null
                     }
                 }
             }
@@ -406,26 +406,26 @@ Function ValidateTestData {
                     if(-not ($_.Name)) {
                         throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Name was empty"
                     }
-                    if(-not ($_.Tasks)) {
-                        throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks was empty"
+                    if(-not ($_.Steps)) {
+                        throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps was empty"
                     }
-                    $taskIndex = -1
-                    $_.Tasks | Foreach-Object {
-                        $taskIndex += 1
+                    $stepIndex = -1
+                    $_.Steps | Foreach-Object {
+                        $stepIndex += 1
                         if(-not ($_.Index)) {
-                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks[$taskIndex].Index was empty"
+                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Index was empty"
                         }
                         if(-not ($_.Name)) {
-                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks[$taskIndex].Name was empty"
+                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Name was empty"
                         }
                         if(-not ($_.Commands)) {
-                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks[$taskIndex].Commands was empty"
+                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Commands was empty"
                         }
                         if(-not ($_.Output)) {
-                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks[$taskIndex].Output was empty"
+                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Output was empty"
                         }
                         if($_.Commands.Count -ne $_.Output.Count) {
-                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks[$taskIndex].Commands.Count doesn't match TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Tasks[$taskIndex].Output.Count"
+                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Commands.Count doesn't match TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Output.Count"
                         }
                     }
                 }

@@ -94,7 +94,7 @@ Process {
         Write-Verbose "retryCountOnStepFailure: $retryCountOnStepFailure"
         Write-Verbose "commands: `n> $($commands -join "`n> ")"	
     #>
-    
+
     # Initialize the step output
     $StepOutput.Value = [PSCustomObject]@{
         Variable = @()
@@ -185,7 +185,7 @@ Process {
             }
         } while(($retryCountOnStepFailure --) -gt 0);
 
-        # Set the tasks result based on the success of the step, unless if set by the step itself
+        # Set the steps result based on the success of the step, unless if set by the step itself
         if (-not $StepOutput.Value.Result) {
             $FinalResult = [pscustomobject]@{
                 Message = 'Done'

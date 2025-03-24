@@ -1,4 +1,4 @@
-Describe "Export" -Tag "Functional","BeforeBuild" {
+Describe "Export-Step" -Tag "Functional","BeforeBuild" {
 
     Context "When the function is called" {
         BeforeAll {
@@ -75,19 +75,19 @@ Describe "Export" -Tag "Functional","BeforeBuild" {
                 }
             }
         }
-        It "Should throw when the Pipeline Id is valid and Stage Index is valid and Job Index is valid and Task Index is not found" {
+        It "Should throw when the Pipeline Id is valid and Stage Index is valid and Job Index is valid and Step Index is not found" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
                 $Pipeline.Stages | Foreach-Object {
                     $Stage = $_
                     $Stage.Jobs | Foreach-Object {
                         $Job = $_
-                        {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Id -Job $Job.Id -Task 127} | Should -Throw
+                        {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Id -Job $Job.Id -Step 127} | Should -Throw
                     }
                 }
             }
         }
-        It "Should not throw an exception when Pipeline Id is given and Stage Index is given and Job Index is given but no Task Index is given" {
+        It "Should not throw an exception when Pipeline Id is given and Stage Index is given and Job Index is given but no Step Index is given" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
                 $Pipeline.Stages | Foreach-Object {
@@ -99,18 +99,18 @@ Describe "Export" -Tag "Functional","BeforeBuild" {
                 }
             }
         }
-        It "Should generate a `$TaskIndex.ps1 script file for each task in directory `$OutputDirectory\`$PipeLineId\`$StageIndex\`$JobIndex and return its absolute path" {
+        It "Should generate a `$StepIndex.ps1 script file for each step in directory `$OutputDirectory\`$PipeLineId\`$StageIndex\`$JobIndex and return its absolute path" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
                 $Pipeline.Stages | Foreach-Object {
                     $Stage = $_
                     $Stage.Jobs | Foreach-Object {
                         $Job = $_
-                        $Job.Tasks | Foreach-Object {
-                            $Task = $_
-                            $Task | ForEach-Object {
-                                $DesiredOutFile = "$($ExportParameters.OutputDirectory)\$($Pipeline.Id)\$($Stage.Index)\$($Job.Index)\$($Task.Index).ps1"
-                                $Result = Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Index -Job $Job.Index -Task $Task.Index
+                        $Job.Steps | Foreach-Object {
+                            $Step = $_
+                            $Step | ForEach-Object {
+                                $DesiredOutFile = "$($ExportParameters.OutputDirectory)\$($Pipeline.Id)\$($Stage.Index)\$($Job.Index)\$($Step.Index).ps1"
+                                $Result = Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Index -Job $Job.Index -Step $Step.Index
                                 $Result | Should -Be $DesiredOutFile
                                 Test-Path $Result | Should -BeTrue
                             }
@@ -119,19 +119,19 @@ Describe "Export" -Tag "Functional","BeforeBuild" {
                 }
             }
         }
-        It "Should generate a `$TaskIndex.ps1 script file containing the Task's commands" {
+        It "Should generate a `$StepIndex.ps1 script file containing the Step's commands" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
                 $Pipeline.Stages | Foreach-Object {
                     $Stage = $_
                     $Stage.Jobs | Foreach-Object {
                         $Job = $_
-                        $Job.Tasks | Foreach-Object {
-                            $Task = $_
-                            $Task | ForEach-Object {
-                                $Result = Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Index -Job $Job.Index -Task $Task.Index
+                        $Job.Steps | Foreach-Object {
+                            $Step = $_
+                            $Step | ForEach-Object {
+                                $Result = Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Index -Job $Job.Index -Step $Step.Index
                                 $Content = Get-Content $Result
-                                $Content -join "`n" | Should -Contain $Task.Commands -join "`n"
+                                $Content -join "`n" | Should -Contain $Step.Commands -join "`n"
                             }
                         }
                     }

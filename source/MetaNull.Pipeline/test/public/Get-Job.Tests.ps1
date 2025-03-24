@@ -1,4 +1,4 @@
-Describe "Get-Jobs" -Tag "Functional","BeforeBuild" {
+Describe "Get-Job" -Tag "Functional","BeforeBuild" {
 
     Context "When the function is called" {
         BeforeAll {
@@ -84,8 +84,8 @@ Describe "Get-Jobs" -Tag "Functional","BeforeBuild" {
                         $Result | Should -BeOfType [PSCustomObject]
                         $Result.Index | Should -Be $Job.Index
                         $Result.Name | Should -Be $Job.Name
-                        $Result.Tasks | Should -Not -BeNullOrEmpty
-                        $Result.Tasks.Count | Should -Be $Stage.Tasks.Count
+                        $Result.Steps | Should -Not -BeNullOrEmpty
+                        $Result.Steps.Count | Should -Be $Stage.Steps.Count
                     }
                 }
             }

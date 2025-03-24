@@ -14,181 +14,132 @@ function task_1 {
         [Parameter(Mandatory=$false)]
         [hashtable]$env = @{WHOAMI = $env:USERNAME},
         [Parameter(Mandatory=$false)]
-        [int]$timeoutInMinutes = 5,
+        [int]$timeoutInMinutes = 60,
         [Parameter(Mandatory=$false)]
         [int]$retryCountOnTaskFailure = 0,
         [Parameter(Mandatory=$false)]
         [string[]]$commands = @(
             'return 0'
-        )
+        ),
+
+        [Parameter(Mandatory)]
+        [ref]$InOutVariable,
+        [Parameter(Mandatory)]
+        [ref]$InOutPath,
+        [Parameter(Mandatory)]
+        [ref]$InOutSecret,
+        [Parameter(Mandatory)]
+        [ref]$OutResult
     )
 
+    # Ensure timeoutInMinutes is within the valid range, if not set to 5 minutes
+    if ($timeoutInMinutes -le 0 -or $timeoutInMinutes -ge 1440) {
+        $timeoutInMinutes = 5
+    }
+
+    # Check if the task should run (condition is true and task is enabled)
     $sb_condition = [scriptblock]::Create($condition)
     if (-not (& $sb_condition)) {
-        return 0
+        Write-Warning "Task '$displayName' was skipped because the condition was false."
+        return
     }
     if (-not $enabled) {
-        return 0
+        Write-Warning "Task '$displayName' was skipped because it was disabled."
+        return
     }
+
+    # Set the environment variables
+    [System.Environment]::SetEnvironmentVariable('TASK_CWD', (Resolve-Path $PSScriptRoot), [System.EnvironmentVariableTarget]::Process)
     foreach ($key in $env.Keys) {
         [System.Environment]::SetEnvironmentVariable(($key.ToUpper() -replace '\W','_'), $env[$key], [System.EnvironmentVariableTarget]::Process)
     }
-    [System.Environment]::SetEnvironmentVariable('TASK_CWD', (Resolve-Path $PSScriptRoot), [System.EnvironmentVariableTarget]::Process)
     
     # Print all arguments
-    Write-Verbose "taskInput: "
-    foreach ($key in $taskInput.Keys) {
-        Write-Verbose "  $key = $($taskInput[$key])"
-    }
-    Write-Verbose "condition: $condition"
-    Write-Verbose "continueOnError: $continueOnError"
-    Write-Verbose "displayName: $displayName"
-    Write-Verbose "enabled: $enabled"
-    Write-Verbose "env: "
-    foreach ($key in $env.Keys) {
-        Write-Verbose "  $key = $($env[$key])"
-    }
-    Write-Verbose "TASK_ENV: "
-    gci env: | where-object { $_.name -like 'TASK_*' } | foreach-object {
-        Write-Verbose "  $($_.Name) = $($_.Value)"
-    }
-    Write-Verbose "timeoutInMinutes: $timeoutInMinutes"
-    Write-Verbose "retryCountOnTaskFailure: $retryCountOnTaskFailure"
-    Write-Verbose "commands: `n> $($commands -join "`n> ")"	
-
-    try {
-        $BackupErrorActionPreference = $ErrorActionPreference
-        $ErrorActionPreference = "Stop"
-        if($continueOnError -eq $true) {
-            $ErrorActionPreference = "Continue"
+        Write-Verbose "taskInput: "
+        foreach ($key in $taskInput.Keys) {
+            Write-Verbose "  $key = $($taskInput[$key])"
         }
+        Write-Verbose "condition: $condition"
+        Write-Verbose "continueOnError: $continueOnError"
+        Write-Verbose "displayName: $displayName"
+        Write-Verbose "enabled: $enabled"
+        Write-Verbose "env: "
+        foreach ($key in $env.Keys) {
+            Write-Verbose "  $key = $($env[$key])"
+        }
+        Write-Verbose "TASK_ENV: "
+        Get-ChildItem env: | where-object { $_.name -like 'TASK_*' } | foreach-object {
+            Write-Verbose "  $($_.Name) = $($_.Value)"
+        }
+        Write-Verbose "timeoutInMinutes: $timeoutInMinutes"
+        Write-Verbose "retryCountOnTaskFailure: $retryCountOnTaskFailure"
+        Write-Verbose "commands: `n> $($commands -join "`n> ")"	
+
+    # Run the task
+    $BackupErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Stop"
+        
         $sb_init = [scriptblock]::Create("Set-Location $($taskInput.path)")
         #$sb_init = [scriptblock]::Create("Set-Location $($env:TASK_CWD)")
-        
         $sb_task = [scriptblock]::Create($commands -join "`n")
-
-        try {
-            Write-Warning "Task 1 - $displayName - $($taskInput.path)"
-            $job = Start-Job -ScriptBlock $sb_task -ArgumentList @($taskInput.args) -InitializationScript $sb_init 
-            if ($timeoutInMinutes -gt 0) {
-                $job | Wait-Job -Timeout ($timeoutInMinutes * 60) | Out-Null
-                if ($job.State -eq 'Running') {
-                    Stop-Job -Job $job  | Out-Null
-                    throw "Task exceeded the timeout of $timeoutInMinutes minutes and was terminated."
+        
+        do {
+            $timer = [System.Diagnostics.Stopwatch]::StartNew()
+            try {
+                $job = Start-Job -ScriptBlock $sb_task -ArgumentList @($taskInput.args) -InitializationScript $sb_init 
+                while ($job.State -eq 'Running') {
+                    if($timer.Elapsed.TotalMinutes -gt $timeoutInMinutes) {
+                        $retryCountOnTaskFailure = 0
+                        Stop-Job -Job $job  | Out-Null
+                        $timer.Stop()
+                        throw "Task exceeded the timeout of $timeoutInMinutes minutes and was terminated."
+                    }
+                    Receive-Job -Job $job -Wait:$false
+                    Start-Sleep -Seconds 1
+                }
+                Receive-Job -Job $job
+                break
+            } catch {
+                Write-Warning "Task '$displayName' failed because of an Exception: $($_.Exception.Message)"
+            } finally {
+                if($job) {
+                    Remove-Job -Job $job | Out-Null
                 }
             }
-            $jobResult = Receive-Job -Job $job
-        } catch {
-            if ($retryCountOnTaskFailure -gt 0) {
-                Write-Warning "Task 1 - $displayName failed. Retrying..."
-                Write-Warning $_
-                Start-Sleep -Seconds 5
-                $taskParams = @{
-                    taskInput = $taskInput
-                    condition = $condition
-                    continueOnError = $continueOnError
-                    displayName = $displayName
-                    enabled = $enabled
-                    env = $env
-                    timeoutInMinutes = $timeoutInMinutes
-                    retryCountOnTaskFailure = ($retryCountOnTaskFailure - 1)
-                    commands = $commands
-                }
-                return task_1 @taskParams
-            }
-            
-            # TO DO TO DO TO DO
-            # TO DO TO DO TO DO
-            # Should not throw, but log a FAILURE instead
-            Write-Warning "TO DO: SHOULD NOT THROW HERE"
-            throw $_
-            # TO DO TO DO TO DO
-            # TO DO TO DO TO DO
+        } while(($retryCountOnTaskFailure --) -gt 0);
 
-        } finally {
-            if($job) {
-                Remove-Job -Job $job | Out-Null
-            }
-        }
-        $jobResult | Foreach-Object {
-
-            # if ($_ -is [System.Management.Automation.ErrorRecord]) {
-            #    Write-Error $_
-            #}
-
-            $vso_regex = [regex]::new('^##vso\[(?<command>[\S]+)(?<properties>[^\]]*)\](?<line>.*)$')
-            $format_regex = [regex]::new('^##\[(?<format>group|endgroup|section|command|warning|error)\](?<line>.*)$')
-
-            $vso = $vso_regex.Match($_)
-            $format = $format_regex.Match($_)
-            if($vso.Success) {
-                #$vso.Groups['command']
-                #$vso.Groups['properties']
-                #$vso.Groups['line']
-                switch($vso.Groups['command']) {
-                    #'task.complete' {
-                    #    $CompleteStatus=$vso.Groups['properties']
-                    #}
-                    #'task.setvariable' {
-                    #    $SetVarName=$vso.Groups['properties']
-                    #    $SetVarValue=$vso.Groups['line']
-                    #    [System.Environment]::SetEnvironmentVariable($SetVarName, $SetVarValue, [System.EnvironmentVariableTarget]::Process)
-                    #}
-                    default {
-                        Write-Host $_
-                    }
-                }
-            } elseif( $format.Success ) {
-                switch($format.Groups['format']) {
-                    'group' {
-                        Write-Host "[+] $($format.Groups['line'])" -ForegroundColor Magenta
-                    }
-                    'endgroup' {
-                        Write-Host "[-] $($format.Groups['line'])" -ForegroundColor Magenta
-                    }
-                    'section' {
-                        Write-Host "$($format.Groups['line'])" -ForegroundColor Cyan
-                    }
-                    'command' {
-                        Write-Host "$($format.Groups['line'])" -ForegroundColor Yellow
-                    }
-                    'warning' {
-                        Write-Warning "WARNING: $($format.Groups['line'])"
-                    }
-                    'error' {
-                        Write-Error "ERROR: $($format.Groups['line'])"
-                    }
-                    default {
-                        Write-Host $_
-                    }
-                }
-                
-            } else {
-                Write-Host $_
-            }
-        }
         #return $jobResult
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }
 
+$InOutVariable = $null
+$InOutPath = $null
+$InOutSecret = $null
+$OutResult = $null
 $TaskParams = @{
-    taskInput = @{args = @('status');path = (Resolve-Path .)}
+    InOutVariable = [ref]$InOutVariable
+    InOutPath= [ref]$InOutPath
+    InOutSecret = [ref]$InOutSecret
+    OutResult= [ref]$OutResult
+    taskInput = @{something = @(); path = (Resolve-Path 'E:\ManageMyOwnWebServerOnWindows')}
     condition = '$true -eq $true'
     continueOnError = $false
     displayName = 'Task 1'
     enabled = $true
     env = @{WHOAMI = $env:USERNAME; CWD = (Resolve-Path .)}
     timeoutInMinutes = 1
-    retryCountOnTaskFailure = 0
+    retryCountOnTaskFailure = 2
     commands = @(
             '$d = get-date'
             '"##[section]Hello $($env:WHOAMI), it is $($d), working in $($env:TASK_CWD)" | write-output'
             '$g = get-command git'
             '"##[command]git $($args -join '' '')" | write-output'
+            'Start-Sleep -Seconds 3'
             #'try {'
-            '&($g) @args 2>&1 | Tee-Object -Variable git_out | Out-Null'
+            '&($g) status 2>&1 | Tee-Object -Variable git_out | Out-Null'
             #'} catch{}'
             'if($LASTEXITCODE -ne 0) {'
                 '"##[error]#$LASTEXITCODE. $git_out" | write-output'

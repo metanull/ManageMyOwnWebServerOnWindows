@@ -6,7 +6,7 @@
     Destination = './build'
 
     # Name used to identify this module
-    Name = 'MetaNull.VsoString'
+    Name = 'MetaNull.InvokeScript'
 
     # Types & Dependencies
     AssemblyDependencies = @(
@@ -42,7 +42,7 @@
         CompanyName       = 'Unknown'
 
         # Copyright statement for this module
-        Copyright         = '© 2025. All rights reserved'
+        Copyright         = 'ï¿½ 2025. All rights reserved'
 
         # Description of the functionality provided by this module
         Description       = 'Read and Write VSO comands for/from Azure DevOps' pipelines'

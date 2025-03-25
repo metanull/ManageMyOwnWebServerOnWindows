@@ -8,7 +8,7 @@
     .PARAMETER OutputObject
     The object to output to the VSO pipeline.
 
-    .PARAMETER StepOutput
+    .PARAMETER ScriptOutput
     The output of the step.
 #>
 param(
@@ -16,18 +16,18 @@ param(
     [object]$OutputObject,
 
     [Parameter(Mandatory)]
-    [ref]$StepOutput
+    [ref]$ScriptOutput
 )
 Process {
     # Detect if the received object is a VSO command
     $VsoCommand = $OutputObject | Expand-VsoCommandString
     if ($VsoCommand) {
         # If so, process the VSO command
-        $VsoCommand | Invoke-VsoCommand -StepOutput ($StepOutput)
+        $VsoCommand | Invoke-VsoCommand -ScriptOutput ($ScriptOutput)
         return
     }
     # Replace secrets in the output
-    $StepOutput.Value.Secret | Foreach-Object {
+    $ScriptOutput.Value.Secret | Foreach-Object {
         $OutputObject = $OutputObject -replace $_, '***'
     }
     # Detect if the received object has VSO formatting instructions

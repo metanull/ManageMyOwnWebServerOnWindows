@@ -6,38 +6,38 @@
         The VSO command object to process.
         This object is initialized by the Expand-VsoCommandString function.
     
-    .PARAMETER StepOutput
+    .PARAMETER ScriptOutput
         The output of the step.
 
     .EXAMPLE
-        '##vso[task.setcomplete result=Succeeded]Done' | Process-VsoCommand -StepOutput ([ref]$StepOutput)
+        '##vso[task.setcomplete result=Succeeded]Done' | Process-VsoCommand -ScriptOutput ([ref]$ScriptOutput)
 #>
 param(
     [Parameter(Mandatory, ValueFromPipeline)]
     [hashtable]$vso,
     
     [Parameter(Mandatory)]
-    [ref]$StepOutput
+    [ref]$ScriptOutput
 )
 Process {
     switch ($vso.Command) {
         'task.complete' {
             $taskResult = [PSCustomObject]$vso.Properties
             $taskResult | Add-Member -MemberType NoteProperty -Name 'Message' -Value ($vso.Message)
-            $StepOutput.Value.Result += , $taskResult
+            $ScriptOutput.Value.Result += , $taskResult
             return
         }
         'task.setvariable' {
             $taskVariable = [PSCustomObject]$vso.Properties
-            $StepOutput.Value.Variable += , $taskVariable
+            $ScriptOutput.Value.Variable += , $taskVariable
             return
         }
         'task.setsecret' {
-            $StepOutput.Value.Secret += , $vso.Properties.Value
+            $ScriptOutput.Value.Secret += , $vso.Properties.Value
             return
         }
         'task.prependpath' {
-            $StepOutput.Value.Path += , $vso.Properties.Value
+            $ScriptOutput.Value.Path += , $vso.Properties.Value
             return
         }
         default {

@@ -25,7 +25,7 @@ function step_1 {
         [hashtable]$variables = @{},
 
         [Parameter(Mandatory)]
-        [ref]$StepOutput
+        [ref]$ScriptOutput
     )
 
     Begin {
@@ -262,27 +262,27 @@ Process {
                 [Parameter(Mandatory,ValueFromPipeline)]
                 [hashtable]$vso,
                 [Parameter(Mandatory)]
-                [ref]$StepOutput
+                [ref]$ScriptOutput
             )
             Process {
                 switch($vso.Command) {
                     'task.complete' {
                         $taskResult = [PSCustomObject]$vso.Properties
                         $taskResult | Add-Member -MemberType NoteProperty -Name 'Message' -Value ($vso.Message)
-                        $StepOutput.Value.Result += ,$taskResult
+                        $ScriptOutput.Value.Result += ,$taskResult
                         return
                     }
                     'task.setvariable' {
                         $taskVariable = [PSCustomObject]$vso.Properties
-                        $StepOutput.Value.Variable += ,$taskVariable
+                        $ScriptOutput.Value.Variable += ,$taskVariable
                         return
                     }
                     'task.setsecret' {
-                        $StepOutput.Value.Secret += ,$vso.Properties.Value
+                        $ScriptOutput.Value.Secret += ,$vso.Properties.Value
                         return
                     }
                     'task.prependpath' {
-                        $StepOutput.Value.Path += ,$vso.Properties.Value
+                        $ScriptOutput.Value.Path += ,$vso.Properties.Value
                         return
                     }
                     default {
@@ -297,15 +297,15 @@ Process {
                 [object]$OutputObject,
 
                 [Parameter(Mandatory)]
-                [ref]$StepOutput
+                [ref]$ScriptOutput
             )
             Process {
                 $VsoCommand = $OutputObject | Expand-VsoCommandString
                 if($VsoCommand) {
-                    $VsoCommand | Invoke-VsoCommand -StepOutput ($StepOutput)
+                    $VsoCommand | Invoke-VsoCommand -ScriptOutput ($ScriptOutput)
                     return
                 }
-                $StepOutput.Value.Secret | Foreach-Object {
+                $ScriptOutput.Value.Secret | Foreach-Object {
                     $OutputObject = $OutputObject -replace $_, '***'
                 }
                 $VsoOutput = $OutputObject | Expand-VsoFormatString
@@ -346,7 +346,7 @@ Process {
         }
     }
     Process {
-        $StepOutput.Value = [PSCustomObject]@{
+        $ScriptOutput.Value = [PSCustomObject]@{
             Variable = @(,[pscustomobject]@{Name='SAMPLE_VARIABLE';Value=127;IsSecret=$false;IsOutput=$false;IsReadOnly=$false})
             Result = @()
             Secret = @()
@@ -408,7 +408,7 @@ Process {
             #$sb_init = [scriptblock]::Create("Set-Location $($env:STEP_CWD)")
             $sb_step = [scriptblock]::Create(($commands |% { 
                 $Command = $_
-                $StepOutput.Value.Variable |% {
+                $ScriptOutput.Value.Variable |% {
                     $Command = $Command -replace "\$\($($_.Name)\)","$($_.Value)"
                 }
                 $Command | Write-Output
@@ -425,10 +425,10 @@ Process {
                             $timer.Stop()
                             throw "Step exceeded the timeout of $timeoutInMinutes minutes and was terminated."
                         }
-                        Receive-Job -Job $job -Wait:$false | Out-Vso -StepOutput ($StepOutput)
+                        Receive-Job -Job $job -Wait:$false | Out-Vso -ScriptOutput ($ScriptOutput)
                         Start-Sleep -Seconds 1
                     }
-                    Receive-Job -Job $job -Wait | Out-Vso -StepOutput ($StepOutput)
+                    Receive-Job -Job $job -Wait | Out-Vso -ScriptOutput ($ScriptOutput)
                     break
                 } catch {
                     Write-Warning "Step '$displayName' failed because of an Exception: $($_.Exception.Message)"
@@ -449,9 +449,9 @@ Process {
     }
 }
 
-$StepOutput = $null
+$ScriptOutput = $null
 $StepParams = @{
-    StepOutput = [ref]$StepOutput
+    ScriptOutput = [ref]$ScriptOutput
     stepInput = @{something = @(); path = (Resolve-Path 'E:\ManageMyOwnWebServerOnWindows')}
     condition = '$true -eq $true'
     continueOnError = $false
@@ -487,5 +487,5 @@ $StepParams = @{
 
 step_1 @StepParams -Verbose
 
-$StepOutput | Format-List
+$ScriptOutput | Format-List
 # step_1

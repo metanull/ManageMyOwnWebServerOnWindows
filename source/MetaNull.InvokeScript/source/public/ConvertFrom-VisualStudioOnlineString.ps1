@@ -75,6 +75,7 @@ Process {
                         return 
                     }
                 }
+                Write-Warning $Result
                 return @{
                     Command = 'task.complete'
                     Message = $Vso.Matches.Groups['line'].Value

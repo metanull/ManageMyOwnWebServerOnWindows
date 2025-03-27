@@ -46,7 +46,6 @@ Process {
         $VsoState.Value.Secret | Foreach-Object {
             $VsoInputString = $VsoInputString -replace [Regex]::Escape($_), '***'
         }
-
         # Output the message as is
         $VsoInputString | Write-Output
         return
@@ -97,8 +96,8 @@ Process {
                 # Do not return! Output is processed further
             }
         }
-        return
     }
+
     if($VsoResult.Command) {
         # Input is a VSO command, process it
         switch($VsoResult.Command) {

@@ -21,5 +21,5 @@ param(
     [string] $String
 )
 Process {
-    return -not -not (ConvertFrom-VisualStudioOnlineString -String $String)
+    return -not -not ($String | ConvertFrom-VisualStudioOnlineString)
 }

@@ -1,19 +1,22 @@
 Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag "UnitTest" {
+
+    BeforeAll {
+        $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
+        $ScriptName = $PSCommandPath | Split-Path -Leaf
+        $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
+        $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
+        $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
+
+        $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
+
+        # Create a Stub for the module function to test
+        Function Invoke-ModuleFunctionStub {
+            . $FunctionPath @args | write-Output
+        }
+    }
+
     Context "When calling the function" {
         BeforeAll {
-            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
-            $ScriptName = $PSCommandPath | Split-Path -Leaf
-            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
-            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
-
-            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
-    
-            # Create a Stub for the module function to test
-            Function Invoke-ModuleFunctionStub {
-                . $FunctionPath @args | write-Output
-            }
-
             Function ConvertFrom-VisualStudioOnlineString {
                 return ($args -join ' ')
             }
@@ -58,18 +61,6 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO formatted string" {
         BeforeAll {
-            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
-            $ScriptName = $PSCommandPath | Split-Path -Leaf
-            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
-            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
-
-            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
-    
-            # Create a Stub for the module function to test
-            Function Invoke-ModuleFunctionStub {
-                . $FunctionPath @args | write-Output
-            }
 
             Function ConvertFrom-VisualStudioOnlineString {
                 @{
@@ -92,19 +83,6 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO command string: task.complete" {
         BeforeAll {
-            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
-            $ScriptName = $PSCommandPath | Split-Path -Leaf
-            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
-            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
-
-            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
-    
-            # Create a Stub for the module function to test
-            Function Invoke-ModuleFunctionStub {
-                . $FunctionPath @args | write-Output
-            }
-
             Function ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.complete'
@@ -126,19 +104,6 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO command string: task.setvariable" {
         BeforeAll {
-            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
-            $ScriptName = $PSCommandPath | Split-Path -Leaf
-            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
-            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
-
-            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
-    
-            # Create a Stub for the module function to test
-            Function Invoke-ModuleFunctionStub {
-                . $FunctionPath @args | write-Output
-            }
-
             Function ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.setvariable'
@@ -168,19 +133,6 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO command string: task.setsecret" {
         BeforeAll {
-            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
-            $ScriptName = $PSCommandPath | Split-Path -Leaf
-            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
-            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
-
-            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
-    
-            # Create a Stub for the module function to test
-            Function Invoke-ModuleFunctionStub {
-                . $FunctionPath @args | write-Output
-            }
-
             Function ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.setsecret'
@@ -197,6 +149,27 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
             Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
             $Result = $State.Secret | Select-Object -First 1
             $Result | Should -Be 'MySecret'
+        }
+    }
+
+    Context "When calling the function on a VSO command string: task.prependpath" {
+        BeforeAll {
+            Function ConvertFrom-VisualStudioOnlineString {
+                @{
+                    Command = 'task.prependpath'
+                    Message = $null
+                    Properties = @{
+                        Value = 'C:\my\directory'
+                    }
+                }
+            }
+        }
+
+        It "Should update the State" {
+            $State = $null
+            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            $Result = $State.Path | Select-Object -First 1
+            $Result | Should -Be 'C:\my\directory'
         }
     }
 }

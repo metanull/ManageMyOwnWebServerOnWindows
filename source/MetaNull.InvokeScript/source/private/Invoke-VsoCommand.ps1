@@ -1,47 +1,86 @@
 <#
     .SYNOPSIS
-        Processes a VSO command object and updates the step output object.
+        Processes a VSO command object and returns its output.
 
     .PARAMETER vso
         The VSO command object to process.
         This object is initialized by the Expand-VsoCommandString function.
     
     .PARAMETER ScriptOutput
-        The output of the step.
+        The output of the vso command.
+        If defined, the output of the script will be stored in this variable and the function will return a boolean indicating the success of the Script
+        Otherwise, the output will be returned as a PSCustomObject
+        If the ScriptOutput is already initialized, then the new values will be merged with the existing values.
 
     .EXAMPLE
         '##vso[task.setcomplete result=Succeeded]Done' | Process-VsoCommand -ScriptOutput ([ref]$ScriptOutput)
 #>
+[CmdletBinding(DefaultParameterSetName='Default')]
+[OutputType([PSCustomObject], [bool])]
 param(
     [Parameter(Mandatory, ValueFromPipeline)]
     [hashtable]$vso,
     
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ParameterSetName='Reference')]
     [ref]$ScriptOutput
 )
 Process {
+    # Initialize the step output
+    $Return = [PSCustomObject]@{
+        Result = [pscustomobject]@{
+            Message = 'Not started'
+            Result = 'Failed'
+        }
+        Variable = @()
+        Secret = @()
+        Path = @()
+    }
+    if($PSCmdlet.ParameterSetName -eq 'Reference') {
+        Write-Debug "Returning a boolean, reporting the ScriptOutput by reference"
+        if (-not ($ScriptOutput.Value -is [PSCustomObject] -and 
+                  $ScriptOutput.Value.PSObject.Properties.Match('Result', 'Variable', 'Secret', 'Path').Count -eq 4)) {
+            $ScriptOutput.Value = $Return
+        } else {
+            # If the ScriptOutput is already initialized, then we need to merge the new values...
+            # Nothing to do here, as the $Return object is already initialized
+        }
+    } else {
+        Write-Debug "Returning the ScriptOutput as a value"
+        $ScriptOutput = [ref]$Return
+    }
+
+    $success = $false
     switch ($vso.Command) {
         'task.complete' {
             $taskResult = [PSCustomObject]$vso.Properties
             $taskResult | Add-Member -MemberType NoteProperty -Name 'Message' -Value ($vso.Message)
             $ScriptOutput.Value.Result += , $taskResult
-            return
+            $success = $true
         }
         'task.setvariable' {
             $taskVariable = [PSCustomObject]$vso.Properties
             $ScriptOutput.Value.Variable += , $taskVariable
-            return
+            $success = $true
         }
         'task.setsecret' {
             $ScriptOutput.Value.Secret += , $vso.Properties.Value
-            return
+            $success = $true
         }
         'task.prependpath' {
             $ScriptOutput.Value.Path += , $vso.Properties.Value
-            return
+            $success = $true
         }
         default {
             Write-Warning "Unknown VSO Command: $($vso.Command)"
         }
+    }
+
+    # Return the result
+    if($PSCmdlet.ParameterSetName -eq 'Reference') {
+        # Return a boolean indicating the success of the step
+        return $success
+    } else {
+        # Return the output as a PSCustomObject
+        return $ScriptOutput
     }
 }

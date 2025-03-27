@@ -92,6 +92,10 @@ param(
     [ref]$ScriptOutput
 )
 Process {
+    # Initialize the step output
+    $Return = $null
+    '' | Invoke-VisualStudioOnlineString -VsoState ([ref]$Return)
+
     # Run the step
     $BackupErrorActionPreference = $ErrorActionPreference
     try {
@@ -121,15 +125,6 @@ Process {
         }
 
         # Initialize the step output
-        $Return = [PSCustomObject]@{
-            Result = [pscustomobject]@{
-                Message = 'Not started'
-                Result = 'Failed'
-            }
-            Variable = @()
-            Secret = @()
-            Path = @()
-        }
         if($PSCmdlet.ParameterSetName -eq 'Reference') {
             Write-Debug "Returning a boolean, reporting the ScriptOutput by reference"
             $ScriptOutput.Value = $Return
@@ -155,15 +150,29 @@ Process {
             $TimeoutInMinutes = 5
         }
 
-        # Check if the step should run (Condition is true and step is Enabled)
+        # Check if the step should run (Condition is true)
         $sb_condition = [scriptblock]::Create($Condition)
         if (-not (& $sb_condition)) {
-            Write-Warning "Script '$DisplayName' was skipped because the Condition was false."
-            return
+            Write-Debug "Script '$DisplayName' was skipped because the Condition was false."
+            $Return.Result.Message = 'Skipped'
+            $Return.Result.Result = 'Succeeded'
+            if($PSCmdlet.ParameterSetName -eq 'Reference') {
+                return $true
+            } else {
+                return $Return
+            }
         }
+
+        # Check if the step should run (step is Enabled)
         if (-not $Enabled) {
-            Write-Warning "Script '$DisplayName' was skipped because it was disabled."
-            return
+            Write-Debug "Script '$DisplayName' was skipped because it was disabled."
+            $Return.Result.Message = 'Disabled'
+            $Return.Result.Result = 'Succeeded'
+            if($PSCmdlet.ParameterSetName -eq 'Reference') {
+                return $true
+            } else {
+                return $Return
+            }
         }
 
         # Set the environment ScriptVariables
@@ -203,15 +212,19 @@ Process {
                         $timer.Stop()
                         throw "Script '$DisplayName' exceeded the timeout of $TimeoutInMinutes minutes and was terminated."
                     }
-                    Receive-Job -Job $job -Wait:$false | Out-Vso -ScriptOutput ($ScriptOutput)
+                    Receive-Job -Job $job -Wait:$false | Invoke-VisualStudioOnlineString -VsoState ($ScriptOutput) | Write-Output
                     Start-Sleep -Seconds 1
                 }
                 Write-Debug "Script '$DisplayName' completed in $($timer.Elapsed.TotalSeconds) seconds"
-                Receive-Job -Job $job -Wait | Out-Vso -ScriptOutput ($ScriptOutput)
+                Receive-Job -Job $job -Wait | Invoke-VisualStudioOnlineString -VsoState ($ScriptOutput) | Write-Output
                 $Succeeded = $true
                 break
             } catch {
-                Write-Warning "Script '$DisplayName' failed because of an Exception: $($_.Exception.Message)"
+                # Unforeseen exception => always fail the step
+                Write-Warning "Script '$DisplayName' failed because of an unforeseen Exception: $($_.Exception.Message)"
+                $ScriptOutput.Value.Result.Result = 'Failed'
+                $ScriptOutput.Value.Result.Message = "Exception: $($_)"
+                $Succeeded = $false
                 # Disable retry on step failure caused by an exception
                 $MaxRetryOnFailure = 0
             } finally {

@@ -148,7 +148,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
                         Value      = 'Hello World'
                         IsSecret   = $false
                         IsOutput   = $false
-                        IsReadOnly = $false
+                        IsReadOnly = $true
                     }
                 }
             }
@@ -162,7 +162,41 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
             $Result.Value | Should -Be 'Hello World'
             $Result.IsSecret | Should -Be $false
             $Result.IsOutput | Should -Be $false
-            $Result.IsReadOnly | Should -Be $false
+            $Result.IsReadOnly | Should -Be $true
+        }
+    }
+
+    Context "When calling the function on a VSO command string: task.setsecret" {
+        BeforeAll {
+            $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
+            $ScriptName = $PSCommandPath | Split-Path -Leaf
+            $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
+            $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
+            $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
+
+            $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
+    
+            # Create a Stub for the module function to test
+            Function Invoke-ModuleFunctionStub {
+                . $FunctionPath @args | write-Output
+            }
+
+            Function ConvertFrom-VisualStudioOnlineString {
+                @{
+                    Command = 'task.setsecret'
+                    Message = $null
+                    Properties = @{
+                        Value = 'MySecret'
+                    }
+                }
+            }
+        }
+
+        It "Should update the State" {
+            $State = $null
+            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            $Result = $State.Secret | Select-Object -First 1
+            $Result | Should -Be 'MySecret'
         }
     }
 }

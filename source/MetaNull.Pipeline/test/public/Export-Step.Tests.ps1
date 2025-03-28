@@ -58,12 +58,12 @@ Describe "Export-Step" -Tag "Functional","BeforeBuild" {
         }
 
         It "Should throw when the Pipeline Id is not found" {
-            {Invoke-ModuleFunctionStub @ExportParameters -Id (New-Guid)} | Should -Throw
+            {Invoke-ModuleFunctionStub @ExportParameters -Id (New-Guid) -Stage 127 -Job 127 -Step 127} | Should -Throw
         }
         It "Should throw when the Pipeline Id is valid and Stage Index is not found" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
-                {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage 127} | Should -Throw
+                {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage 127 -Job 127 -Step 127} | Should -Throw
             }
         }
         It "Should throw when the Pipeline Id is valid and Stage Index is valid and Job Index is not found" {
@@ -71,7 +71,7 @@ Describe "Export-Step" -Tag "Functional","BeforeBuild" {
                 $Pipeline = $_
                 $Pipeline.Stages | Foreach-Object {
                     $Stage = $_
-                    {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Id -Job 127} | Should -Throw
+                    {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Id -Job 127 -Step 127} | Should -Throw
                 }
             }
         }
@@ -87,18 +87,7 @@ Describe "Export-Step" -Tag "Functional","BeforeBuild" {
                 }
             }
         }
-        It "Should not throw an exception when Pipeline Id is given and Stage Index is given and Job Index is given but no Step Index is given" {
-            $TestData.Pipelines | Foreach-Object {
-                $Pipeline = $_
-                $Pipeline.Stages | Foreach-Object {
-                    $Stage = $_
-                    $Stage.Jobs | Foreach-Object {
-                        $Job = $_
-                        {Invoke-ModuleFunctionStub @ExportParameters -Id $Pipeline.Id -Stage $Stage.Id -Job $Job.Id} | Should -Not -Throw
-                    }
-                }
-            }
-        }
+
         It "Should generate a `$StepIndex.ps1 script file for each step in directory `$OutputDirectory\`$PipeLineId\`$StageIndex\`$JobIndex and return its absolute path" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_

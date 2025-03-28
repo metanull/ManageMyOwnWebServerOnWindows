@@ -37,12 +37,12 @@ Describe "New-Step" -Tag "Functional","BeforeBuild" {
         }
 
         It "Should throw when the Pipeline Id is not found" {
-            {Invoke-ModuleFunctionStub -Id (New-Guid)} | Should -Throw
+            {Invoke-ModuleFunctionStub -Id (New-Guid) -Stage 127 -Job 127 -Commands '# nothing'} | Should -Throw
         }
         It "Should throw when the Pipeline Id is valid and Stage Index is not found" {
             $TestData.Pipelines | Foreach-Object {
                 $Pipeline = $_
-                {Invoke-ModuleFunctionStub -Id $Pipeline.Id -Stage 127} | Should -Throw
+                {Invoke-ModuleFunctionStub -Id $Pipeline.Id -Stage 127 -Job 127 -Commands '# nothing'} | Should -Throw
             }
         }
         It "Should throw when the Pipeline Id is valid and Stage Index is valid and Job Index is not found" {
@@ -50,7 +50,7 @@ Describe "New-Step" -Tag "Functional","BeforeBuild" {
                 $Pipeline = $_
                 $Pipeline.Stages | Foreach-Object {
                     $Stage = $_
-                    {Invoke-ModuleFunctionStub -Id $Pipeline.Id -Stage $Stage.Id -Job 127} | Should -Throw
+                    {Invoke-ModuleFunctionStub -Id $Pipeline.Id -Stage $Stage.Id -Job 127 -Commands '# nothing'} | Should -Throw
                 }
             }
         }

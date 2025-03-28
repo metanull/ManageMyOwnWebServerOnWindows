@@ -20,9 +20,9 @@ param(
     [int]
     $Job,
 
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
     [string]
-    $Name,
+    $Name = 'Step',
 
     [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
     [string[]]

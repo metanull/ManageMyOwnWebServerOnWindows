@@ -7,10 +7,16 @@ param(
     [string] $String
 )
 Begin {
-    $VisualStudioOnlineExpressions = @{
-        Command = '^##vso\[(?<command>[\S]+)(?<properties>[^\]]*)\](?<line>.*)$'
-        Format = '^##\[(?<format>group|endgroup|section|warning|error|debug|command)\](?<line>.*)$'
-    }
+    $VisualStudioOnlineExpressions = @(
+        @{
+            Name = 'Command'
+            Expression = '^##vso\[(?<command>[\S]+)(?<properties>[^\]]*)\](?<line>.*)$'
+        }
+        @{
+            Name = 'Format'
+            Expression = '^##\[(?<format>group|endgroup|section|warning|error|debug|command)\](?<line>.*)$'
+        }
+    )
 }
 Process {
     # Check if the line is null or empty
@@ -19,25 +25,22 @@ Process {
     }
     
     # Evaluate each regular expression against the received String
-    $Vso = @{
-        Type = $null
-        Expression = $null
-        Matches = $null
-    }
-    $VisualStudioOnlineExpressions.GetEnumerator() | Foreach-Object {
-        $RxExpression = [regex]::new($_)
-        $Rx = $RxExpression.Match($String)
-        if ($Rx.Success) {
-            $Vso.Type = $_.Key
-            $Vso.Expression = $_.Value
-            $Vso.Matches = $Rx.Groups
-            break    
+    foreach($Expression in $VisualStudioOnlineExpressions) {
+        $RxExpression = [regex]::new($Expression.Expression)
+        $RxResult = $RxExpression.Match($String)
+        if ($RxResult.Success) {
+            $Vso = @{
+                Type = $Expression.Name
+                Expression = $Expression.Expression
+                Matches = $RxResult
+            }
+            break
         }
     }
     if(-not $Vso.Type) {
         return
     }
-
+    
     # Handle known commands, or return
     if($Vso.Type -eq 'Format') {
         return @{
@@ -46,11 +49,14 @@ Process {
         }
     } 
     if($Vso.Type -eq 'Command') {
-        $Properties = $Vso.Matches.Groups['properties'].Value.Trim() -split '\s*;\s*' | Where-Object { 
+        # "> Command: $String" | Write-Debug
+        $Properties = @{}
+        $Vso.Matches.Groups['properties'].Value.Trim() -split '\s*;\s*' | Where-Object { 
             -not ([string]::IsNullOrEmpty($_)) 
         } | ForEach-Object {
             $key, $value = $_.Trim() -split '\s*=\s*', 2
-            @{"$key" = $value }
+            # "{$key = $value}" | Write-Debug
+            $Properties += @{"$key" = $value }
         }
         switch ($Vso.Matches.Groups['command']) {
             'task.complete' {
@@ -86,23 +92,27 @@ Process {
             'task.setvariable' {
                 # Requires properties to be in 'variable', 'isSecret', 'isOutput', and 'isReadOnly'
                 if ($Properties.Keys | Where-Object { $_ -notin @('variable', 'isSecret', 'isOutput', 'isReadOnly') }) {
+                    Write-Warning "Invalid properties"
                     return
                 }
                 # Requires property 'variable'
                 if (-not ($Properties.ContainsKey('variable'))) {
+                    Write-Warning "Missing name"
                     return
                 }
                 # Requires property 'variable' to be not empty
                 if ([string]::IsNullOrEmpty($Properties['variable'])) {
+                    Write-Warning "Null name"
                     return
                 }
                 # Requires property 'variable' to be a valid variable name
                 try { & { Invoke-Expression "`$$($Properties['variable']) = `$null" } } catch {
+                    Write-Warning "Invalid name"
                     return
                 }
                 return @{
                     Command = 'task.setvariable'
-                    Message = $Vso.Matches.Groups['line'].Value
+                    Message = $null
                     Properties = @{
                         Name       = $Properties['variable']
                         Value      = $Vso.Matches.Groups['line'].Value
@@ -237,9 +247,9 @@ Process {
                 }
                 return @{
                     Command = 'task.logissue'
-                    Message = $null
+                    Message = $Vso.Matches.Groups['line'].Value
                     Properties = @{
-                        Message = $Vso.Matches.Groups['line'].Value
+                        Type = $Properties['type']
                         SourcePath = $Properties['sourcepath']
                         LineNumber = $LogLineNumber
                         ColNumber = $LogColNumber

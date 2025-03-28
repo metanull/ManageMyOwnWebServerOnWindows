@@ -4,7 +4,9 @@
 #>
 [CmdletBinding()]
 [OutputType([PSCustomObject])]
-param()
+param(
+    
+)
 End {
     $True | Write-Output
 }

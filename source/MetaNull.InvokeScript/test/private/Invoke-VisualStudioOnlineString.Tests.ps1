@@ -24,11 +24,11 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should not throw when state is not initialized and input is empty" {
             $State = $null
-            {'' | Invoke-ModuleFunctionStub -VsoInputString '' -VsoState ([ref]$State)} | Should -Not -Throw
+            {'' | Invoke-ModuleFunctionStub -InputString '' -ScriptOutput ([ref]$State)} | Should -Not -Throw
         }
         It "Should initialize the state variable and input is empty" {
             $State = $null
-            '' | Invoke-ModuleFunctionStub -VsoInputString '' -VsoState ([ref]$State)
+            '' | Invoke-ModuleFunctionStub -InputString '' -ScriptOutput ([ref]$State)
             $State | Should -Not -BeNullOrEmpty
             $State.Result.Result | Should -Be 'Failed'
             $State.Result.Message | Should -Be 'Not started'
@@ -46,15 +46,15 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should return unmodified input when no processing occures" {
             $State = $null
-            $Result = Invoke-ModuleFunctionStub -VsoInputString 'Unmodified input' -VsoState ([ref]$State)
+            $Result = Invoke-ModuleFunctionStub -InputString 'Unmodified input' -ScriptOutput ([ref]$State)
             $Result | Should -Be 'Unmodified input'
         }
 
         It "Should obfuscate secrets" {
             $State = $null
-            Invoke-ModuleFunctionStub -VsoInputString '' -VsoState ([ref]$State)
+            Invoke-ModuleFunctionStub -InputString '' -ScriptOutput ([ref]$State)
             $State.Secret += ,'secret'
-            $Result = Invoke-ModuleFunctionStub -VsoInputString 'whatever secret whatever' -VsoState ([ref]$State)
+            $Result = Invoke-ModuleFunctionStub -InputString 'whatever secret whatever' -ScriptOutput ([ref]$State)
             $Result | Should -Be 'whatever *** whatever'
         }
     }
@@ -76,7 +76,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should invoke Write-Host" {
             $State = $null
-            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
             Should -Invoke -CommandName 'Write-Host' -Exactly -Times 1 -Scope It
         }
     }
@@ -96,7 +96,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
             $State.Result.Result | Should -Be 'Succeeded'
             $State.Result.Message | Should -Be 'Done with test'
         }
@@ -121,7 +121,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
             $Result = $State.Variable | Select-Object -First 1
             $Result.Name | Should -Be 'MyVariable'
             $Result.Value | Should -Be 'Hello World'
@@ -146,7 +146,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
             $Result = $State.Secret | Select-Object -First 1
             $Result | Should -Be 'MySecret'
         }
@@ -167,7 +167,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -VsoInputString 'whatever' -VsoState ([ref]$State)
+            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
             $Result = $State.Path | Select-Object -First 1
             $Result | Should -Be 'C:\my\directory'
         }

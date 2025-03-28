@@ -65,7 +65,7 @@ Describe "New-Step" -Tag "Functional","BeforeBuild" {
                 Name = "Test Step"
                 Commands = @("'Test-57_Command1' | Write-Output","'Test-57_Command2' | Write-Output","'Test-57_Command3' | Write-Output")
                 ContinueOnError = $false
-                TimeoutInMinutes = 1
+                TimeoutInSeconds = 1
                 RetryCountOnStepFailure = 0
             }
             $StepCommandOutputs = @("Test-57_Command1","Test-57_Command2","Test-57_Command3")
@@ -82,7 +82,7 @@ Describe "New-Step" -Tag "Functional","BeforeBuild" {
                 Name = "Test Step"
                 Commands = @("'Test-57_Command1' | Write-Output","'Test-57_Command2' | Write-Output","'Test-57_Command3' | Write-Output")
                 ContinueOnError = $false
-                TimeoutInMinutes = 1
+                TimeoutInSeconds = 1
                 RetryCountOnStepFailure = 0
             }
             $StepCommandOutputs = @("Test-57_Command1","Test-57_Command2","Test-57_Command3")
@@ -99,7 +99,7 @@ Describe "New-Step" -Tag "Functional","BeforeBuild" {
                 Name = "Test Step"
                 Commands = @("'Test-57_Command1' | Write-Output","'Test-57_Command2' | Write-Output","'Test-57_Command3' | Write-Output")
                 ContinueOnError = $false
-                TimeoutInMinutes = 1
+                TimeoutInSeconds = 1
                 RetryCountOnStepFailure = 0
             }
             $StepCommandOutputs = @("Test-57_Command1","Test-57_Command2","Test-57_Command3")

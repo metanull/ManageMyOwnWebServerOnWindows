@@ -5,10 +5,10 @@
     .DESCRIPTION
         Process Visual Studio Online strings.
 
-    .PARAMETER VsoInputString
+    .PARAMETER InputString
         The object to output to the VSO pipeline.
 
-    .PARAMETER VsoResult
+    .PARAMETER ScriptOutput
         The output of the step.
 #>
 [CmdletBinding(DefaultParameterSetName='Default')]
@@ -16,15 +16,15 @@
 param(
     [Parameter(Mandatory, ValueFromPipeline)]
     [AllowEmptyString()]
-    [string]$VsoInputString,
+    [string]$InputString,
 
     [Parameter(Mandatory = $false)]
-    [ref]$VsoState
+    [ref]$ScriptOutput
 )
 Process {
     # Initialize the State variable, if not already initialized
-    if($null -eq $VsoState.Value) {
-        $VsoState.Value = [pscustomobject]@{
+    if($null -eq $ScriptOutput.Value) {
+        $ScriptOutput.Value = [pscustomobject]@{
             Result = [pscustomobject]@{
                 Message = 'Not started'
                 Result = 'Failed'
@@ -34,20 +34,22 @@ Process {
             Path = @()
             Upload = @()
             Log = @()
+            Error = @()
+            Retried = 0
         }
     }
 
     # Detect if the received object is a VSO command or VSO format string
-    $VsoResult = $VsoInputString | ConvertFrom-VisualStudioOnlineString
+    $VsoResult = $InputString | ConvertFrom-VisualStudioOnlineString
     if(-not ($VsoResult)) {
         # Input is just a string, no procesing required
 
         # Replace any secrets in the output
-        $VsoState.Value.Secret | Foreach-Object {
-            $VsoInputString = $VsoInputString -replace [Regex]::Escape($_), '***'
+        $ScriptOutput.Value.Secret | Foreach-Object {
+            $InputString = $InputString -replace [Regex]::Escape($_), '***'
         }
         # Output the message as is
-        $VsoInputString | Write-Output
+        $InputString | Write-Output
         return
     }
 
@@ -55,7 +57,7 @@ Process {
         # Input is a VSO format string, no procesing required, but output the message according to the format
 
         # Replace any secrets in the output
-        $VsoState.Value.Secret | Foreach-Object {
+        $ScriptOutput.Value.Secret | Foreach-Object {
             $VsoResult.Message = $VsoResult.Message -replace [Regex]::Escape($_), '***'
         }
 
@@ -103,33 +105,33 @@ Process {
         switch($VsoResult.Command) {
             'task.complete' {
                 Write-Debug "Task complete: $($VsoResult.Properties.Result) - $($VsoResult.Message)"
-                $VsoState.Value.Result.Result = $VsoResult.Properties.Result
-                $VsoState.Value.Result.Message = $VsoResult.Message
+                $ScriptOutput.Value.Result.Result = $VsoResult.Properties.Result
+                $ScriptOutput.Value.Result.Message = $VsoResult.Message
                 return
             }
             'task.setvariable' {
                 Write-Debug "Task set variable: $($VsoResult.Properties.Variable) = $($VsoResult.Properties.Value)"
-                $VsoState.Value.Variable += ,[pscustomobject]$VsoResult.Properties
+                $ScriptOutput.Value.Variable += ,[pscustomobject]$VsoResult.Properties
                 return
             }
             'task.setsecret' {
                 Write-Debug "Task set secret: $($VsoResult.Properties.Value)"
-                $VsoState.Value.Secret += ,$VsoResult.Properties.Value
+                $ScriptOutput.Value.Secret += ,$VsoResult.Properties.Value
                 return
             }
             'task.prependpath' {
                 Write-Debug "Task prepend path: $($VsoResult.Properties.Value)"
-                $VsoState.Value.Path += ,$VsoResult.Properties.Value
+                $ScriptOutput.Value.Path += ,$VsoResult.Properties.Value
                 return
             }
             'task.uploadfile' {
                 Write-Debug "Task upload file: $($VsoResult.Properties.Value)"
-                $VsoState.Value.Upload += ,$VsoResult.Properties.Value
+                $ScriptOutput.Value.Upload += ,$VsoResult.Properties.Value
                 return
             }
             'task.logissue' {
                 Write-Debug "Task log issue: $($VsoResult.Properties.Type) - $($VsoResult.Message)"
-                $VsoState.Value.Log += ,[pscustomobject]$VsoResult.Properties
+                $ScriptOutput.Value.Log += ,[pscustomobject]$VsoResult.Properties
                 return
             }
             'task.setprogress' {
@@ -148,11 +150,11 @@ Process {
     }
     
     # Replace any secrets in the output
-    $VsoState.Value.Secret | Foreach-Object {
-        $VsoInputString = $VsoInputString -replace [Regex]::Escape($_), '***'
+    $ScriptOutput.Value.Secret | Foreach-Object {
+        $InputString = $InputString -replace [Regex]::Escape($_), '***'
     }
 
     # Unknown input, output as is
-    Write-Warning "Error processing input: $vsoInputString"
-    $VsoInputString | Write-Output
+    Write-Warning "Error processing input: $InputString"
+    $InputString | Write-Output
 }

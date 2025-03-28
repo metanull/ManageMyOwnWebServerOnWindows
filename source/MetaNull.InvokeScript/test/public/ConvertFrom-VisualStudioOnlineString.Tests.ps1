@@ -22,75 +22,150 @@ Describe "Testing public module function Write-VisualStudioOnlineString" -Tag "U
 
         It "Should properly parse format strings" {
             $Result = Invoke-ModuleFunctionStub -String "##[section]Task completed successfully"
-            $Result | Should -Be @{Format='section';Message='Task completed successfully'}
+            $Result.Format | Should -Be 'section'
+            $Result.Message | Should -Be 'Task completed successfully'
 
             $Result = Invoke-ModuleFunctionStub -String "##[group]Begin group of tasks"
-            $Result | Should -Be @{Format='group';Message='Begin group of tasks'}
+            $Result.Format | Should -Be 'group'
+            $Result.Message | Should -Be 'Begin group of tasks'
 
             $Result = Invoke-ModuleFunctionStub -String "##[endgroup]End group of tasks"
-            $Result | Should -Be @{Format='endgroup';Message='End group of tasks'}
+            $Result.Format | Should -Be 'endgroup'
+            $Result.Message | Should -Be 'End group of tasks'
 
             $Result = Invoke-ModuleFunctionStub -String "##[command]echo 'Hello World'"
-            $Result | Should -Be @{Format='command';Message="echo 'Hello World'"}
+            $Result.Format | Should -Be 'command'
+            $Result.Message | Should -Be 'echo ''Hello World'''
 
             $Result = Invoke-ModuleFunctionStub -String "##[error]Task failed"
-            $Result | Should -Be @{Format='error';Message='Task failed'}
+            $Result.Format | Should -Be 'error'
+            $Result.Message | Should -Be 'Task failed'
 
             $Result = Invoke-ModuleFunctionStub -String "##[warning]Task warning"
-            $Result | Should -Be @{Format='warning';Message='Task warning'}
+            $Result.Format | Should -Be 'warning'
+            $Result.Message | Should -Be 'Task warning'
 
             $Result = Invoke-ModuleFunctionStub -String "##[debug]Task debug"
-            $Result | Should -Be @{Format='debug';Message='Task debug'}
+            $Result.Format | Should -Be 'debug'
+            $Result.Message | Should -Be 'Task debug'
         }
 
         It "Should properly parse command strings" {
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.complete result=Succeeded;]Task completed successfully"
-            $Result | Should -Be @{Command='task.complete';Result='Succeeded';Message='Task completed successfully'}
+            $Result.Command | Should -Be 'task.complete'
+            $Result.Message | Should -Be 'Task completed successfully'
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Result | Should -Be 'Succeeded'
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setvariable variable=VariableName;]VariableValue"
-            $Result | Should -Be @{Command='task.setvariable';Variable='VariableName';Value='VariableValue'}
+            $Result.Command | Should -Be 'task.setvariable'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Name | Should -Be 'VariableName'
+            $Result.Properties.Value | Should -Be 'VariableValue'
+            $Result.Properties.IsSecret | Should -BeFalse
+            $Result.Properties.IsReadOnly | Should -BeFalse
+            $Result.Properties.IsOutput | Should -BeFalse
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setvariable variable=VariableName;issecret=true;]VariableValue"
-            $Result | Should -Be @{Command='task.setvariable';Variable='VariableName';Value='VariableValue';IsSecret=$true}
+            $Result.Command | Should -Be 'task.setvariable'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Name | Should -Be 'VariableName'
+            $Result.PropertieS.Value | Should -Be 'VariableValue'
+            $Result.Properties.IsSecret | Should -BeTrue
+            $Result.Properties.IsReadOnly | Should -BeFalse
+            $Result.Properties.IsOutput | Should -BeFalse
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setvariable variable=VariableName;isreadonly=true;]VariableValue"
-            $Result | Should -Be @{Command='task.setvariable';Variable='VariableName';Value='VariableValue';IsReadOnly=$true}
+            $Result.Command | Should -Be 'task.setvariable'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Name | Should -Be 'VariableName'
+            $Result.PropertieS.Value | Should -Be 'VariableValue'
+            $Result.Properties.IsSecret | Should -BeFalse
+            $Result.Properties.IsReadOnly | Should -BeTrue
+            $Result.Properties.IsOutput | Should -BeFalse
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setvariable variable=VariableName;isoutput=true;]VariableValue"
-            $Result | Should -Be @{Command='task.setvariable';Variable='VariableName';Value='VariableValue';IsOutput=$true}
+            $Result.Command | Should -Be 'task.setvariable'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Name | Should -Be 'VariableName'
+            $Result.PropertieS.Value | Should -Be 'VariableValue'
+            $Result.Properties.IsSecret | Should -BeFalse
+            $Result.Properties.IsReadOnly | Should -BeFalse
+            $Result.Properties.IsOutput | Should -BeTrue
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setvariable variable=VariableName;issecret=true;isreadonly=true;isoutput=true;]VariableValue"
-            $Result | Should -Be @{Command='task.setvariable';Variable='VariableName';Value='VariableValue';IsSecret=$true;IsReadOnly=$true;IsOutput=$true}
-
-            $Result = Invoke-ModuleFunctionStub -String "##vso[task.addattachment type=attachmentType;name=attachmentName;]attachmentPath"
-            $Result | Should -Be @{Command='task.addattachment';Type='attachmentType';Name='attachmentName';Path='attachmentPath'}
+            $Result.Command | Should -Be 'task.setvariable'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Name | Should -Be 'VariableName'
+            $Result.PropertieS.Value | Should -Be 'VariableValue'
+            $Result.Properties.IsSecret | Should -BeTrue
+            $Result.Properties.IsReadOnly | Should -BeTrue
+            $Result.Properties.IsOutput | Should -BeTrue
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setsecret]SecretValue"
-            $Result | Should -Be @{Command='task.setsecret';Value='SecretValue'}
+            $Result.Command | Should -Be 'task.setsecret'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Value | Should -Be 'SecretValue'
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.prependpath]C:\Path\To\Prepend"
-            $Result | Should -Be @{Command='task.prependpath';Path='C:\Path\To\Prepend'}
+            $Result.Command | Should -Be 'task.prependpath'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Value | Should -Be 'C:\Path\To\Prepend'
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.uploadfile]C:\Path\To\Upload"
-            $Result | Should -Be @{Command='task.uploadfile';Path='C:\Path\To\Upload'}
+            $Result.Command | Should -Be 'task.uploadfile'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Value | Should -Be 'C:\Path\To\Upload'
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.setprogress value=50;]Task is 50% complete"
-            $Result | Should -Be @{Command='task.setprogress';Value=50;Message='Task is 50% complete'}
+            $Result.Command | Should -Be 'task.setprogress'
+            $Result.Message | Should -Be 'Task is 50% complete'
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Value | Should -Be 50
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.logissue type=warning;]This is a warning"
-            $Result | Should -Be @{Command='task.logissue';Type='warning';Message='This is a warning'}
+            $Result.Command | Should -Be 'task.logissue'
+            $Result.Message | Should -Be 'This is a warning'
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Type | Should -Be 'warning'
+            $Result.Properties.SourcePath | Should -BeNullOrEmpty
+            $Result.Properties.LineNumber | Should -BeNullOrEmpty
+            $Result.Properties.ColNumber | Should -BeNullOrEmpty
+            $Result.Properties.Code | Should -BeNullOrEmpty
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[task.logissue type=error;]This is an error"
-            $Result | Should -Be @{Command='task.logissue';Type='error';Message='This is an error'}
+            $Result.Command | Should -Be 'task.logissue'
+            $Result.Message | Should -Be 'This is an error'
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Type | Should -Be 'error'
+            $Result.Properties.SourcePath | Should -BeNullOrEmpty
+            $Result.Properties.LineNumber | Should -BeNullOrEmpty
+            $Result.Properties.ColNumber | Should -BeNullOrEmpty
+            $Result.Properties.Code | Should -BeNullOrEmpty
 
-            $Result = Invoke-ModuleFunctionStub -String "##vso[task.logissue type=error;sourcepath=sourcePath;linenumber=1;colnumber=1;code=code;tag=tag;]This is an error"
-            $Result | Should -Be @{Command='task.logissue';Type='error';Message='This is an error';SourcePath='sourcePath';LineNumber=1;ColNumber=1;Code='code';Tag='tag'}
-
-            $Result = Invoke-ModuleFunctionStub -String "##vso[task.logissue type=error;sourcepath=sourcePath;linenumber=1;colnumber=1;code=code;tag=tag;]This is an error"
-            $Result | Should -Be @{Command='task.logissue';Type='error';Message='This is an error';SourcePath='sourcePath';LineNumber=1;ColNumber=1;Code='code';Tag='tag'}
+            $Result = Invoke-ModuleFunctionStub -String "##vso[task.logissue type=error;sourcepath=C:\Path\To\Source.ext;linenumber=127;colnumber=321;code=42]This is an error"
+            $Result.Command | Should -Be 'task.logissue'
+            $Result.Message | Should -Be 'This is an error'
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Type | Should -Be 'error'
+            $Result.Properties.SourcePath | Should -Be 'C:\Path\To\Source.ext'
+            $Result.Properties.LineNumber | Should -Be 127
+            $Result.Properties.ColNumber | Should -Be 321
+            $Result.Properties.Code | Should -Be 42
 
             $Result = Invoke-ModuleFunctionStub -String "##vso[build.addbuildtag]ThisIsATag"
-            $Result | Should -Be @{Command='build.addbuildtag';Tag='ThisIsATag'}
+            $Result.Command | Should -Be 'build.addbuildtag'
+            $Result.Message | Should -BeNullOrEmpty
+            $Result.Properties | Should -Not -BeNullOrEmpty
+            $Result.Properties.Value | Should -Be 'ThisIsATag'
         }
     }
 }

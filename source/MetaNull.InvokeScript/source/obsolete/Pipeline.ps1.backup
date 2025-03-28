@@ -14,7 +14,7 @@ function step_1 {
         [Parameter(Mandatory=$false)]
         [hashtable]$env = @{WHOAMI = $env:USERNAME},
         [Parameter(Mandatory=$false)]
-        [int]$timeoutInMinutes = 60,
+        [int]$TimeoutInSeconds = 60,
         [Parameter(Mandatory=$false)]
         [int]$retryCountOnStepFailure = 0,
         [Parameter(Mandatory=$false)]
@@ -353,9 +353,9 @@ Process {
             Path = @()
         }
 
-        # Ensure timeoutInMinutes is within the valid range, if not set to 5 minutes
-        if ($timeoutInMinutes -le 0 -or $timeoutInMinutes -ge 1440) {
-            $timeoutInMinutes = 5
+        # Ensure TimeoutInSeconds is within the valid range, if not set to 5 minutes
+        if ($TimeoutInSeconds -le 0 -or $TimeoutInSeconds -ge 1440) {
+            $TimeoutInSeconds = 5
         }
 
         # Check if the step should run (condition is true and step is enabled)
@@ -393,7 +393,7 @@ Process {
             Get-ChildItem env: | where-object { $_.name -like 'STEP_*' } | foreach-object {
                 Write-Verbose "  $($_.Name) = $($_.Value)"
             }
-            Write-Verbose "timeoutInMinutes: $timeoutInMinutes"
+            Write-Verbose "TimeoutInSeconds: $TimeoutInSeconds"
             Write-Verbose "retryCountOnStepFailure: $retryCountOnStepFailure"
             Write-Verbose "commands: `n> $($commands -join "`n> ")"	
         #>
@@ -419,11 +419,11 @@ Process {
                 try {
                     $job = Start-Job -ScriptBlock $sb_step -ArgumentList @($stepInput.args) -InitializationScript $sb_init 
                     while ($job.State -eq 'Running') {
-                        if($timer.Elapsed.TotalMinutes -gt $timeoutInMinutes) {
+                        if($timer.Elapsed.TotalMinutes -gt $TimeoutInSeconds) {
                             $retryCountOnStepFailure = 0
                             Stop-Job -Job $job  | Out-Null
                             $timer.Stop()
-                            throw "Step exceeded the timeout of $timeoutInMinutes minutes and was terminated."
+                            throw "Step exceeded the timeout of $TimeoutInSeconds minutes and was terminated."
                         }
                         Receive-Job -Job $job -Wait:$false | Out-Vso -ScriptOutput ($ScriptOutput)
                         Start-Sleep -Seconds 1
@@ -458,7 +458,7 @@ $StepParams = @{
     displayName = 'Step 1'
     enabled = $true
     env = @{WHOAMI = $env:USERNAME; CWD = (Resolve-Path .)}
-    timeoutInMinutes = 1
+    TimeoutInSeconds = 1
     retryCountOnStepFailure = 2
     commands = @(
             '$d = get-date'

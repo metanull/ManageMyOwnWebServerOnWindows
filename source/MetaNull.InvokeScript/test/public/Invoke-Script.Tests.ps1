@@ -176,4 +176,64 @@ Describe "Testing private module function Invoke-Script" -Tag "UnitTest" {
             $Result.Log.GetType().FullName | Should -Be 'System.Object[]'
         }
     }
+
+    Context "When ScriptWorkingDirectory is set" {
+
+        It "Should not throw" {
+            $Result = $null
+            {Invoke-ModuleFunctionStub -Commands 'Get-Location' -ScriptWorkingDirectory $env:TEMP -ScriptOutput ([ref]$Result) } | Should -Not -Throw
+        }
+
+        It "Should move to the specified location" {
+            $Result = $null
+            $CommandOutput = Invoke-ModuleFunctionStub -Commands 'Get-Location' -ScriptWorkingDirectory $env:TEMP -ScriptOutput ([ref]$Result)
+            $CommandOutput | Should -Be $env:TEMP
+            $Result.Result.Result | Should -Be 'Succeeded'
+        }
+
+        It "Should set the METANULL_WORKING_DIRECTORY environment variable" {
+            $Result = $null
+            $CommandOutput = Invoke-ModuleFunctionStub -Commands '$env:METANULL_WORKING_DIRECTORY' -ScriptWorkingDirectory $env:TEMP -ScriptOutput ([ref]$Result)
+            $CommandOutput | Should -Be $env:TEMP
+            $Result.Result.Result | Should -Be 'Succeeded'
+        }
+    }
+
+    Context "When ScriptWorkingDirectory is set and contains a Variable" {
+
+        It "Should not throw" {
+            $Result = $null
+            {Invoke-ModuleFunctionStub -Commands 'Get-Location' -ScriptVariable @{TESTPATH = $env:TEMP} -ScriptWorkingDirectory '$(TESTPATH)' -ScriptOutput ([ref]$Result) } | Should -Not -Throw
+        }
+
+        It "Should expand variables in the working directory" {
+            $Result = $null
+            $CommandOutput = Invoke-ModuleFunctionStub -Commands 'Get-Location' -ScriptVariable @{TESTPATH = $env:TEMP} -ScriptWorkingDirectory '$(TESTPATH)' -ScriptOutput ([ref]$Result)
+            $CommandOutput | Should -Be $env:TEMP
+            $Result.Result.Result | Should -Be 'Succeeded'
+        }
+
+        It "Should set the METANULL_WORKING_DIRECTORY environment variable" {
+            $Result = $null
+            $CommandOutput = Invoke-ModuleFunctionStub -Commands '$env:METANULL_WORKING_DIRECTORY' -ScriptVariable @{TESTPATH = $env:TEMP} -ScriptWorkingDirectory '$(TESTPATH)' -ScriptOutput ([ref]$Result)
+            $CommandOutput | Should -Be $env:TEMP
+            $Result.Result.Result | Should -Be 'Succeeded'
+        }
+    }
+
+    Context "When commands contain a Variable" {
+
+        It "Should not throw" {
+            $Result = $null
+            {Invoke-ModuleFunctionStub -Commands '"EXPANDED $(TESTPATH)"' -ScriptVariable @{TESTPATH = $env:TEMP} -ScriptOutput ([ref]$Result) } | Should -Not -Throw
+        }
+
+        It "Should expand the variables in the output" {
+            $Result = $null
+            $CommandOutput = Invoke-ModuleFunctionStub -Commands '"EXPANDED $(TESTPATH)"' -ScriptVariable @{TESTPATH = $env:TEMP} -ScriptWorkingDirectory '$(TESTPATH)' -ScriptOutput ([ref]$Result)
+            $CommandOutput | Should -Be "EXPANDED $env:TEMP"
+            $Result.Result.Result | Should -Be 'Succeeded'
+        }
+    }
+
 }

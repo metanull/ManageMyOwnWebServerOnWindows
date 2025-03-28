@@ -61,7 +61,6 @@ param(
     [string[]]$Commands,
 
     [Parameter(Mandatory = $false)]
-    [ValidateScript({Test-Path $_})]
     [string]$ScriptWorkingDirectory = '.',
 
     [Parameter(Mandatory=$false)]
@@ -103,21 +102,6 @@ Process {
         # Create an empty Result object
         '' | Invoke-VisualStudioOnlineString -ScriptOutput $ScriptOutput
 
-        <# 
-         # Create an empty Result object
-         $ReturnObject_value = $null
-         '' | Invoke-VisualStudioOnlineString -ScriptOutput ([ref]$ReturnObject_value)
-        
-         Assign the result object, to permit reporting by reference and/or returning the object
-         if($PSCmdlet.ParameterSetName -eq 'Reference') {
-            # Function will return a boolean, reporting is done through $ScriptOutput by reference"
-            $ScriptOutput.Value = $ReturnObject_value
-         } else {
-            # Function will return the $ScriptOutput object
-            $ScriptOutput = [ref]$ReturnObject_value
-         }
-        #>
-
         # Check if the step should run (step is Enabled)
         if ($Enabled.IsPresent -and -not $Enabled) {
             Write-Debug "Script '$DisplayName' was skipped because it was disabled."
@@ -133,8 +117,8 @@ Process {
         # Add received input environment variables to the process' environment
         Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_CURRENT_DIRECTORY' -Value ([System.Environment]::CurrentDirectory)
         Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_CURRENT_LOCATION' -Value ((Get-Location).Path)
-        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_SCRIPT_ROOT' -Value (Resolve-Path $PSScriptRoot)
-        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_WORKING_DIRECTORY' -Value (Resolve-Path $ScriptWorkingDirectory)
+        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_SCRIPT_ROOT' -Value ($PSScriptRoot)
+        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_WORKING_DIRECTORY' -Value ($ScriptWorkingDirectory | Expand-Variables -ScriptOutput $ScriptOutput)
         foreach ($key in $ScriptEnvironment.Keys) {
             Add-Environment -ScriptOutput $ScriptOutput -Name $key -Value $ScriptEnvironment[$key]
         }
@@ -154,7 +138,7 @@ Process {
                 '$ErrorActionPreference = "Stop"'
                 '$DebugPreference = "SilentlyContinue"'
                 '$VerbosePreference = "SilentlyContinue"'
-                "Set-Location $($ScriptWorkingDirectory)"
+                'Set-Location $env:METANULL_WORKING_DIRECTORY'
             ) -join "`n"
         )
         # - Step: run the Commands
@@ -166,6 +150,10 @@ Process {
         # Run the step, optionally retrying on failure
         do {
             Write-Debug "Running script $DisplayName as a Job"
+            
+            #"INIT: $($sb_init.ToString())" | Write-Debug
+            #"STEP: $($sb_step.ToString())" | Write-Debug
+
             $job = Start-Job -ScriptBlock $sb_step -ArgumentList @($ScriptInput.args) -InitializationScript $sb_init 
             try {
                 # Wait for job to complete
@@ -174,6 +162,7 @@ Process {
                     # Collect and process job's (partial) output
                     try {
                         $Partial = Receive-Job -Job $job -Wait:$false
+                        # $Partial |% {"Partial: $($_)" | Write-Debug}
                         $Partial | Invoke-VisualStudioOnlineString -ScriptOutput $ScriptOutput | Write-Output
                     } catch {
                         Add-Error -ScriptOutput $ScriptOutput -ErrorRecord $_
@@ -188,6 +177,7 @@ Process {
                 if($job.HasMoreData) {
                     try {
                         $Partial = Receive-Job -Job $job -Wait
+                        # $Partial |% {"Partial: $($_)" | Write-Debug}
                         $Partial | Invoke-VisualStudioOnlineString -ScriptOutput $ScriptOutput | Write-Output
                     } catch {
                         Add-Error -ScriptOutput $ScriptOutput -ErrorRecord $_
@@ -234,17 +224,6 @@ Process {
     } finally {
         $ErrorActionPreference = $BackupErrorActionPreference
     }
-
-    <#
-    # Return the Result Object, or a boolean
-    if($PSCmdlet.ParameterSetName -eq 'Reference') {
-        # Return a boolean, the reporting was done through the [ref]$ScriptOutput parameter
-        return (Test-Result -ScriptOutput $ScriptOutput)
-    } else {
-        # Return the result object
-        return $ReturnObject_value
-    }
-    #>
 }
 Begin {
     <#
@@ -378,8 +357,8 @@ Begin {
         Process {
             $ExpandedString = $_
             # Expand the Variables found in the command
-            $ScriptOutput.Value.Variable | Foreach-Object {
-                $ExpandedString = $ExpandedString -replace "\$\($($_.Name)\)","$($_.Value)"
+            $ScriptOutput.Value.Variable.GetEnumerator() | Foreach-Object {
+                $ExpandedString = $ExpandedString -replace [Regex]::Escape("`$($($_.Name))"),"$($_.Value)"
             }
             # [System.Environment]::ExpandEnvironmentVariables($ExpandedString) | Write-Output
             $ExpandedString | Write-Output

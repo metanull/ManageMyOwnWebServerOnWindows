@@ -42,10 +42,10 @@
         CompanyName       = 'Unknown'
 
         # Copyright statement for this module
-        Copyright         = '� 2025. All rights reserved'
+        Copyright         = '© 2025. All rights reserved'
 
         # Description of the functionality provided by this module
-        Description       = 'Read and Write VSO comands for/from Azure DevOps' pipelines'
+        Description       = 'Read and Write VSO comands for/from Azure DevOps'' pipelines'
 
         # Minimum version of the Windows PowerShell engine required by this module
         PowerShellVersion = '5.1'

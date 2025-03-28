@@ -50,7 +50,6 @@ Process {
         $StepScriptBlock = [scriptblock]::Create($Step.Commands -join "`n")
         $StepScriptBlock.ToString() | Set-Content -Path $StepFilePath -Force
         $StepFilePath | Write-Output
-
     } finally {
         $ErrorActionPreference = $ErrorActionPreferenceBackup
     }

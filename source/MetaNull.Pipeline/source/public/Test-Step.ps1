@@ -1,9 +1,9 @@
 <#
     .SYNOPSIS
-    Remove a Step from a Pipeline
+    Test existance of a Step from a Pipeline
 #>
 [CmdletBinding()]
-[OutputType([int])]
+[OutputType([bool])]
 param(
     [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
     [Alias('PipelineId')]
@@ -29,17 +29,7 @@ Process {
     $ErrorActionPreferenceBackup = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $Item = Get-Item "MetaNull:\Pipelines\$Id\Stages\$($Stage)\Jobs\$($Job)\Steps\$($Step)"
-        $Properties = $Item | Get-ItemProperty
-        [pscustomobject]@{
-            Index = $Properties.Index
-            Name = $Properties.Name
-            Commands = $Properties.Commands
-            #Enabled = $Properties.Enabled
-            #ContinueOnError = $Properties.ContinueOnError
-            #TimeoutInSeconds = $Properties.TimeoutInSeconds
-            #RetryCountOnStepFailure = $Properties.RetryCountOnStepFailure
-        }
+        return Test-Path "MetaNull:\Pipelines\$Id\Stages\$($Stage)\Jobs\$($Job)\Steps\$($Step)"
     } finally {
         $ErrorActionPreference = $ErrorActionPreferenceBackup
     }

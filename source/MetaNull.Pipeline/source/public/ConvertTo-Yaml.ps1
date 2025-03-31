@@ -1,15 +1,14 @@
 <#
     .SYNOPSIS
-    Export a Step from a Pipeline to a Powershell script file
+        Converts a pipeline object into a YAML text file
 #>
 [CmdletBinding()]
 [OutputType([string[]])]
 param(
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, Position = 0)]
-    [Alias('PipelineId')]
-    [ValidateScript({Test-Pipeline $_})]
-    [guid]
-    $Id
+    [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
+    [ValidateScript({$_.Id -is [guid]})]
+    [pscustomobject]
+    $Pipeline
 )
 Begin {
     Function Get-IndentedString {

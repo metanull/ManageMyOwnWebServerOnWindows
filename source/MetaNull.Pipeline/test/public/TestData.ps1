@@ -20,80 +20,60 @@ $TestData = @{
 
             Stages = @(
                 @{
-                    Index = 1
+                    Stage = 1
                     Name = 'STAGE:1.1'
 
                     Jobs = @(
                         @{
-                            Index = 1
+                            Job = 1
                             Name = 'JOB:1.1.1'
 
                             Steps = @(
                                 @{
-                                    Index = 1
+                                    Step = 1
                                     Name = 'STEP:1.1.1.1'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "One"'
                                     )
-                                    Output = @(
-                                        'Hello'
-                                        'One'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:1.1.1.2'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Two"'
                                     )
-                                    Output = @(
-                                        'Hello'
-                                        'Two'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:1.1.1.3'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Three"'
                                     )
-                                    Output = @(
-                                        'Hello'
-                                        'Three'
-                                    )
                                 }
                             )
                         }
                         @{
-                            Index = 2
+                            Job = 2
                             Name = 'JOB:1.1.2'
 
                             Steps = @(
                                 @{
-                                    Index = 1
+                                    Step = 1
                                     Name = 'STEP:1.1.2.1'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Four"'
                                     )
-                                    Output = @(
-                                        'Hello'
-                                        'Four'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:1.1.2.2'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Five"'
-                                    )
-                                    Output = @(
-                                        'Hello'
-                                        'Five'
                                     )
                                 }
                             )
@@ -101,49 +81,37 @@ $TestData = @{
                     )
                 }
                 @{
-                    Index = 2
+                    Stage = 2
                     Name = 'STAGE:1.2'
 
                     Jobs = @(
                         @{
-                            Index = 1
+                            Job = 1
                             Name = 'JOB:1.2.1'
 
                             Steps = @(
                                 @{
-                                    Index = 1
+                                    Step = 1
                                     Name = 'STEP:1.2.1.1'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Six"'
                                     )
-                                    Output = @(
-                                        'Hello'
-                                        'Six'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:1.2.1.2'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Seven"'
                                     )
-                                    Output = @(
-                                        'Hello'
-                                        'Seven'
-                                    )
                                 }
                                 @{
-                                    Index = 3
+                                    Step = 3
                                     Name = 'STEP:1.2.1.3'
                                     Commands = @(
                                         'Write-Output "Hello"'
                                         'Write-Output "Eight"'
-                                    )
-                                    Output = @(
-                                        'Hello'
-                                        'Eight'
                                     )
                                 }
                             )
@@ -158,80 +126,60 @@ $TestData = @{
 
             Stages = @(
                 @{
-                    Index = 1
+                    Stage = 1
                     Name = 'STAGE:2.1'
 
                     Jobs = @(
                         @{
-                            Index = 1
+                            Job = 1
                             Name = 'JOB:2.1.1'
 
                             Steps = @(
                                 @{
-                                    Index = 1
+                                    Step = 1
                                     Name = 'STEP:2.1.1.1'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "One"'
                                     )
-                                    Output = @(
-                                        'World'
-                                        'One'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:2.1.1.2'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Two"'
                                     )
-                                    Output = @(
-                                        'World'
-                                        'Two'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:2.1.1.3'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Three"'
                                     )
-                                    Output = @(
-                                        'World'
-                                        'Three'
-                                    )
                                 }
                             )
                         }
                         @{
-                            Index = 2
+                            Job = 2
                             Name = 'JOB:2.1.2'
 
                             Steps = @(
                                 @{
-                                    Index = 1
+                                    Step = 1
                                     Name = 'STEP:2.1.2.1'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Four"'
                                     )
-                                    Output = @(
-                                        'World'
-                                        'Four'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:2.1.2.2'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Five"'
-                                    )
-                                    Output = @(
-                                        'World'
-                                        'Five'
                                     )
                                 }
                             )
@@ -239,49 +187,37 @@ $TestData = @{
                     )
                 }
                 @{
-                    Index = 2
+                    Stage = 2
                     Name = 'STAGE:2.2'
 
                     Jobs = @(
                         @{
-                            Index = 1
+                            Job = 1
                             Name = 'JOB:2.2.1'
 
                             Steps = @(
                                 @{
-                                    Index = 1
+                                    Step = 1
                                     Name = 'STEP:2.2.1.1'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Six"'
                                     )
-                                    Output = @(
-                                        'World'
-                                        'Six'
-                                    )
                                 }
                                 @{
-                                    Index = 2
+                                    Step = 2
                                     Name = 'STEP:2.2.1.2'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Seven"'
                                     )
-                                    Output = @(
-                                        'World'
-                                        'Seven'
-                                    )
                                 }
                                 @{
-                                    Index = 3
+                                    Step = 3
                                     Name = 'STEP:2.2.1.3'
                                     Commands = @(
                                         'Write-Output "World"'
                                         'Write-Output "Eight"'
-                                    )
-                                    Output = @(
-                                        'World'
-                                        'Eight'
                                     )
                                 }
                             )
@@ -388,8 +324,8 @@ Function ValidateTestData {
             $stageIndex = -1
             $_.Stages | Foreach-Object {
                 $stageIndex += 1
-                if(-not ($_.Index)) {
-                    throw "TestData[$pipelineIndex].Stages[$stageIndex].Index was empty"
+                if(-not ($_.Stage)) {
+                    throw "TestData[$pipelineIndex].Stages[$stageIndex].Stage was empty"
                 }
                 if(-not ($_.Name)) {
                     throw "TestData[$pipelineIndex].Stages[$stageIndex].Name was empty"
@@ -400,8 +336,8 @@ Function ValidateTestData {
                 $jobIndex = -1
                 $_.Jobs | Foreach-Object {
                     $jobIndex += 1
-                    if(-not ($_.Index)) {
-                        throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Index was empty"
+                    if(-not ($_.Job)) {
+                        throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Job was empty"
                     }
                     if(-not ($_.Name)) {
                         throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Name was empty"
@@ -412,8 +348,8 @@ Function ValidateTestData {
                     $stepIndex = -1
                     $_.Steps | Foreach-Object {
                         $stepIndex += 1
-                        if(-not ($_.Index)) {
-                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Index was empty"
+                        if(-not ($_.Step)) {
+                            throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Step was empty"
                         }
                         if(-not ($_.Name)) {
                             throw "TestData[$pipelineIndex].Stages[$stageIndex].Jobs[$jobIndex].Steps[$stepIndex].Name was empty"

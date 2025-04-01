@@ -1,4 +1,4 @@
-Describe "Get-Pipeline" -Tag "Functional","BeforeBuild" {
+Describe "Import-Pipeline" -Tag "UnitTest","BeforeBuild" {
 
     Context "When the function is called" {
         BeforeAll {

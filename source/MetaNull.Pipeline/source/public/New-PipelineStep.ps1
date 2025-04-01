@@ -6,10 +6,6 @@
 [OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory = $false)]
-    [ValidateRange(1, 1000)]
-    [int]$Step = 1,
-    
-    [Parameter(Mandatory = $false)]
     [string]$Name = 'Step',
     
     [Parameter(Mandatory = $false)]
@@ -29,7 +25,6 @@ param(
 )
 Process {
     return [pscustomobject]@{
-        Step = $Step
         Name = $Name
         Commands = $Commands
 

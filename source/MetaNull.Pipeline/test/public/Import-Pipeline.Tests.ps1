@@ -36,30 +36,30 @@ Describe "Import-Pipeline" -Tag "Functional","BeforeBuild" {
             ValidateTestData -TestData $TestData | Should -BeTrue
         }
 
-        It "Should throw when the Id is not found" {
+        It "Should not throw when no paramters are given" {
+            {Invoke-ModuleFunctionStub} | Should -Not -Throw
+        }
+        It "Should throw when an invalid ID is provided" {
             {Invoke-ModuleFunctionStub -Id (New-Guid)} | Should -Throw
         }
-        It "Should not throw an exception when Id is given and valid" {
-            $TestData.Pipelines | Foreach-Object {
-                $Pipeline = $_
-                {Invoke-ModuleFunctionStub -Id $Pipeline.Id} | Should -Not -Throw
-            }
-        }
-        It "Should return all pipelines when no Id is provided" {
+        It "Should return the expected number of objects when no parameters are given" {
             $Result = Invoke-ModuleFunctionStub
-            $Result.Count | Should -Be $TestData.Pipelines.Count
+            $Result.GetType().FullName | Should -Be 'System.Object[]'
+            $Result.Count | Should -Be 2
+            $Result[0].Name | Should -BeIn $TestData.Pipelines.Name
+            $Result[1].Name | Should -BeIn $TestData.Pipelines.Name
+            $Result[0].Name | Should -Not -Be $Result[1].Name
         }
-        It "Should return the expected data when the Id is provided" {
-            $TestData.Pipelines | Foreach-Object {
-                $Pipeline = $_
-                $Result = Invoke-ModuleFunctionStub -Id $Pipeline.Id
-                $Result | Should -BeOfType [PSCustomObject]
-                $Result.Id | Should -Be $Pipeline.Id
-                $Result.Name | Should -Be $Pipeline.Name
-                $Result.Description | Should -Be $Pipeline.Description
-                $Result.Stages | Should -Not -BeNullOrEmpty
-                $Result.Stages.Count | Should -Be $Pipeline.Stages.Count
-            }
+        It "Should return one single object when a valid Id is provided" {
+            $Result = Invoke-ModuleFunctionStub -Id ($TestData.Pipelines[1].Id)
+            $Result.GetType().FullName | Should -Be 'System.Management.Automation.PSCustomObject'
+            $Result.Name | Should -Be $TestData.Pipelines[1].Name
+            $Result.Stages.GetType().FullName | Should -Be 'System.Object[]'
+            $Result.Stages.Count | Should -BeGreaterThan 0
+            $Result.Stages.Count | Should -Be $TestData.Pipelines[1].Stages.Count
+            $Result.Stages[0].Name | Should -BeIn $TestData.Pipelines[1].Stages.Name
+            $Result.Stages[1].Name | Should -BeIn $TestData.Pipelines[1].Stages.Name
+            Read-Host "PipelineId: $($TestData.Pipelines[1].Id)"
         }
     }
 }

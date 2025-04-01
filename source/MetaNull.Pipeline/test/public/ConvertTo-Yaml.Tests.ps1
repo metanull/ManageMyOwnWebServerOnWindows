@@ -22,23 +22,16 @@ Describe "ConvertTo-Yaml" -Tag "UnitTest","BeforeBuild" {
                 Name = 'PIPELINE:1'
                 Stages = @(
                     @{
-                        Index = 1
                         Name = 'STAGE:1.1'
                         Jobs = @(
                             @{
-                                Index = 1
                                 Name = 'JOB:1.1.1'
                                 Steps = @(
                                     @{
-                                        Index = 1
                                         Name = 'STEP:1.1.1.1'
                                         Commands = @(
                                             'Write-Output "Hello"'
                                             'Write-Output "One"'
-                                        )
-                                        Output = @(
-                                            'Hello'
-                                            'One'
                                         )
                                     }
                                 )

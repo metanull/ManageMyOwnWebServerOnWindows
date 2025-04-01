@@ -2,26 +2,25 @@
     .SYNOPSIS
     Remove a Pipeline from the Registry
 #>
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
 [OutputType([void])]
 param(
     [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
-    [Alias('PipelineId')]
-    [SupportsWildcards()]
     [ArgumentCompleter( { Resolve-PipelineId @args } )]
     [Alias('PipelineId')]
     [guid]
-    $Id
+    $Id,
+
+    [Parameter(Mandatory = $false)]
+    [switch]
+    $Force = $false
 )
 Process {
     $ErrorActionPreferenceBackup = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $IdFilter = '*'
-        if ($Id -ne [guid]::Empty) {
-            $IdFilter = $Id.ToString()
-        }
-        Get-Item "MetaNull:\Pipelines\$IdFilter" | Remove-Item -Recurse | Out-Null
+        $Force = $Force.IsPresent -and $Force # -or $PSCmdlet.ShouldContinue("Remove Pipeline $Id", "Are you sure?")
+        Get-Item "MetaNull:\Pipelines\$Id" | Remove-Item -Recurse -Force:$Force | Out-Null
     } finally {
         $ErrorActionPreference = $ErrorActionPreferenceBackup
     }

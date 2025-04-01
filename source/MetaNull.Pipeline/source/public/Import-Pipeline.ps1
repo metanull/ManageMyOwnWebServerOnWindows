@@ -2,37 +2,35 @@
     .SYNOPSIS
         Get Pipeline(s) from the registry
 #>
-[CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+[CmdletBinding(DefaultParameterSetName = 'Without')]
 [OutputType([int])]
 param(
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName, ParameterSetName = 'Pipeline')]
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'Stage')]
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'Job')]
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'Step')]
-    [SupportsWildcards()]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithPipeline')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithStage')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithJob')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithStep')]
     [ArgumentCompleter( { Resolve-PipelineId @args } )]
     [Alias('PipelineId')]
     [guid]
     $Id,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName, ParameterSetName = 'Stage')]
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'Job')]
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'Step')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithStage')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithJob')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithStep')]
     [Alias('StageIndex')]
     [int]
     $Stage,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName, ParameterSetName = 'Job')]
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'Step')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithJob')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithStep')]
     [Alias('JobIndex')]
     [int]
     $Job,
 
-    [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName, ParameterSetName = 'Step')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = 'WithStep')]
     [Alias('StepIndex')]
-    [AllowNull()]
     [int]
-    $Step = $null
+    $Step
 )
 Begin {
     Function GetProperties {
@@ -49,52 +47,56 @@ Process {
     $ErrorActionPreferenceBackup = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $IdFilter = '*'
-        if ($Id -ne [guid]::Empty) {
-            $IdFilter = $Id.ToString()
+        if ($Id -and $Id -ne [guid]::Empty) {
+            $PipelineItems = Get-Item "MetaNull:\Pipelines\$Id"
+        } else {
+            $PipelineItems = Get-ChildItem "MetaNull:\Pipelines" 
         }
-
-        Get-ChildItem "MetaNull:\Pipelines\$IdFilter" | Foreach-Object {
-            $Pipeline = $_ | GetProperties
-            $Pipeline | Add-Member -MemberType NoteProperty -Name Id -Value [Guid]::new($_.Name)
-            $Pipeline | Add-Member -MemberType NoteProperty -Name Stages -Value @()
+        $PipelineItems | Foreach-Object {
+            $PipelineProperties = $_ | GetProperties
+            # $Pipeline | Add-Member -MemberType NoteProperty -Name Id -Value ([guid]::new(($_.Name | Split-Path -Leaf)))
+            $PipelineProperties | Add-Member -MemberType NoteProperty -Name Stages -Value @()
             
-            Get-ChildItem "MetaNull:\Pipelines\$($Pipeline.Id)\Stages" | Where-Object {
-                $null -eq $Stage -or $_.Name -eq "$Stage"
-            } | ForEach-Object {
-                $Stage = $_ | GetProperties
-                $Stage | Add-Member -MemberType NoteProperty -Name Id -Value $Pipeline.Id
-                $Stage | Add-Member -MemberType NoteProperty -Name Stage -Value ([int]::Parse($_.Name))
-                $Stage | Add-Member -MemberType NoteProperty -Name Jobs -Value @()
 
-                Get-ChildItem "MetaNull:\Pipelines\$($Pipeline.Id)\Stages\$($Stage.Stage)\Jobs" | Where-Object {
-                    $null -eq $Job -or $_.Name -eq "$Job"
+            if ($Stage) {
+                $StageItems = Get-Item "MetaNull:\Pipelines\$($PipelineProperties.Id)\Stages\$Stage"
+            } else {
+                $StageItems = Get-ChildItem "MetaNull:\Pipelines\$($PipelineProperties.Id)\Stages" 
+            }
+
+            $StageItems | ForEach-Object {
+                $StageProperties = $_ | GetProperties
+                $StageProperties | Add-Member -MemberType NoteProperty -Name Id -Value $PipelineProperties.Id
+                $StageProperties | Add-Member -MemberType NoteProperty -Name Stage -Value ([int]::Parse(($_.Name | Split-Path -Leaf)))
+                $StageProperties | Add-Member -MemberType NoteProperty -Name Jobs -Value @()
+
+                Get-ChildItem "MetaNull:\Pipelines\$($StageProperties.Id)\Stages\$($StageProperties.Stage)\Jobs" | Where-Object {
+                    (-not $Job) -or $_.Name -eq "$Job"
                 } | ForEach-Object {
-                    $Job = $_ | GetProperties
-                    $Job | Add-Member -MemberType NoteProperty -Name Id -Value $Stage.Id
-                    $Job | Add-Member -MemberType NoteProperty -Name Stage -Value $Stage.Stage
-                    $Job | Add-Member -MemberType NoteProperty -Name Job -Value ([int]::Parse($_.Name))
-                    $Job | Add-Member -MemberType NoteProperty -Name Jobs -Value @()
+                    $JobProperties = $_ | GetProperties
+                    $JobProperties | Add-Member -MemberType NoteProperty -Name Id -Value $StageProperties.Id
+                    $JobProperties | Add-Member -MemberType NoteProperty -Name Stage -Value $StageProperties.Stage
+                    $JobProperties | Add-Member -MemberType NoteProperty -Name Job -Value ([int]::Parse(($_.Name | Split-Path -Leaf)))
+                    $JobProperties | Add-Member -MemberType NoteProperty -Name Steps -Value @()
                     
-                    Get-ChildItem "MetaNull:\Pipelines\$($Pipeline.Id)\Stages\$($Stage.Stage)\Jobs\$($Job.Job)\Steps" | Where-Object {
-                        $null -eq $Step -or $_.Name -eq "$Step"
+                    Get-ChildItem "MetaNull:\Pipelines\$($JobProperties.Id)\Stages\$($JobProperties.Stage)\Jobs\$($JobProperties.Job)\Steps" | Where-Object {
+                        (-not $Step) -or $_.Name -eq "$Step"
                     } | ForEach-Object {
-                        $Step = $_ | GetProperties
-                        $Step | Add-Member -MemberType NoteProperty -Name Id -Value $Job.Id
-                        $Step | Add-Member -MemberType NoteProperty -Name Stage -Value $Job.Stage
-                        $Step | Add-Member -MemberType NoteProperty -Name Job -Value $Job.Job
-                        $Step | Add-Member -MemberType NoteProperty -Name Step -Value ([int]::Parse($_.Name))
+                        $StepProperties = $_ | GetProperties
+                        $StepProperties | Add-Member -MemberType NoteProperty -Name Id -Value $JobProperties.Id
+                        $StepProperties | Add-Member -MemberType NoteProperty -Name Stage -Value $JobProperties.Stage
+                        $StepProperties | Add-Member -MemberType NoteProperty -Name Job -Value $JobProperties.Job
+                        $StepProperties | Add-Member -MemberType NoteProperty -Name Step -Value ([int]::Parse(($_.Name | Split-Path -Leaf)))
                         
-                        $Job.Steps += $Step
+                        $JobProperties.Steps += $StepProperties
                     }
 
-                    $Stage.Jobs += $Job
+                    $StageProperties.Jobs += $JobProperties
                 } 
 
-                $Pipeline.Stages += $Stage
+                $PipelineProperties.Stages += $StageProperties
             }
-            $Pipeline | Add-Member -MemberType NoteProperty -Name Stages -Value @()
-            $Pipeline | Write-Output
+            $PipelineProperties | Write-Output
         }
     }
     finally {

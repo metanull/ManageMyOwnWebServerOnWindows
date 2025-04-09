@@ -5,6 +5,8 @@
 
 <#
     !!!!!!  Date = (Get-Date|ConvertTo-Json)
-    Increment queue's MessageCount
+    Increment queue's AvailableMessageCount
     Update Queues's LastMessage
+
+    + Increment SendCount
 #>

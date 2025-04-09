@@ -18,8 +18,7 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockRead)
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockWrite)
+    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.Lock)
     try {
         # Find the message queue
         if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
@@ -29,8 +28,7 @@ Process {
         # Remove the messages
         Remove-Item "MetaNull:\MessageQueue\$Id\Messages\*" -Recurse
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockWrite)
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockRead)
+        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

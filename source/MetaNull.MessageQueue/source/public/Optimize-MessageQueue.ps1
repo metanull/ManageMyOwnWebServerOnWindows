@@ -16,14 +16,14 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockRead)
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockWrite)
+    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.Lock)
     try {
         # Find the message queue
         if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
             throw  "MessageQueue $Id not found"
         }
 
+        # Get the properties of the message queue
         $CurrentDate = (Get-Date)
         $MaximumSize = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").MaximumSize
         $MessageCount = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").MessageCount
@@ -32,7 +32,7 @@ Process {
         if([string]::IsNullOrEmpty($LastMessage)) {
             $LastMessage = (Get-Date)
         } else {
-            $LastMessage = [datetime]($LastMessage|ConvertFrom-Json)
+            $LastMessage = ($LastMessage|ConvertFrom-Json)
         }
         
         # Remove excess messages
@@ -53,15 +53,23 @@ Process {
                 $_ | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS* | Write-Output
             } | Sort-Object -Property Index)
             $MessageList | Where-Object {
-                $MessageDate = [datetime]($_.Date|ConvertFrom-Json)
+                $MessageDate = ($_.Date|ConvertFrom-Json)
                 $MessageDate -lt ($CurrentDate.AddDays(-$MessageRetentionPeriod))
             } | ForEach-Object {
                 Remove-Item "MetaNull:\MessageQueue\$Id\Messages\$($_.Index)"
             }
         }
+        # Remove leftover messages from the MessageStore
+        $MessageQueueEntries = Get-ChildItem "MetaNull:\MessageQueue\*\Messages\" -ErrorAction SilentlyContinue | Foreach-Object {
+            $_ | Get-ItemProperty | Select-Object -ExpandProperty Id | Write-Output
+        }
+        Get-ChildItem "MetaNull:\MessageStore" | Where-Object {
+            $_.PSChildName -notin $MessageQueueEntries
+        } | ForEach-Object {
+            Remove-Item "MetaNull:\MessageStore\$($_.PSChildName)" -Recurse
+        }
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockWrite)
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockRead)
+        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

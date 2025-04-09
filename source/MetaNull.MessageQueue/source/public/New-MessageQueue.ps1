@@ -22,8 +22,7 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockRead)
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockWrite)
+    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.Lock)
     try {
         # Check if the queue already exists
         $Existing = Get-ChildItem "MetaNull:\MessageQueue" | Where-Object {
@@ -41,14 +40,12 @@ Process {
         New-ItemProperty -Path "MetaNull:\MessageQueue\$Id" -Name 'Name' -Value $Name -Force | Out-Null
         New-ItemProperty -Path "MetaNull:\MessageQueue\$Id" -Name 'MaximumSize' -Value $MaximumSize -Force | Out-Null
         New-ItemProperty -Path "MetaNull:\MessageQueue\$Id" -Name 'MessageRetentionPeriod' -Value $MessageRetentionPeriod -Force | Out-Null
-        New-ItemProperty -Path "MetaNull:\MessageQueue\$Id" -Name 'MessageRetentionPeriod' -Value $MessageRetentionPeriod -Force | Out-Null
         New-ItemProperty -Path "MetaNull:\MessageQueue\$Id" -Name 'MessageCount' -Value 0 -Force | Out-Null
         New-ItemProperty -Path "MetaNull:\MessageQueue\$Id" -Name 'LastMessage' -Value '' -Force | Out-Null
         New-Item -Path "MetaNull:\MessageQueue\$Id\Messages" | Out-Null
         return $Id
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockWrite)
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockRead)
+        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.Lock)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

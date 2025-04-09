@@ -19,8 +19,7 @@ if(-not (Test-Path $PSDriveRoot)) {
 New-Variable MetaNull -Scope script -Value @{
     MessageQueue = @{
         PSDriveRoot = $PSDriveRoot
-        LockRead = New-Object Object
-        LockWrite = New-Object Object
+        Lock = New-Object Object
         Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
     }
 }

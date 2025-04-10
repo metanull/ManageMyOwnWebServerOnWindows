@@ -18,7 +18,7 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.Lock)
+    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageQueue)
     try {
         # Find the message queue
         if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
@@ -56,7 +56,7 @@ Process {
             LastMessageDate = $LastMessage | Select-Object -ExpandProperty Date
         } | Write-Output
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.Lock)
+        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageQueue)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

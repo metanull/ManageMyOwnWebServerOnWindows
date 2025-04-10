@@ -16,7 +16,7 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.Lock)
+    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageQueue)
     try {
         # Find the message queue
         if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
@@ -26,14 +26,21 @@ Process {
         # Get the properties of the message queue
         $CurrentDate = (Get-Date)
         $MaximumSize = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").MaximumSize
-        $MessageCount = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").MessageCount
+        #$MessageCount = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").MessageCount
         $MessageRetentionPeriod = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").MessageRetentionPeriod
-        $LastMessage = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").LastMessage
-        if([string]::IsNullOrEmpty($LastMessage)) {
-            $LastMessage = (Get-Date)
-        } else {
-            $LastMessage = ($LastMessage|ConvertFrom-Json)
-        }
+        #$LastMessage = (Get-ItemProperty "MetaNull:\MessageQueue\$Id").LastMessage
+        #if([string]::IsNullOrEmpty($LastMessage)) {
+        #    $LastMessage = (Get-Date)
+        #} else {
+        #    $LastMessage = ($LastMessage|ConvertFrom-Json)
+        #}
+        
+
+        # REDO: Get-Item to variable, then get-itemproperty, then measure-object on the variable
+        # REDO: Get-Item to variable, then get-itemproperty, then measure-object on the variable
+        # REDO: Get-Item to variable, then get-itemproperty, then measure-object on the variable
+        # REDO: Get-Item to variable, then get-itemproperty, then measure-object on the variable
+        # REDO: Get-Item to variable, then get-itemproperty, then measure-object on the variable
         
         # Remove excess messages
         if($MessageCount -gt $MaximumSize) {
@@ -69,7 +76,7 @@ Process {
             Remove-Item "MetaNull:\MessageStore\$($_.PSChildName)" -Recurse
         }
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.Lock)
+        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageQueue)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

@@ -18,7 +18,7 @@ param(
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.Lock)
+    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageQueue)
     try {
         # Find the message queue
         if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
@@ -29,10 +29,10 @@ Process {
         $MessageQueue = Get-Item "MetaNull:\MessageQueue\$Id"
         $MessageQueueProperties = $MessageQueue | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS*
 
-        $MessageQueueProperties | Add-Member -MemberType NoteProperty -Name 'Id' -Value ([guid]::new($MessageQueue.PSChildName))
+        $MessageQueueProperties | Add-Member -MemberType NoteProperty -Name 'MessageQueueId' -Value ([guid]::new($MessageQueue.PSChildName))
         $MessageQueueProperties | Write-Output
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.Lock)
+        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageQueue)
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

@@ -30,8 +30,8 @@ Process {
                 @{Name = 'MessageId'; Expression = { [guid]($Message.MessageId) }}
                 @{Name = 'Index'; Expression = { [int]$Message.Index }}
                 @{Name = 'Label'; Expression = { $_.Label }}
-                @{Name = 'Date'; Expression = { [datetime]($_.Date | ConvertFrom-Json | Select-Object -ExpandProperty Value) }}
-                @{Name = 'Message'; Expression = { $_.MetaData | ConvertFrom-Json }}
+                @{Name = 'Date'; Expression = { [datetime]($_.Date | ConvertFrom-Json) }}
+                @{Name = 'MetaData'; Expression = { $_.MetaData | ConvertFrom-Json }}
             ) | Write-Output
         }
     } finally {

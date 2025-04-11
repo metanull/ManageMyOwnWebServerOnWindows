@@ -32,7 +32,7 @@ Process {
             if($Properties.MessageRetentionPeriod -gt 0) {
                 $DateConstraint = $CurrentDate.AddDays(-$Properties.MessageRetentionPeriod)
                 $Children = $_ | Get-ChildItem | Where-Object {
-                    $DateConstraint -gt ([datetime]($_ | Get-ItemProperty | Select-Object -ExpandProperty Date | ConvertFrom-Json | Select-Object -ExpandProperty Value))
+                    $DateConstraint -gt ([datetime]($_ | Get-ItemProperty | Select-Object -ExpandProperty Date | ConvertFrom-Json))
                 }
                 if($Children.Count -gt 0) {
                     $ExcessMessages = $Children.Count

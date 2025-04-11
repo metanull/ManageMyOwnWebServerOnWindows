@@ -26,7 +26,7 @@ param(
         return Test-Path -Path $_ -PathType Container
     })]
     [string] $Path,
-    
+
     [Parameter(Mandatory = $false)]
     [string] $RepositoryName = 'PSGallery',
 

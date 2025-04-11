@@ -11,7 +11,7 @@ Describe "Testing private module function Get-DummyPrivate" -Tag "UnitTest" {
     
             # Create a Stub for the module function to test
             Function Invoke-ModuleFunctionStub {
-                . $FunctionPath @args | write-Output
+                . $FunctionPath @args | Write-Output
             }
         }
 

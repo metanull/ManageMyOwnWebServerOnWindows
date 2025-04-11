@@ -9,30 +9,21 @@
     Get-MessageQueue -Id '12345678-1234-1234-1234-123456789012'
 #>
 [CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
-[OutputType([pscustomobject])]
+[OutputType([Object],[Object[]])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ArgumentCompleter( {Resolve-MessageQueueId @args} )]
-    [guid]$Id
+    [guid]$MessageQueueId
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageQueue)
     try {
-        # Find the message queue
-        if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
-            throw  "MessageQueue $Id not found"
-        }
-
-        # Get the mesage queue and its properties
-        $MessageQueue = Get-Item "MetaNull:\MessageQueue\$Id"
-        $MessageQueueProperties = $MessageQueue | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS*
-
-        $MessageQueueProperties | Add-Member -MemberType NoteProperty -Name 'MessageQueueId' -Value ([guid]::new($MessageQueue.PSChildName))
-        $MessageQueueProperties | Write-Output
+        $MetaNull.MessageQueue.MutexMessageQueue.WaitOne() | Out-Null
+        # Get the message queue and its properties
+        Get-ItemProperty -Path "MetaNull:\MessageQueue\$MessageQueueId" | Select-Object -ExcludeProperty PS*
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageQueue)
+        $MetaNull.MessageQueue.MutexMessageQueue.ReleaseMutex()
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

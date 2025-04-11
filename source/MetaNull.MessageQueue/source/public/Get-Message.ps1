@@ -1,70 +1,41 @@
 <#
-    !!!!!!  Date = (Get-Date|ConvertTo-Json)
-
-    + Increment ReceiveCount
-
-
-    DON'T Decrement queue's AvailableMessageCount
-    DON'T Update Queues's LastMessage (if the last message was removed)
-
-    unless if parameter -Pop is set to $true
-    + Decrement MessageCount
-    + Decrement AvailableMessageCount
-    + Update Queues's LastMessage (if the last message was removed)
-#>
-
-<#
 .SYNOPSIS
-    Get message(s), without removing them from the message queue.
+    Get the messages in a message queue.
 .DESCRIPTION
-    Get message(s), without removing them from the message queue.
-.PARAMETER Id
-    The ID of the message queue to be cleared. This is a mandatory parameter and must be provided.
+    Get the messages in a message queue.
+.PARAMETER MessageQueueId
+    The ID of the message queue to be retrieved.
 .EXAMPLE
-        Get-MessageQueue -Id '12345678-1234-1234-1234-123456789012'
+    Get-MessageQueue -Id '12345678-1234-1234-1234-123456789012'
 #>
-[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Medium')]
-[OutputType([void])]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
+[OutputType([Object],[Object[]])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ArgumentCompleter( {Resolve-MessageQueueId @args} )]
-    [guid]$Id
+    [guid]$MessageQueueId
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        # Find the message queue
-        if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
-            throw  "MessageQueue $Id not found"
-        }
+        $MetaNull.MessageQueue.MutexMessageQueue.WaitOne() | Out-Null
 
-        [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageQueue)
-        try {
-            # Get the message(s) from the MessageQueue
-            $Messages = Get-Item "MetaNull:\MessageQueue\$Id\Messages" | Get-ChildItem | Foreach-Object {
-                $Message = $_ | Get-ItemProperty
-                $Message | Add-Member -MemberType NoteProperty -Name MessageQueueId -Value ([guid]$Id)
-                $Message | Add-Member -MemberType NoteProperty -Name Index -Value ([int]($_.PSChildName))
-                $Message | Write-Output
-            } | Sort-Object -Property Index | ForEach-Object {
-                $Message = $_
-                # Get the message details from the MessageStore
-                [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageStore)
-                try {
-                    $MessageDetails = Get-Item "MetaNull:\MessageStore\$($Message.Id)" | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS*
-                } finally {
-                    [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageStore)
-                }
-                $MessageDetails | Add-Member -MemberType NoteProperty -Name MessageQueueId -Value $Message.MessageQueueId
-                $MessageDetails | Add-Member -MemberType NoteProperty -Name Id -Value $Message.Id
-                $MessageDetails | Add-Member -MemberType NoteProperty -Name Index -Value $Message.Index
-                $MessageDetails | Write-Output
-            }
-        } finally {
-            [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageQueue)
+        # Get the messages in the queue
+        $Messages = Get-Item -Path "MetaNull:\MessageQueue\$MessageQueueId" | Get-ChildItem | Get-ItemProperty
+        $Messages | Sort-Object -Property Index | Foreach-Object {
+            $Message = $_
+            Get-Item -Path "MetaNull:\MessageStore\$($Message.MessageId)" | Get-ItemProperty | Select-Object -Property @(
+                @{Name = 'MessageQueueId'; Expression = { $MessageQueueId }}
+                @{Name = 'MessageId'; Expression = { [guid]($Message.MessageId) }}
+                @{Name = 'Index'; Expression = { [int]$Message.Index }}
+                @{Name = 'Label'; Expression = { $_.Label }}
+                @{Name = 'Date'; Expression = { [datetime]($_.Date | ConvertFrom-Json | Select-Object -ExpandProperty Value) }}
+                @{Name = 'Message'; Expression = { $_.MetaData | ConvertFrom-Json }}
+            ) | Write-Output
         }
     } finally {
+        $MetaNull.MessageQueue.MutexMessageQueue.ReleaseMutex()
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

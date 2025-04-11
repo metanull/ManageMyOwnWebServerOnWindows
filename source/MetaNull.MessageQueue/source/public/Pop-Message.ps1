@@ -1,64 +1,49 @@
 <#
-    !!!!!!  Date = (Get-Date|ConvertTo-Json)
-
-    + Increment ReceiveCount
-
-    + Decrement MessageCount
-    + Decrement AvailableMessageCount
-    + Update Queues's LastMessage (if the last message was removed)
-#>
-
-<#
 .SYNOPSIS
-    Get message(s), without removing them from the message queue.
+    Get and remove the oldest message in a message queue.
 .DESCRIPTION
-    Get message(s), without removing them from the message queue.
-.PARAMETER Id
-    The ID of the message queue to be cleared. This is a mandatory parameter and must be provided.
+    Get and remove the oldest message in a message queue.
+.PARAMETER MessageQueueId
+    The ID of the message queue(s) where message should be added to.
 .EXAMPLE
-        Get-MessageQueue -Id '12345678-1234-1234-1234-123456789012'
+    Pop-Message -Id '12345678-1234-1234-1234-123456789012'
 #>
-[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Medium')]
-[OutputType([void])]
+[CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
+[OutputType([Object],[Object[]])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ArgumentCompleter( {Resolve-MessageQueueId @args} )]
-    [guid]$Id
+    [guid[]]$MessageQueueId
 )
 Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
-    [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageQueue)
     try {
-        # Find the message queue
-        if(-not "$Id" -or -not (Test-Path "MetaNull:\MessageQueue\$Id")) {
-            throw  "MessageQueue $Id not found"
+        $MetaNull.MessageQueue.MutexMessageQueue.WaitOne() | Out-Null
+
+        # Get the one oldest message in the queue
+        $Messages = Get-Item -Path "MetaNull:\MessageQueue\$MessageQueueId" | Get-ChildItem | Get-ItemProperty
+        $MessageQueueItem = $Messages | Sort-Object -Property Index | Select-Object -First 1 | Foreach-Object {
+            $Message = $_
+            Get-Item -Path "MetaNull:\MessageStore\$($Message.MessageId)" | Get-ItemProperty | Select-Object -Property @(
+                @{Name = 'MessageQueueId'; Expression = { $MessageQueueId }}
+                @{Name = 'MessageId'; Expression = { [guid]($Message.MessageId) }}
+                @{Name = 'Index'; Expression = { [int]$Message.Index }}
+                @{Name = 'Label'; Expression = { $_.Label }}
+                @{Name = 'Date'; Expression = { [datetime]($_.Date | ConvertFrom-Json | Select-Object -ExpandProperty Value) }}
+                @{Name = 'Message'; Expression = { $_.MetaData | ConvertFrom-Json }}
+            )
         }
 
-        # Get the oldest message from the MessageQueue
-        $Messages = Get-Item "MetaNull:\MessageQueue\$Id\Messages" | Get-ChildItem | Foreach-Object {
-            $Message = $_ | Get-ItemProperty
-            $Message | Add-Member -MemberType NoteProperty -Name MessageQueueId -Value ([guid]$Id)
-            $Message | Add-Member -MemberType NoteProperty -Name Index -Value ([int]($_.PSChildName))
-            $Message | Write-Output
-        } | Sort-Object -Property Index | Select-Object -First 1 | ForEach-Object {
-            # Get the message details from the MessageStore
-            [System.Threading.Monitor]::Enter($MetaNull.MessageQueue.LockMessageStore)
-            try {
-                $MessageDetails = Get-Item "MetaNull:\MessageStore\$($_.Id)" | Get-ItemProperty | Select-Object * | Select-Object -ExcludeProperty PS*
-            } finally {
-                [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageStore)
-            }
-            $MessageDetails | Add-Member -MemberType NoteProperty -Name MessageQueueId -Value $_.MessageQueueId
-            $MessageDetails | Add-Member -MemberType NoteProperty -Name Id -Value $_.Id
-            $MessageDetails | Add-Member -MemberType NoteProperty -Name Index -Value $_.Index
-            $MessageDetails | Write-Output
+        # Remove the message from the message queue (but not from the message store)
+        Get-Item -Path "MetaNull:\MessageQueue\$MessageQueueId" | Get-ChildItem | Where-Object {
+            $_.PSChildName -eq $MessageQueueItem.Index
+        } | Remove-Item
 
-            # Remove the message from the MessageQueue (and not from the messagestore, which would be done by Optimize-MessageQueue)
-            Remove-Item "MetaNull:\MessageQueue\$Id\Messages\$($_.Index)"
-        }
+        # Return the message
+        $MessageQueueItem | Write-Output
     } finally {
-        [System.Threading.Monitor]::Exit($MetaNull.MessageQueue.LockMessageQueue)
+        $MetaNull.MessageQueue.MutexMessageQueue.ReleaseMutex()
         $ErrorActionPreference = $BackupErrorActionPreference
     }
 }

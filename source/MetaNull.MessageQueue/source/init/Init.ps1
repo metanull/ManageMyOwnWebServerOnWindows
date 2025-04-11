@@ -20,7 +20,7 @@ New-Variable MetaNull -Scope script -Value @{
     MessageQueue = @{
         PSDriveRoot = $PSDriveRoot
         LockMessageQueue = New-Object Object
-        LockMessageStore = New-Object Object
+        MutexMessageQueue = New-Object System.Threading.Mutex($false, 'MetaNull.MessageQueue')
         Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
     }
 }

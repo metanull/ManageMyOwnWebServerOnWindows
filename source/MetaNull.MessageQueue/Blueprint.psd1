@@ -1,4 +1,4 @@
-@{
+﻿@{
     # Where the cod eis stored
     Source = './source'
 
@@ -13,7 +13,7 @@
         'System.Management.Automation.PSCredential'
     )
     ModuleDependencies = @(
-        
+
     )
 
     # Module Settings

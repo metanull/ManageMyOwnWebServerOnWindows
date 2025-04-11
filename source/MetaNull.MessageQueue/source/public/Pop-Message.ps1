@@ -9,7 +9,7 @@
     Pop-Message -Id '12345678-1234-1234-1234-123456789012'
 #>
 [CmdletBinding(SupportsShouldProcess,ConfirmImpact = 'Low')]
-[OutputType([Object],[Object[]])]
+[OutputType([PSCustomObject])]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
     [ArgumentCompleter( {Resolve-MessageQueueId @args} )]
@@ -30,8 +30,8 @@ Process {
                 @{Name = 'MessageId'; Expression = { [guid]($Message.MessageId) }}
                 @{Name = 'Index'; Expression = { [int]$Message.Index }}
                 @{Name = 'Label'; Expression = { $_.Label }}
-                @{Name = 'Date'; Expression = { [datetime]($_.Date | ConvertFrom-Json | Select-Object -ExpandProperty Value) }}
-                @{Name = 'Message'; Expression = { $_.MetaData | ConvertFrom-Json }}
+                @{Name = 'Date'; Expression = { [datetime]($_.Date | ConvertFrom-Json) }}
+                @{Name = 'MetaData'; Expression = { $_.MetaData | ConvertFrom-Json }}
             )
         }
 

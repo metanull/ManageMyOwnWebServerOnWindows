@@ -1,4 +1,4 @@
-@{
+﻿@{
     # Where the cod eis stored
     Source = './source'
 
@@ -10,10 +10,10 @@
 
     # Types & Dependencies
     AssemblyDependencies = @(
-        
+
     )
     ModuleDependencies = @(
-        
+
     )
 
     # Module Settings

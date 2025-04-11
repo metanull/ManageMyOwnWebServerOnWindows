@@ -36,7 +36,7 @@ Describe "Import-Pipeline" -Tag "Functional","BeforeBuild" {
             ValidateTestData -TestData $TestData | Should -BeTrue
         }
 
-        It "Should not throw when no paramters are given" {
+        It "Should not throw when no parameters are given" {
             {Invoke-ModuleFunctionStub} | Should -Not -Throw
         }
         It "Should throw when an invalid ID is provided" {

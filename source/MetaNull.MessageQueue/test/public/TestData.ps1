@@ -2,11 +2,14 @@
 $PSDriveRoot = 'HKCU:\SOFTWARE\MetaNull\PowerShell.Tests\MetaNull.MesageQueue'
 New-Item -Force -Path $PSDriveRoot\MessageQueue -ErrorAction SilentlyContinue 
 New-Item -Force -Path $PSDriveRoot\MessageStore -ErrorAction SilentlyContinue 
+$FakeMutex = New-Object Object
+$FakeMutex | Add-Member -MemberType ScriptMethod -Name 'WaitOne' -Value {return}
+$FakeMutex | Add-Member -MemberType ScriptMethod -Name 'ReleaseMutex' -Value {return}
 $MetaNull = @{
     MessageQueue = @{
         PSDriveRoot = $PSDriveRoot
         LockMessageQueue = New-Object Object
-        MutexMessageQueue = New-Object System.Threading.Mutex($false, 'MetaNull.MessageQueue.Test')
+        MutexMessageQueue = $FakeMutex
         Drive = New-PSDrive -Name 'MetaNull' -Scope Script -PSProvider Registry -Root $PSDriveRoot
     }
 }

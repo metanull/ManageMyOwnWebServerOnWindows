@@ -59,7 +59,6 @@ Describe "Import-Pipeline" -Tag "Functional","BeforeBuild" {
             $Result.Stages.Count | Should -Be $TestData.Pipelines[1].Stages.Count
             $Result.Stages[0].Name | Should -BeIn $TestData.Pipelines[1].Stages.Name
             $Result.Stages[1].Name | Should -BeIn $TestData.Pipelines[1].Stages.Name
-            Read-Host "PipelineId: $($TestData.Pipelines[1].Id)"
         }
     }
 }

@@ -188,7 +188,7 @@ Ligne =
     ==> soit on démarre une nouvelle CLÉ/VALUE; soit on démarre un nouveau TABLEAU; soit on démarre une VALEUR MULTILIGNE; soit on capture une VALEUR EN LIGNE
 #>
 
-Function YTrim {
+Function TrimComment {
     param(
         [Parameter(Mandatory = $false, Position = 0, ValueFromPipeline)]
         [AllowEmptyString()]
@@ -240,7 +240,8 @@ Function YTrim {
             $EscapeNext = $false
         }
         # Return the final string
-        $String.TrimEnd() | Write-Output
+        #$String.TrimEnd() | Write-Output
+        $String | Write-Output
     }
 }
 Function ProcessLine {
@@ -255,19 +256,26 @@ Function ProcessLine {
     Begin {
         $Yex = [regex]::new(
             @(  '^'
+                '(?<NewDocument>---$)?'
                 '(?<Indentation>[ ]*)'
-                '(?<Array>- )?'
-                '(?<KeyValuePair>(?<KeyQuote>["'']?)(?<Key>.*?)\k<KeyQuote>:( |$))?'
-                '(?<Value>'
-                    '(?<MultilineBlockScalar>(!!(?<BlockScalarCast>[^ ]+) )?(?<BlockScalarStyle>[\|>])(?<BlockScalarChomp>[\+-])?(?<BlockScalarIndent>[1-9])?)'    # Block Scalar
+                '(?<Structure>'
+                    '(?<Array>- )'
                     '|'
-                    '(?<FlowCollection>(?<FlowCollectionType>[\[\{])(?<FlowCollectionValue>.*?)\k<FlowCollectionType>)' # Flow Collection, single line
+                    '(?<KeyValuePair>(?<KeyQuote>["'']?)(?<Key>.*?)\k<KeyQuote>:( |$))?'
+                ')?'
+                '(?<Tags>!!(?<CastTag>[^ ]+) )?'
+                '(?<Value>'
+                    '(?<MultilineBlockScalar>(?<BlockScalarStyle>[\|>])(?<BlockScalarChomp>[\+-])?(?<BlockScalarIndent>[1-9])?)'    # Block Scalar
+                    '|'
+                    '(?<FlowCollectionSequence>\[(?<FlowCollectionSequenceValue>.*)\])' # Array ([]) Flow Collection, single line
+                    '|'
+                    '(?<FlowCollectionMapping>\{(?<FlowCollectionMappingValue>.*)\})' # Object ({}) Flow Collection, single line
                     '|'
                     '(?<MultilineFlowCollection>(?<MultilineFlowCollectionType>[\[\{])(?<MultilineFlowCollectionValue>.*))' # Flow Collection, multiline line
                     '|'
-                    '(?<QuotedFlowScalar>(!!(?<QuotedFlowScalarCast>[^ ]+) )?(?<QuotedFlowScalarType>["''])(?<QuotedFlowScalarValue>.*?)\k<QuotedFlowScalarType>)' # Flow Scalar, single line
+                    '(?<QuotedFlowScalar>(?<QuotedFlowScalarType>["''])(?<QuotedFlowScalarValue>.*?)\k<QuotedFlowScalarType>)' # Flow Scalar, single line
                     '|'
-                    '(?<MultilineQuotedFlowScalar>(!!(?<MultilineQuotedFlowScalarCast>[^ ]+) )?(?<MultilineQuotedFlowScalarType>["''])(?<MultilineQuotedFlowScalarValue>.*))' # Flow Scalar, multiline line
+                    '(?<MultilineQuotedFlowScalar>(?<MultilineQuotedFlowScalarType>["''])(?<MultilineQuotedFlowScalarValue>.*))' # Flow Scalar, multiline line
                     '|'
                     '(?<PlainScalar>(?<PlainScalarValue>.*))' # Flow Scalar, multiline line
                 ')?'
@@ -278,13 +286,14 @@ Function ProcessLine {
     Process {
         # Trim and remove comments
         $OriginalLine = $Line
-        $Line = $Line | YTrim
+        $Line = $Line | TrimComment
         # Skip empty lines
         if([string]::IsNullOrEmpty($Line.Trim())) {
             return [pscustomobject]@{
                 Line = $OriginalLine
                 Indentation = ([regex]::new("^( *)")).Match($LineIndentation).Groups[0].Length
                 Empty = $true
+                IsNewDocument = $false
             }
         }
         # Parse the YAML line
@@ -296,13 +305,7 @@ Function ProcessLine {
         # Get the actual line indentation
         $LineIndentation = $Parsed.Groups['Indentation'].Length
         if($Parsed.Groups['Array'].Success) {
-            <#
-            # DISABLED: Array nesting will be processed differently
-            # If the line is an array (which may be nested), get the last capture's index and length as the actual indentation
-            $LineIndentation = $Parsed.Groups['Array'].Captures | Select-Object -last 1 | Foreach-Object {
-                $_.Index + $_.Length
-            }
-            #>
+            # Array induces an extra identation ()"- " counting for 2)
             $LineIndentation = $Parsed.Groups['Array'].Index + $Parsed.Groups['Array'].Length
         }
 
@@ -311,18 +314,22 @@ Function ProcessLine {
             Line = $Line
             Indentation = $LineIndentation
             Empty = $false
+            IsNewDocument = $Parsed.Groups['NewDocument'].Success
             HasValue = $Parsed.Groups['Value'].Success
-            IsArray = $Parsed.Groups['Array'].Success
-            IsKeyValue = $Parsed.Groups['KeyValuePair'].Success
+            IsSequence = $Parsed.Groups['Array'].Success
+            IsMapping = $Parsed.Groups['KeyValuePair'].Success
             IsMultiline = (
                 $Parsed.Groups['MultilineBlockScalar'].Success -or `
                 $Parsed.Groups['MultilineFlowCollection'].Success -or `
-                $Parsed.Groups['MultilineQuotedFlowScalar'].Success -or `
+                $Parsed.Groups['MultilineQuotedFlowScalar'].Success 
+            )
+            IsMultilineByIndentation = (
                 $Parsed.Groups['PlainScalar'].Success
             )
             IsBlockScalar = $Parsed.Groups['MultilineBlockScalar'].Success
             IsFlowCollection = (
-                $Parsed.Groups['FlowCollection'].Success -or `
+                $Parsed.Groups['FlowCollectionSequence'].Success -or `
+                $Parsed.Groups['FlowCollectionMapping'].Success -or `
                 $Parsed.Groups['MultilineFlowCollection'].Success
             )
             IsFlowScalar = (
@@ -334,30 +341,44 @@ Function ProcessLine {
                 Value = $Parsed.Groups['Key'].Value
                 Quote = $Parsed.Groups['KeyQuote'].Value
             }
-            MultilineDelimiter = "$($Parsed.Groups['MultilineFlowCollectionType'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarType'].Value)"
-            MultilineFirstLine = "$($Parsed.Groups['MultilineFlowCollectionValue'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarValue'].Value)$($Parsed.Groups['PlainScalarValue'].Value)"
+            Cast = $Parsed.Groups['CastTag'].Value
             BlockScalar = [PSCustomObject]@{
                 Style = $Parsed.Groups['BlockScalarStyle'].Value
                 Chomp = $Parsed.Groups['BlockScalarChomp'].Value
                 Indent = $Parsed.Groups['BlockScalarIndent'].Value
-                Cast = $Parsed.Groups['BlockScalarCast'].Value
             }
             FlowCollection = [PSCustomObject]@{
-                Type = "$($Parsed.Groups['FlowCollectionType'].Value)$($Parsed.Groups['MultilineFlowCollectionType'].Value)"
-                Value = "$($Parsed.Groups['FlowCollectionValue'].Value)$($Parsed.Groups['MultilineFlowCollectionValue'].Value)"
+                Type = "$(  if($Parsed.Groups['FlowCollectionSequence'].Success) {
+                                '[]'
+                            } elseif($Parsed.Groups['FlowCollectionMapping'].Success) {
+                                '{}'
+                            } elseif($Parsed.Groups['MultilineFlowCollectionType'].Success) {
+                                if($Parsed.Groups['MultilineFlowCollectionType'].Value -eq '[') {
+                                    '[]'
+                                } elseif($Parsed.Groups['MultilineFlowCollectionType'].Value -eq '{') {
+                                    '{}'
+                                }
+                            })"
+                Value = "$($Parsed.Groups['FlowCollectionSequenceValue'].Value)$($Parsed.Groups['FlowCollectionMappingValue'].Value)$($Parsed.Groups['MultilineFlowCollectionValue'].Value)"
                 MultiLine = $Parsed.Groups['MultilineFlowCollection'].Success
-                MultilineEnder = $Parsed.Groups['MultilineFlowCollectionType'].Value
+                MultilineEnder = "$(
+                            if($Parsed.Groups['FlowCollectionSequence'].Success -or $Parsed.Groups['MultilineFlowCollectionType'].Value -eq '[') {
+                                ']'
+                            } elseif($Parsed.Groups['FlowCollectionMapping'].Success -or $Parsed.Groups['MultilineFlowCollectionType'].Value -eq '{') {
+                                '}'
+                            })"
             }
             FlowScalar = [PSCustomObject]@{
                 Type = "$($Parsed.Groups['QuotedFlowScalarType'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarType'].Value)"
                 Value = "$($Parsed.Groups['QuotedFlowScalarValue'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarValue'].Value)"
                 MultiLine = $Parsed.Groups['MultilineQuotedFlowScalar'].Success
                 MultilineEnder = $Parsed.Groups['MultilineQuotedFlowScalarType'].Value
-                Cast = "$($Parsed.Groups['QuotedFlowScalarCast'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarCast'].Value)"
             }
             PlainScalar = [PSCustomObject]@{
                 Value = "$($Parsed.Groups['PlainScalarValue'].Value)"
             }
+            RawLine = $OriginalLine
+            RawParse = $Parsed.Groups
             <#
             KeyValuePair = $Parsed.Groups['KeyValuePair'].Success
             Array = $Parsed.Groups['Array'].Success

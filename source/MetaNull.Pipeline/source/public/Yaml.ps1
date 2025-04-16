@@ -254,14 +254,31 @@ Function ProcessLine {
         [string]$Line
     )
     Begin {
+        $Dex = [regex]::new(
+            @(  '^('
+                    '(%YAML (?<VersionDirective>[\d\.]+))'
+                    '|'
+                    '(%TAG (?<TagDirective>(!(?<TagName>[^!]+)! (?<TagValue>[^ ]+))+))'
+                    '|'
+                    '(?<DocumentStart>---( (!(?<DocumentTag>[^!]+))*)?)'
+                    '|'
+                    '(?<DocumentEnd>...)'
+                ')$'
+            ) -join ''
+        )
         $Yex = [regex]::new(
             @(  '^'
-                '(?<NewDocument>---$)?'
+                #'(?<VersionDirective>%YAML [\d\.]+$)?'
+                #'(?<TagDirective>%TAG (!(?<TagName>[^!]+)! (?<TagValue>.+)$)*)?'
+                #'(?<DocumentStart>---( (!(?<DocumentTag>[^!]+))*)?$)?'
+                #'(?<DocumentEnd>...$)?'
                 '(?<Indentation>[ ]*)'
                 '(?<Structure>'
                     '(?<Array>- )'
                     '|'
-                    '(?<KeyValuePair>(?<KeyQuote>["'']?)(?<Key>.*?)\k<KeyQuote>:( |$))?'
+                    '(?<QuotedKeyValuePair>(?<KeyQuote>["''])(?<QuotedKey>.*?)\k<KeyQuote>:( |$))?'
+                    '|'
+                    '(?<KeyValuePair>(?<Key>[^#@\|>%\?!\&\*][^#]+?):( |$))?'
                 ')?'
                 '(?<Tags>!!(?<CastTag>[^ ]+) )?'
                 '(?<Value>'
@@ -284,19 +301,50 @@ Function ProcessLine {
         )
     }
     Process {
-        # Trim and remove comments
         $OriginalLine = $Line
-        $Line = $Line | TrimComment
+
+        # Parse the YAML line - checking for Document Level instructions
+        $Parsed = $Dex.Match($OriginalLine)
+        if(($Parsed.Success)) {
+            # This is a document level line
+            return [pscustomobject]@{
+                Line = $OriginalLine
+                Indentation = $null
+                Empty = $false
+                IsDocumentLevelLine = $true
+                IsDocumentStart = $Parsed.Groups['DocumentStart'].Success
+                IsDocumentEnd = $Parsed.Groups['DocumentEnd'].Success
+                IsVersionDirective = $Parsed.Groups['VersionDirective'].Success
+                IsTagDirective = $Parsed.Groups['TagDirective'].Success
+                VersionDirective = $Parsed.Groups['VersionDirective'].Value
+                TagDirective = "$(
+                                for($td=0; $td -lt $Parsed.Groups['TagDirective'].Captures.Count; $td ++) {
+                                    [pscustomobject]@{
+                                        Name = $Parsed.Groups['TagName'].Captures[$td].Value
+                                        Value = $Parsed.Groups['TagValue'].Captures[$td].Value
+                                    }
+                                })"
+                DocumentTags = $Parsed.Groups['DocumentTag'].Captures.Value
+                RawValue = $null
+                RawLine = $OriginalLine
+                RawParse = $Parsed.Groups
+            }
+        }
+
+        # Trim and remove comments
+        $Line = $Line  | TrimComment
+
         # Skip empty lines
         if([string]::IsNullOrEmpty($Line.Trim())) {
             return [pscustomobject]@{
                 Line = $OriginalLine
                 Indentation = ([regex]::new("^( *)")).Match($LineIndentation).Groups[0].Length
                 Empty = $true
-                IsNewDocument = $false
+                IsDocumentLevelLine = $false
             }
         }
-        # Parse the YAML line
+
+        # Parse the YAML line - Checking for YAML data
         $Parsed = $Yex.Match($Line)
         if(-not ($Parsed.Success)) {
             throw "Invalid Yaml Line: $Line - Regex Failed"
@@ -314,10 +362,13 @@ Function ProcessLine {
             Line = $Line
             Indentation = $LineIndentation
             Empty = $false
-            IsNewDocument = $Parsed.Groups['NewDocument'].Success
+            IsDocumentLevelLine = $false
             HasValue = $Parsed.Groups['Value'].Success
             IsSequence = $Parsed.Groups['Array'].Success
-            IsMapping = $Parsed.Groups['KeyValuePair'].Success
+            IsMapping = (
+                $Parsed.Groups['KeyValuePair'].Success -or `
+                $Parsed.Groups['QuotedKeyValuePair'].Success
+            )
             IsMultiline = (
                 $Parsed.Groups['MultilineBlockScalar'].Success -or `
                 $Parsed.Groups['MultilineFlowCollection'].Success -or `
@@ -338,8 +389,20 @@ Function ProcessLine {
             )
             IsPlainScalar = $Parsed.Groups['PlainScalar'].Success
             Key = [pscustomobject]@{
-                Value = $Parsed.Groups['Key'].Value
-                Quote = $Parsed.Groups['KeyQuote'].Value
+                Value = "$( if($Parsed.Groups['KeyValuePair'].Success) {
+                                $Parsed.Groups['Key'].Value
+                            } elseif($Parsed.Groups['QuotedKeyValuePair'].Success) {
+                                $Parsed.Groups['QuotedKey'].Value
+                            } else {
+                                $null
+                            })" 
+                        #$Parsed.Groups['Key'].Value
+                Quote = "$( if($Parsed.Groups['QuotedKeyValuePair'].Success) {
+                                $Parsed.Groups['KeyQuote'].Value
+                            } else {
+                                $null
+                            })"
+                        #$Parsed.Groups['KeyQuote'].Value
             }
             Cast = $Parsed.Groups['CastTag'].Value
             BlockScalar = [PSCustomObject]@{
@@ -357,26 +420,59 @@ Function ProcessLine {
                                     '[]'
                                 } elseif($Parsed.Groups['MultilineFlowCollectionType'].Value -eq '{') {
                                     '{}'
+                                } else {
+                                    $null
                                 }
+                            } else {
+                                $null
                             })"
-                Value = "$($Parsed.Groups['FlowCollectionSequenceValue'].Value)$($Parsed.Groups['FlowCollectionMappingValue'].Value)$($Parsed.Groups['MultilineFlowCollectionValue'].Value)"
+                Value = "$( if($Parsed.Groups['FlowCollectionSequence'].Success) {
+                            $Parsed.Groups['FlowCollectionSequenceValue'].Value
+                        } elseif($Parsed.Groups['FlowCollectionMapping'].Success) {
+                            $($Parsed.Groups['FlowCollectionMappingValue'].Value)
+                        } elseif($Parsed.Groups['MultilineFlowCollectionType'].Success) {
+                            $($Parsed.Groups['MultilineFlowCollectionValue'].Value)
+                        } else {
+                            $null
+                        })"
+                        #"$($Parsed.Groups['FlowCollectionSequenceValue'].Value)$($Parsed.Groups['FlowCollectionMappingValue'].Value)$($Parsed.Groups['MultilineFlowCollectionValue'].Value)"
                 MultiLine = $Parsed.Groups['MultilineFlowCollection'].Success
                 MultilineEnder = "$(
                             if($Parsed.Groups['FlowCollectionSequence'].Success -or $Parsed.Groups['MultilineFlowCollectionType'].Value -eq '[') {
                                 ']'
                             } elseif($Parsed.Groups['FlowCollectionMapping'].Success -or $Parsed.Groups['MultilineFlowCollectionType'].Value -eq '{') {
                                 '}'
+                            } else {
+                                $null
                             })"
             }
             FlowScalar = [PSCustomObject]@{
-                Type = "$($Parsed.Groups['QuotedFlowScalarType'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarType'].Value)"
-                Value = "$($Parsed.Groups['QuotedFlowScalarValue'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarValue'].Value)"
+                Type =  "$(
+                            if($Parsed.Groups['QuotedFlowScalar'].Success) {
+                                $Parsed.Groups['QuotedFlowScalarType'].Value
+                            } elseif($Parsed.Groups['MultilineQuotedFlowScalar'].Success) {
+                                $Parsed.Groups['MultilineQuotedFlowScalarType'].Value
+                            } else {
+                                $null
+                            })"
+                        #"$($Parsed.Groups['QuotedFlowScalarType'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarType'].Value)"
+                Value = "$(
+                            if($Parsed.Groups['QuotedFlowScalar'].Success) {
+                                $Parsed.Groups['QuotedFlowScalarValue'].Value
+                            } elseif($Parsed.Groups['MultilineQuotedFlowScalar'].Success) {
+                                $Parsed.Groups['MultilineQuotedFlowScalarValue'].Value
+                            } else {
+                                $null
+                            }
+                        )"
+                        #"$($Parsed.Groups['QuotedFlowScalarValue'].Value)$($Parsed.Groups['MultilineQuotedFlowScalarValue'].Value)"
                 MultiLine = $Parsed.Groups['MultilineQuotedFlowScalar'].Success
                 MultilineEnder = $Parsed.Groups['MultilineQuotedFlowScalarType'].Value
             }
             PlainScalar = [PSCustomObject]@{
                 Value = "$($Parsed.Groups['PlainScalarValue'].Value)"
             }
+            RawValue = "$($Parsed.Groups['Value'].Value)"
             RawLine = $OriginalLine
             RawParse = $Parsed.Groups
             <#

@@ -282,7 +282,7 @@ Function ProcessLine {
                 ')?'
                 '(?<Tags>!!(?<CastTag>[^ ]+) )?'
                 '(?<Value>'
-                    '(?<MultilineBlockScalar>(?<BlockScalarStyle>[\|>])(?<BlockScalarChomp>[\+-])?(?<BlockScalarIndent>[1-9])?)'    # Block Scalar
+                    '(?<MultilineBlockScalar>(?<BlockScalarStyle>[\|>])(?<BlockScalarChomp>[\+-])?(?<BlockScalarIndent>[1-9])?)'    # Block Scalar, always multiline
                     '|'
                     '(?<FlowCollectionSequence>\[(?<FlowCollectionSequenceValue>.*)\])' # Array ([]) Flow Collection, single line
                     '|'
@@ -324,6 +324,7 @@ Function ProcessLine {
                                         Value = $Parsed.Groups['TagValue'].Captures[$td].Value
                                     }
                                 })"
+                HasDocumentTags = $Parsed.Groups['DocumentTag'].Success
                 DocumentTags = $Parsed.Groups['DocumentTag'].Captures.Value
                 RawValue = $null
                 RawLine = $OriginalLine
@@ -332,7 +333,10 @@ Function ProcessLine {
         }
 
         # Trim and remove comments
+        Write-Debug "ORIGINA: ``$($OriginalLine)``"
+        Write-Debug "NOT TRIMMED: ``$($Line)``"
         $Line = $Line  | TrimComment
+        Write-Debug "TRIMMED: ``$($Line)``"
 
         # Skip empty lines
         if([string]::IsNullOrEmpty($Line.Trim())) {
@@ -370,11 +374,11 @@ Function ProcessLine {
                 $Parsed.Groups['QuotedKeyValuePair'].Success
             )
             IsMultiline = (
-                $Parsed.Groups['MultilineBlockScalar'].Success -or `
                 $Parsed.Groups['MultilineFlowCollection'].Success -or `
                 $Parsed.Groups['MultilineQuotedFlowScalar'].Success 
             )
             IsMultilineByIndentation = (
+                $Parsed.Groups['MultilineBlockScalar'].Success -or `
                 $Parsed.Groups['PlainScalar'].Success
             )
             IsBlockScalar = $Parsed.Groups['MultilineBlockScalar'].Success
@@ -475,25 +479,426 @@ Function ProcessLine {
             RawValue = "$($Parsed.Groups['Value'].Value)"
             RawLine = $OriginalLine
             RawParse = $Parsed.Groups
-            <#
-            KeyValuePair = $Parsed.Groups['KeyValuePair'].Success
-            Array = $Parsed.Groups['Array'].Success
-            Multiline = $Parsed.Groups['MultilineBlockScalar'].Success
-            BlockScalarStyle = $Parsed.Groups['BlockScalarStyle'].Value
-            BlockScalarChomp = $Parsed.Groups['BlockScalarChomp'].Value
-            BlockScalarIndent = $Parsed.Groups['BlockScalarIndent'].Value
-            QuotedFlowScalar = $Parsed.Groups['QuotedFlowScalar'].Success
-            QuotedFlowScalarType = $Parsed.Groups['QuotedFlowScalarType'].Value
-            QuotedFlowScalarValue = $Parsed.Groups['QuotedFlowScalarValue'].Value
-            MultilineQuotedFlowScalar = $Parsed.Groups['MultilineQuotedFlowScalar'].Success
-            MultilineQuotedFlowScalarType = $Parsed.Groups['MultilineQuotedFlowScalarType'].Value
-            MultilineQuotedFlowScalarValue = $Parsed.Groups['MultilineQuotedFlowScalarValue'].Value
-            Key = $Parsed.Groups['Key'].Value
-            KeyQuote = $Parsed.Groups['KeyQuote'].Value
-            Cast = $Cast
-            # Parsed = $Parsed
-            #>
+            
         } | Write-Output
+    }
+}
+
+Function ProcessAllLines {
+    [CmdletBinding()]
+    [OutputType([void])]
+    param(
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [AllowEmptyString()]
+        [string[]]$YamlLines,
+
+        [int]$Identation = 0
+    )
+    Begin {
+        Function CountLeadingSpaces {
+            param(
+                [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+                [AllowEmptyString()]
+                [string]$Line
+            )
+            Begin {
+                $rx = [regex]::new('(?<Indentation>[ ]+)')
+            }
+            Process {
+                $r = $rx.Match($Line)
+                if($r.Groups['Indentation'].Success) {
+                    return $r.Groups['Indentation'].Length
+                } else {
+                    return $null
+                }
+            }
+        }
+    }
+    Process {
+        $Documents = [System.Collections.ArrayList]::new()
+        
+        $Header = $true
+        $CurrentDocument = $null
+        for($k = 0; $k -lt $YamlLines.Length; $k ++) {
+            Write-Debug "Yaml line $($k): ``$($YamlLines[$k])``"
+            if($Header -and ($_ -eq [string]::empty -or $_ -match '^#')) {
+                # Skip Leading empty lines and comments in the document header
+                Write-Debug "Yaml line $($k): Skipping empty or comment line"
+                continue
+            }
+
+            # Parse the current line
+            $Parsed = $YamlLines[$k] | ProcessLine
+
+            "PARSED: " | write-Warning
+            $Parsed |  Write-Error
+
+            # Line is an explicit document end
+            if($Parsed.IsDocumentEnd) {
+                Write-Debug "Yaml line $($k): Document End found"
+                if($null -ne $CurrentDocument) {
+                    Write-Debug "Yaml line $($k): Adding current document to the output"
+                    # Add the current document to the list
+                    $Documents.Add($CurrentDocument) | Out-Null
+                }
+                Write-Debug "Yaml line $($k): Resetting the current document"
+                # Reset the current document
+                $CurrentDocument = $null
+                $Header = $true
+                continue
+            }
+            # Line is a document level directive
+            if($Parsed.IsDocumentLevelLine) {
+                if(-not $Header) {
+                    throw "Yaml line $($k): Yaml directive found in the body"
+                }
+                # A document header directive was found, process it
+                if($Parsed.IsDocumentStart) {
+                    Write-Debug "Yaml line $($k): Document Start found"
+                    # An explicit document start
+                    if($null -ne $CurrentDocument) {
+                        Write-Debug "Yaml line $($k): Adding current document to the output"
+                        # Add the current document to the list
+                        $Documents.Add($CurrentDocument) | Out-Null
+                    }
+                    Write-Debug "Yaml line $($k): Resetting the current document"
+                    # Reset the current document
+                    $Header = $true
+                    $CurrentDocument = New-Object Object
+                    if($Parsed.HasDocumentTags) {
+                        Write-Debug "Yaml line $($k): Document Tags: $($Parsed.DocumentTags -join ', ')"
+                        $CurrentDocument | Add-Member -MemberType NoteProperty -Name Tag -Value $Parsed.DocumentTags
+                    }
+                    continue
+                }
+                if($null -eq $CurrentDocument) {
+                    Write-Debug "Yaml line $($k): Document Starting (implicit)"
+                    # Implicit document start, Reset the current document
+                    $Header = $true
+                    $CurrentDocument = New-Object Object
+                }
+                if($Parsed.IsVersionDirective) {
+                    Write-Debug "Yaml line $($k): YAML version directive: $($Parsed.VersionDirective)"
+                    $CurrentDocument | Add-Member -MemberType NoteProperty -Name Version -Value $Parsed.VersionDirective
+                    continue
+                }
+                if($Parsed.IsTagDirective) {
+                    Write-Debug "Yaml line $($k): YAML tag declaration: $($Parsed.TagDirective | Foreach-Object { "{$($_.TagName) = $($_.TagValue)}" })"
+                    $CurrentDocument | Add-Member -MemberType NoteProperty -Name TagDeclaration -Value $Parsed.TagDirective
+                    continue
+                }
+                throw "Yaml line $($k): Unrecognized/unexpected directive found: ``$($YamlLines[$k])``"
+                # continue
+            }
+            # Line is not a document level directive, leaving the Header
+            if($Header -and -not ($Parsed.IsDocumentLevelLine)) {
+                Write-Debug "Yaml line $($k): Document Body starting"
+                # Leaving the document header
+                $Header = $false
+            }
+
+            # Skip empty lines in the document body
+            if($Parsed.Empty) {
+                Write-Warning "Yaml line $($k): Empty line found"
+                    <#
+                    # TO DO: Verifiy if it is appropriate??
+                    #>
+                continue
+            }
+
+            # In the document body, mind the indentation and multiline strings!
+            if($Parsed.IsMultiline -or $Parsed.IsMultilineByIndentation) {
+                Write-Debug "Yaml line $($k): Multiline string detected"
+                # Collect the multiline string
+                $MultiLineString = [System.Collections.ArrayList]::new()
+                $ParentIndentation = $Parsed.Indentation
+
+                # Value could have started on the parent's line
+                if($Parsed.IsFlowCollection -and $Parsed.FlowCollection.Value) {
+                    $MultiLineString.Add($Parsed.FlowCollection.Value) | Out-Null
+                } elseif($Parsed.IsFlowCollection -and $Parsed.FlowCollection.Value) {
+                    $MultiLineString.Add($Parsed.FlowCollection.Value) | Out-Null
+                }
+                
+                if($k -lt $YamlLines.Length) {  # Multiline could start on the very last line of input, avoid out of range error
+                    # Collect the indentation level of the children
+                    $ChildIndentation = $YamlLines[$k + 1] | CountLeadingSpaces
+                    # For Block Scalar, the indentation of the firstline may be overriden by declaration
+                    if($Parsed.IsBlockScalar -and $null -ne $Parsed.BlockScalar.Indent) {
+                        $ChildIndentation -= $Parsed.BlockScalar.Indent
+                    }
+
+                    # Capture the rest of the value
+                    for($mlk = $k + 1; $mlk -lt $YamlLines.Length; $mlk ++) {
+                        $mli = $YamlLines[$mlk] | CountLeadingSpaces
+                        # Value is always subject to indentation rules
+                        if($mli -le $ParentIndentation) {
+                            # Indentation is less or equal the parent indentation => end of the multiline string
+                            break;
+                        }
+                        if($mli -lt $ChildIndentation) {
+                            # Indentation is less than the child indentation => end of the multiline string
+                            break;
+                        }
+                        # Value could be character delimited
+                        if( ($Parsed.IsFlowCollection -and $Parsed.FlowCollection.MultiLineEnder -and $YamlLines[$mlk].EndsWith($Parsed.FlowCollection.MultiLineEnder)) `
+                            -or ($Parsed.IsFlowScalar -and $Parsed.FlowScalar.MultiLineEnder -and $YamlLines[$mlk].EndsWith($Parsed.FlowScalar.MultiLineEnder)) ) {
+                            # This is the end of the multiline string, strip the delimiter and return
+                            $buf = $YamlLines[$mlk].Substring($ChildIndentation)
+                            $buf = $buf.Substring(0, $buf.Length - 1)
+                            $MultiLineString.Add($buf) | Out-Null
+                            break;
+                        }
+                        # None of the conditions met, continue to add the line to the multiline string
+                        $MultiLineString.Add($YamlLines[$mlk].Substring($ChildIndentation)) | Out-Null
+                    }
+
+                    # Move the cursor
+                    Write-Warning "Moving cursor from $($k) to $($mlk)"
+                    Write-Warning "BEFORE: $($YamlLines[$k])"
+                    Write-Warning "AFTER:  $($YamlLines[$mlk])"
+                    $k = $mlk
+                }
+
+                # We have our Multiline string in $MultiLineString, as an array.
+                # Join the array according to the YAML rules
+                $FoldedString = [System.Collections.ArrayList]::new()
+                if($Parsed.IsFlowScalar) {
+                    Write-Debug "Yaml line $($k): Multiline String was a FLOW SCALAR"
+                    <#They can be on multiple lines, and can start on the same line as the parent node.
+                    Linebreaks are subject to flow folding
+                    Whitespace at the beginning or end of line are ignored
+                    Whitespace inside a line are kept
+                    If you add a blank line, it will not be folded
+                    Every following empty line after the first will be kept as a newline
+                    #>
+                    $PrevTrimmed = $null
+                    for($mlk = 0; $mlk -lt $MultiLineString.Count; $mlk ++) {
+                        $Trimmed = $MultiLineString[$mlk].Trim()
+                        if($Trimmed.Length -eq 0) {
+                            if($null -ne $PrevTrimmed -and $PrevTrimmed.Length -eq 0) {
+                                # This is a newline, following another newline, keep it as a newline
+                                $FoldedString.Add('') | Out-Null
+                            } else {
+                                # A newline not following another newline, keep it as a space
+                            }
+                        } else {
+                            # This is a segment of the string, preserve it
+                            $FoldedString.Add($Trimmed) | Out-Null
+                        }
+                        $PrevTrimmed = $Trimmed
+                    }
+                    $FoldedString = $FoldedString -join ' '
+                    
+                    if($Parsed.FlowScalar.Type -eq "'") {
+                        <# Single Quoted Scalars
+                           Any character except ' will be returned literally.
+                           The single quote itself is escaped by doubling it
+                           Ref: https://www.yaml.info/learn/quote.html#single
+                        #>
+                        $FoldedString = $FoldedString.Replace("''","'")
+                    } elseif($Parsed.FlowScalar.Type -eq '"') {
+                        <# Double Quoted scalar
+                           A double quoted scalar has the same rules as a single quoted scalar, plus escape sequences
+                           The escaping rules are compatible to JSON
+                           Escape characters are: \b, \f, \n, \r, \t, \\, \", \/, \xXX, \uXXXX, \UXXXXXXXX, \N, \_, \L, \P
+                           Ref: https://www.yaml.info/learn/quote.html#double
+                        #>
+                        
+                        $FoldedString = $FoldedString.Replace('\0',"`0")
+                        $FoldedString = $FoldedString.Replace('\a',"`a")
+                        $FoldedString = $FoldedString.Replace('\b',"`b")
+                        $FoldedString = $FoldedString.Replace('\t',"`t")
+                        $FoldedString = $FoldedString.Replace('\n',"`n")
+                        $FoldedString = $FoldedString.Replace('\v',"`v")
+                        $FoldedString = $FoldedString.Replace('\f',"`f")
+                        $FoldedString = $FoldedString.Replace('\e',"`e")
+                        $FoldedString = $FoldedString.Replace('\ '," ")
+                        $FoldedString = $FoldedString.Replace('\/',"/")
+                        $FoldedString = $FoldedString.Replace('\\',"\")
+                        $FoldedString = $FoldedString.Replace('\N',"`u{85}")
+                        $FoldedString = $FoldedString.Replace('\_',"`u{a0}")
+                        $FoldedString = $FoldedString.Replace('\L',"`u{2028}")
+                        $FoldedString = $FoldedString.Replace('\P',"`u{2029}")
+                        # $FoldedString = $FoldedString.Replace('\x[0-90-f]{2}',"`u{$1}")   # Escaped 8 bit unicode character
+                        # $FoldedString = $FoldedString.Replace('\u[0-90-f]{4}',"`u{$1}")   # Escaped 16 bit unicode character
+                        # $FoldedString = $FoldedString.Replace('\U[0-90-f]{8}',"`u{$1}")   # Escaped 32 bit unicode character
+                    }
+                } elseif($Parsed.IsBlockScalar) {
+                    Write-Debug "Yaml line $($k): Multiline String was a BLOCK SCALAR"
+                    <# A Literal Block Scalar is introduced with the | pipe. The content starts on the next line and has to be indented:
+                       The indendation is detected from the first (non-empty) line of the block scalar. And can be modified by the BlockScalarIndent
+                        property (in the event where the first line is more indented than the following ones)
+
+                       The Folded Block Scalar, will fold its lines with spaces. It is introduced with the > sign
+
+                       Trailing spaces are kept
+                       You can enforce a newline with an empty line
+                       You can enforce newlines by increasing the indentation inside the block
+                       If a line starting with # is indented correctly, it will not be interpreted as a comment
+
+                       Block Scalars always end with a newline.
+                       Chomping is used to remove the trailing newlines. It can be set to + (keep all), - (remove all) or nothing (keep one)
+                    #>
+                    if($Parsed.BlockScalar.Style -eq '>') {
+                        Write-Debug "Yaml line $($k): Multiline String was a FOLDED BLOCK SCALAR"
+                        # Folded Block Scalar
+                        $PrevTrimmed = $null
+                        for($mlk = 0; $mlk -lt $MultiLineString.Count; $mlk ++) {
+                            if($mlk -ne 0 -and ($YamlLines[$mlk] | CountLeadingSpaces) -gt 0) {
+                                # The line is more indented than the previous one, it goes on a new line, leading whitespace is preserved
+                                $Trimmed = $MultiLineString[$mlk].TrimEnd()
+                                $FoldedString.Add($Trimmed) | Out-Null
+                                $PrevTrimmed = $Trimmed
+                                continue
+                            }
+                            if($mlk -ne 0 -and ($YamlLines[$mlk - 1] | CountLeadingSpaces) -gt 0) {
+                                # The previous line was more indented than this one, it goes on a new line
+                                $Trimmed = $MultiLineString[$mlk].Trim()
+                                $FoldedString.Add($Trimmed) | Out-Null
+                                $PrevTrimmed = $Trimmed
+                                continue
+                            }
+                            # Other cases
+                            $Trimmed = $MultiLineString[$mlk].Trim()
+                            if($Trimmed.Length -eq 0) {
+                                if($null -ne $PrevTrimmed -and $PrevTrimmed.Length -eq 0) {
+                                    # This is a newline, following another newline, keep it as a newline
+                                    $FoldedString.Add('') | Out-Null
+                                } else {
+                                    # A newline not following another newline, keep it as a space
+                                }
+                            } else {
+                                # This is a segment of the string, preserve it
+                                $FoldedString.Add($Trimmed) | Out-Null
+                            }
+                            $PrevTrimmed = $Trimmed
+                        }
+                        $FoldedString = $FoldedString -join "`n"
+                    } elseif($Parsed.BlockScalar.Style -eq '|') {
+                        Write-Debug "Yaml line $($k): Multiline String was a LITERAL BLOCK SCALAR"
+                        # Literal Block Scalar
+                        
+                        # The lines are preserved
+                        for($mlk = 0; $mlk -lt $MultiLineString.Count; $mlk ++) {
+                            $FoldedString.Add($MultiLineString[$mlk])
+                        }
+                        $FoldedString = $FoldedString -join "`n"
+                    }
+
+                    <# Chomp #>
+                    switch($Parsed.BlockScalarChomp) {
+                        '+' {
+                            # Keep all trailing newlines
+                            # Nothing to do
+                        }
+                        '-' {
+                            # Remove all trailing newlines
+                            $FoldedString = $FoldedString.TrimEnd("`n")
+                        }
+                        default {
+                            # Keep one trailing newline
+                            $FoldedString = $FoldedString.TrimEnd("`n")
+                            $FoldedString = $FoldedString + "`n"
+                        }
+                    }
+                }
+            }
+
+            # The multiline string (if any) was captured and processed into $FoldedString
+            if($null -ne $FoldedString) {
+                Write-Debug "Yaml line $($k): Using the captured Multiline String as a value:`n$($FoldedString)"
+                $Value = $FoldedString
+            } else {
+                Write-Debug "Yaml line $($k): Using the inline String as a value:`n$($Parsed.Value)"
+                $Value = $Parsed.Value
+            }
+
+            # Proceed with structure and value processing
+            if($null -ne $PrevParsed) {
+                Write-Debug "Yaml line $($k): First item found, processing it"
+                # This is the first item we process
+                # Process Sequence, Mapping or Scalar
+                if($Parsed.IsSequence) {
+                    Write-Debug "Yaml line $($k): Item is a sequence"
+                    $CurrentObject = [system.Collections.ArrayList]::new()
+                    $CurrentObject.Add($Value)
+                } elseif($Parsed.IsMapping) {
+                    Write-Debug "Yaml line $($k): Item is a mapping"
+                    $CurrentObject = [System.Collections.Hashtable]::new()
+                    $CurrentObject.Add($Parsed.Key.Value, $Value)
+                } else {
+                    Write-Debug "Yaml line $($k): Item is a scalar"
+                    $CurrentObject = $Value
+                }
+                $PrevParsed = $Parsed
+            } else {
+                # This is another object, it can be sibling, parent or child
+                if($Parsed.Indentation -eq $PrevParsed.Indentation) {
+                    Write-Debug "Yaml line $($k): Sibling item found, processing it"
+                    # This is a sibling item
+                    # Process Sequence, Mapping or Scalar
+                    if($Parsed.IsSequence) {
+                        Write-Debug "Yaml line $($k): Item is a sequence"
+                        $CurrentObject.Add($Value)
+                    } elseif($Parsed.IsMapping) {
+                        Write-Debug "Yaml line $($k): Item is a mapping"
+                        $CurrentObject.Add($Parsed.Key.Value, $Value)
+                    } else {
+                        Write-Warning "Yaml line $($k): Item is a scalar - This is unexpected for a sibling!"
+                        throw "Yaml line $($k): Invalid Yaml Line: $Line - Expected a Sequence or Mapping"
+                    }
+                    $PrevParsed = $Parsed
+                } elseif($Parsed.Indentation -gt $PrevParsed.Indentation) {
+                    Write-Debug "Yaml line $($k): Child item found, processing it"
+                    # This is a child item
+                    
+                    # Collect the lines of the child, by their identation
+                    $ChildLines = [System.Collections.ArrayList]::new()
+                    for($mlk = $k; $mlk -lt $YamlLines.Length; $mlk ++) {
+                        $mli = $YamlLines[$mlk] | CountLeadingSpaces
+                        if($mli -le $Parsed.Indentation) {
+                            # End of the child item
+                            break;
+                        } else {
+                            $ChildLines.Add($YamlLines[$mlk]) | Out-Null
+                        }
+                    }
+                    Write-Debug "Yaml line $($k): Calling recursively to process the child item"
+                    $ChildObject = ProcessAllLines -YamlLines $ChildLines -Identation $mli
+
+                    Write-Debug "Yaml line $($k): Child item processed, moving cursor from $($k) to $($mlk)"
+                    Write-Warning "BEFORE: $($YamlLines[$k])"
+                    Write-Warning "AFTER:  $($YamlLines[$mlk])"
+                    $k = $mlk
+
+                    # Process Sequence, Mapping or Scalar
+                    if($Parsed.IsSequence) {
+                        Write-Debug "Yaml line $($k): Item is a sequence"
+                        $CurrentObject.Add($ChildObject)
+                    } elseif($Parsed.IsMapping) {
+                        Write-Debug "Yaml line $($k): Item is a mapping"
+                        $CurrentObject.Add($Parsed.Key.Value, $ChildObject)
+                    } else {
+                        Write-Warning "Yaml line $($k): Item is a scalar - This is unexpected for a child!"
+                        throw "Yaml line $($k): Invalid Yaml Line: $Line - Expected a Sequence or Mapping"
+                    }
+
+                } elseif($Parsed.Indentation -lt $PrevParsed.Indentation) {
+                    Write-Debug "Yaml line $($k): Parent item found, stop processing and return the object"
+                    Write-Warning "Yaml line $($k): Parent item found - This is unexpected - save maybe for the first level!"
+                    # This is a parent item
+                    # Return the object to the caller
+                    return $CurrentObject
+                }
+            }
+        }
+
+        # IT WAS USELESS TO CAPTURE THE YAML version and YAML tag directives, as we do nto use them
+        # $CurrentDocument | Add-Member -MemberType NoteProperty -Name Body -Value $CurrentObject
+        #
+        # Return the Object right away
+        return $CurrentObject
     }
 }
 <#
@@ -798,3 +1203,6 @@ Function ConvertFrom-Yaml {
 # . E:\ManageMyOwnWebServerOnWindows\source\MetaNull.Pipeline\source\public\Yaml.ps1 
 $yml = @('Step:','- Task:','  Name: "Build"','  Path: .','#Next step','- Task:','  Name: "Deploy"','  Script: |','         Get-Date') 
 $yml | ProcessLine | Select Line,Indentation,Depth,Key,Cast,QuotedFlowScalarValue,MultilineQuotedFlowScalarValue,Multiline,BlockScalarStyle,BlockScalarChomp,BlockScalarIndent,MultilineQuotedFlowScalarType | ft
+
+$AllInes = Get-Content z:\t.yaml
+ProcessAllLines -YamlLines $AllInes -Identation 0 -Debug

@@ -819,6 +819,25 @@ Function ProcessAllLines {
                         }
                     }
                 } else {
+                    Write-Warning "SEE HERE FOR WHAT TO DO: Line 822"
+                    Write-Warning "SEE HERE FOR WHAT TO DO: Line 822"
+                    Write-Warning "SEE HERE FOR WHAT TO DO: Line 822"
+                    #
+                    #
+                    # THERE IS ANOTHER OPTION HERE
+                    # It could be that it is NOT a multiline string at all
+                    # By example if Parsed was a Collection, it could be immediatelly followed by a child sequence:
+                    #
+                    #   trigger:
+                    #   - {{ branch }}
+                    #
+                    # ==> The value of the key 'trigger' is therefore a block of yaml to be processed, and not a scalar!
+                    #
+                    #
+                    Write-Warning "SEE HERE FOR WHAT TO DO: Line 822"
+                    Write-Warning "SEE HERE FOR WHAT TO DO: Line 822"
+                    Write-Warning "SEE HERE FOR WHAT TO DO: Line 822"
+                    
                     Write-Debug "Yaml line $($k): Multiline String was a PLAIN SCALAR"
                     # Plain Scalar, multiline string
                     # The lines are preserved

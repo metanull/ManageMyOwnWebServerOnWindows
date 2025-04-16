@@ -333,10 +333,10 @@ Function ProcessLine {
         }
 
         # Trim and remove comments
-        Write-Debug "ORIGINA: ``$($OriginalLine)``"
-        Write-Debug "NOT TRIMMED: ``$($Line)``"
+        Write-Debug "   > ORIGINAL: ``$($OriginalLine)``"
+        Write-Debug "   > NOT TRIMMED: ``$($Line)``"
         $Line = $Line  | TrimComment
-        Write-Debug "TRIMMED: ``$($Line)``"
+        Write-Debug "   > TRIMMED: ``$($Line)``"
 
         # Skip empty lines
         if([string]::IsNullOrEmpty($Line.Trim())) {
@@ -499,14 +499,20 @@ Function ProcessAllLines {
             param(
                 [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
                 [AllowEmptyString()]
-                [string]$Line
+                [string]$Line,
+
+                [switch]$IgnoreSequence
             )
-            Begin {
-                $rx = [regex]::new('(?<Indentation>[ ]+)')
-            }
             Process {
+                if($IgnoreSequence.IsPresent -and $IgnoreSequence) {
+                    $rx = [regex]::new('^(?<Indentation>[ ]+)')
+                } else {
+                    $rx = [regex]::new('^(?<Indentation>[ ]+)?(?<Sequence>- )?')
+                }
                 $r = $rx.Match($Line)
-                if($r.Groups['Indentation'].Success) {
+                if($r.Groups['Sequence'].Success) {
+                    return $r.Groups['Indentation'].Length + $r.Groups['Sequence'].Length
+                } elseif($r.Groups['Indentation'].Success) {
                     return $r.Groups['Indentation'].Length
                 } else {
                     return $null
@@ -530,8 +536,8 @@ Function ProcessAllLines {
             # Parse the current line
             $Parsed = $YamlLines[$k] | ProcessLine
 
-            "PARSED: " | write-Warning
-            $Parsed |  Write-Error
+            #"PARSED: " | write-Warning
+            #$Parsed |  Write-Error
 
             # Line is an explicit document end
             if($Parsed.IsDocumentEnd) {
@@ -615,8 +621,10 @@ Function ProcessAllLines {
 
                 # Value could have started on the parent's line
                 if($Parsed.IsFlowCollection -and $Parsed.FlowCollection.Value) {
+                    Write-Debug "   > multiline Flow Collection with value in first line:`t``$($Parsed.FlowCollection.Value)``"
                     $MultiLineString.Add($Parsed.FlowCollection.Value) | Out-Null
-                } elseif($Parsed.IsFlowCollection -and $Parsed.FlowCollection.Value) {
+                } elseif($Parsed.IsFlowScalar -and $Parsed.FlowScalar.Value) {
+                    Write-Debug "   > multiline Flow Scalar with value in first line:`t``$($Parsed.FlowCollection.Value)``"
                     $MultiLineString.Add($Parsed.FlowCollection.Value) | Out-Null
                 }
                 
@@ -625,38 +633,46 @@ Function ProcessAllLines {
                     $ChildIndentation = $YamlLines[$k + 1] | CountLeadingSpaces
                     # For Block Scalar, the indentation of the firstline may be overriden by declaration
                     if($Parsed.IsBlockScalar -and $null -ne $Parsed.BlockScalar.Indent) {
+                        Write-Debug "   > multiline Block Scalar with extra Indentation:`t``$($Parsed.BlockScalar.Indent)``"
                         $ChildIndentation -= $Parsed.BlockScalar.Indent
                     }
 
                     # Capture the rest of the value
                     for($mlk = $k + 1; $mlk -lt $YamlLines.Length; $mlk ++) {
                         $mli = $YamlLines[$mlk] | CountLeadingSpaces
+                        Write-Debug "Yaml line $($mlk): > analyzing string for multiline : Identation: $($mli), Content: ``$($YamlLines[$mlk])``"
+
                         # Value is always subject to indentation rules
                         if($mli -le $ParentIndentation) {
+                            Write-Debug "   > multiline string ended by indentation: $($mli) <= $($ParentIndentation) (parent)"
                             # Indentation is less or equal the parent indentation => end of the multiline string
                             break;
                         }
                         if($mli -lt $ChildIndentation) {
+                            Write-Debug "   > multiline string ended by indentation: $($mli) < $($ChildIndentation) (child)"
                             # Indentation is less than the child indentation => end of the multiline string
                             break;
                         }
                         # Value could be character delimited
                         if( ($Parsed.IsFlowCollection -and $Parsed.FlowCollection.MultiLineEnder -and $YamlLines[$mlk].EndsWith($Parsed.FlowCollection.MultiLineEnder)) `
-                            -or ($Parsed.IsFlowScalar -and $Parsed.FlowScalar.MultiLineEnder -and $YamlLines[$mlk].EndsWith($Parsed.FlowScalar.MultiLineEnder)) ) {
+                            -or ($Parsed.IsFlowScalar -and $Parsed.FlowScalar.MultiLineEnder -and $YamlLines[$mlk].EndsWith($Parsed.FlowScalar.MultiLineEnder)) 
+                        ) {
+                            Write-Debug "   > multiline string ended by delimiter"
                             # This is the end of the multiline string, strip the delimiter and return
-                            $buf = $YamlLines[$mlk].Substring($ChildIndentation)
+                            $buf = $YamlLines[$mlk] <#.Substring($ChildIndentation)#>
                             $buf = $buf.Substring(0, $buf.Length - 1)
                             $MultiLineString.Add($buf) | Out-Null
                             break;
                         }
                         # None of the conditions met, continue to add the line to the multiline string
-                        $MultiLineString.Add($YamlLines[$mlk].Substring($ChildIndentation)) | Out-Null
+                        Write-Debug "   > multiline string continued: ``$($YamlLines[$mlk])``"
+                        $MultiLineString.Add($YamlLines[$mlk] <#.Substring($ChildIndentation)#>) | Out-Null
                     }
 
                     # Move the cursor
                     Write-Warning "Moving cursor from $($k) to $($mlk)"
-                    Write-Warning "BEFORE: $($YamlLines[$k])"
-                    Write-Warning "AFTER:  $($YamlLines[$mlk])"
+                    Write-Warning "   > BEFORE: ``$($YamlLines[$k])``"
+                    Write-Warning "   > AFTER:  ``$($YamlLines[$mlk])``"
                     $k = $mlk
                 }
 
@@ -802,6 +818,14 @@ Function ProcessAllLines {
                             $FoldedString = $FoldedString + "`n"
                         }
                     }
+                } else {
+                    Write-Debug "Yaml line $($k): Multiline String was a PLAIN SCALAR"
+                    # Plain Scalar, multiline string
+                    # The lines are preserved
+                    for($mlk = 0; $mlk -lt $MultiLineString.Count; $mlk ++) {
+                        $FoldedString.Add($MultiLineString[$mlk]) | Out-Null
+                    }
+                    $FoldedString = $FoldedString -join "`n"
                 }
             }
 

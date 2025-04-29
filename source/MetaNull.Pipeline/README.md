@@ -98,7 +98,7 @@ jobs:
 |`[string]`|`Name`|_$Name_|'#text'||
 |`[hashtable]`|`Property`|_$Property_|`@{'#type' = 'string|int|datetime|...'}`|(see Yaml documentation)|
 |`[object[]]`|`Children`|[`YamlNode[]`]$Children|[`String[]`]$Children||
-|`[string]`|`InnerText`
-|`[object]`|`InnerYaml`
-|`[string]`|`OuterText`
-|`[object]`|`OuterYaml`
+|`[string]`|`InnerText`| | | | |
+|`[object]`|`InnerYaml`| | | | |
+|`[string]`|`OuterText`| | | | |
+|`[object]`|`OuterYaml`| | | | |

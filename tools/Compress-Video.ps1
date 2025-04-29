@@ -57,7 +57,7 @@
 		$Item,
 
 		[Parameter(Mandatory, ParameterSetName = 'Scale')]
-		[int]$With,
+		[int]$Width,
 		[Parameter(Mandatory, ParameterSetName = 'Scale')]
 		[int]$Height,
 
@@ -269,14 +269,14 @@
 			$FinalOutPath = $OutPath 	# Output file path
 			$Arguments = $StoredArguments
 			$Arguments += , $FinalOutPath	# Output file
-			$ArgumentList += , [pscustomobject]@{
+			$ArgumentList = , [pscustomobject]@{
 				Arguments = $Arguments
 				OutPath = $FinalOutPath
 				ChapterMessage = "Whole file"
 				ScaleMessage = $ScaleMessage
 				Start = 0
 				End = $TotalDuration
-			} | Write-Output
+			}
 		}
 
 		# Process each lsit of arguments
@@ -298,13 +298,13 @@
 
 				try {
 					& ffmpeg $Arguments 2>&1 | Out-String -Stream | Tee-Object -Variable FFMPEG_OUT | Foreach-Object {
-						$RxRes = $RxTime.Match($_)
-						if ($RxRes.Success) {
+						$RxResult = $RxTime.Match($_)
+						if ($RxResult.Success) {
 							$CurrentDuration = [pscustomobject]@{
-								Hour        = [int]::Parse(($RxRes.Groups['HOUR'].Value))
-								Minute      = [int]::Parse(($RxRes.Groups['MINUTE'].Value))
-								Second      = [int]::Parse(($RxRes.Groups['SECOND'].Value))
-								MilliSecond = [int]::Parse(($RxRes.Groups['MILLISECOND'].Value))
+								Hour        = [int]::Parse(($RxResult.Groups['HOUR'].Value))
+								Minute      = [int]::Parse(($RxResult.Groups['MINUTE'].Value))
+								Second      = [int]::Parse(($RxResult.Groups['SECOND'].Value))
+								MilliSecond = [int]::Parse(($RxResult.Groups['MILLISECOND'].Value))
 							}
 							$CurrentDuration = $StartOffset + ($CurrentDuration.Hour * 3600000) + ($CurrentDuration.Minute * 60000) + ($CurrentDuration.Second * 1000) + $CurrentDuration.MilliSecond
 

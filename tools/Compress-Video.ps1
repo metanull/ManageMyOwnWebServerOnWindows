@@ -354,7 +354,7 @@
         # Regex to capture the duration of the video
 		$RegexDuration = [regex]::new('^\s*Duration:\s*(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+),')
 		$RegexTime = [regex]::new('\stime=(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+)\s')
-		$RegexResolution = [regex]::new("^\s*Stream #\d\S+: Video:.*, (?<RESOLUTION>(?<WIDTH>\d+)x(?<HEIGHT>\d+)), (?<RATE>\d+) kb/s,.*, (?<FPS>\d+) fps,")
+		$RegexResolution = [regex]::new("^\s*Stream #\d\S+: Video:.*, (?<RESOLUTION>(?<WIDTH>\d+)x(?<HEIGHT>\d+))(?: \[.*?\])?, (?<RATE>\d+) kb/s(?:, .*?)*, (?<FPS>\d+) fps,")
 
         # Predefined resolutions
 		$Resolutions = @{

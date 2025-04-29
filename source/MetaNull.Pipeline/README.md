@@ -91,8 +91,7 @@ jobs:
 
 ## YamlDocument
 
-- `[YamlNode]` Root`
-
+- `[YamlNode]` Root
 ## YamlNode
 
 ||Type|Name|Node|Scalar|Comment||

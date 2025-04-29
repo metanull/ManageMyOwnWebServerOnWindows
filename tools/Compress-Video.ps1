@@ -1,4 +1,4 @@
-function Compress-Video {
+﻿function Compress-Video {
 	<#
         .NOTES
             Author: Pascal Havelange
@@ -120,7 +120,7 @@ function Compress-Video {
 			}
 		} | Select-Object -First 1
 		$TotalDuration = ($Duration.Hour * 3600000) + ($Duration.Minute * 60000) + ($Duration.Second * 1000) + $Duration.MilliSecond
-		
+
 		# Get the original resolution
 		$Resolution = $Probe | Select-String '^\s*Stream #\d\S+: Video: ' | Foreach-Object {
 			$RxResult = $RxRes.Match($_)
@@ -134,15 +134,15 @@ function Compress-Video {
 				}
 			}
 		} | Select-Object -First 1
-		
+
 		# Collect info about the chapters
 		if($Chapters.IsPresent -and $Chapters) {
 			$ChapterList = ffprobe -i $InPath -print_format csv -show_chapters 2>$null | Out-String -Stream | Foreach-Object {
 				$ChapterData = $_ -split ','
 				[pscustomobject]@{
-					Number = $ChapterData[1]
-					Start = $ChapterData[4]
-					End = $ChapterData[6]
+					Number = [int]::Parse($ChapterData[1])
+					Start = [double]::Parse($ChapterData[4],[cultureinfo]::InvariantCulture)
+					End = [double]::Parse($ChapterData[6],[cultureinfo]::InvariantCulture)
 					Title = $ChapterData[7]
 				}
 			}
@@ -180,7 +180,7 @@ function Compress-Video {
 				# Couldn't find the original resolution
 				$ScaleMessage = "Possible downscaling to $($PSCmdlet.ParameterSetName) ($Width x $Height)"
 			}
-			
+
 			$Arguments += , "-vf", "scale='if(gt(max(iw,ih),max($Width,$Height))*gt(min(iw,ih),min($Width,$Height))*gt(iw,ih),$Width,-2)':'if(gt(max(iw,ih),max($Width,$Height))*gt(min(iw,ih),min($Width,$Height))*gt(ih,iw),$Height,-2)':flags=lanczos"
 			<#
 			#"-vf","scale=1920:-2:flags=lanczos"	# Scale to 1920*x (preserving original aspect ratio)
@@ -247,19 +247,21 @@ function Compress-Video {
 		$ArgumentList = @()
 		if($Chapters.IsPresent -and $Chapters -and $ChapterList) {
 			# -Chapters is set, and the input has chapters
-			$ArgumentsList = $ChapterList | Foreach-Object {
+			$ArgumentList = $ChapterList | Foreach-Object {
 				$FinalOutPath = $ChapterOutPath -f "#$($_.Number)#$($_.Title -replace '\W','_')"	# Output file path
 				$Arguments = $StoredArguments
-				$Arguments += , "-ss", $_.Start
-				$Arguments += , "-to", $_.End
+				$Arguments += , "-ss", $_.Start.ToString([cultureinfo]::InvariantCulture)
+				$Arguments += , "-to", $_.End.ToString([cultureinfo]::InvariantCulture)
 				$Arguments += , "-map", '0'
 				$Arguments += , "-map_chapters", '-1'
 				$Arguments += , $FinalOutPath	# Output file
-				$ArgumentList += , [pscustomobject]@{
+				[pscustomobject]@{
 					Arguments = $Arguments
 					OutPath = $FinalOutPath
 					ChapterMessage = "Chapter #$($_.Number) - $($_.Title)"
 					ScaleMessage = $ScaleMessage
+					Start = [int]($_.Start * 1000)
+					End = [int]($_.End * 1000)
 				} | Write-Output
 			}
 		} else {
@@ -272,24 +274,28 @@ function Compress-Video {
 				OutPath = $FinalOutPath
 				ChapterMessage = "Whole file"
 				ScaleMessage = $ScaleMessage
+				Start = 0
+				End = $TotalDuration
 			} | Write-Output
 		}
-		
+
 		# Process each lsit of arguments
 		$ArgumentList | Foreach-Object {
 			$Arguments = $_.Arguments
 			$OutPath = $_.OutPath
 			$ChapterMessage = $_.ChapterMessage
-			
+			$StartOffset = $_.Start
+			# $EndOffset = $_.End 	# Not used
+
 			Write-Verbose "Writing to: $($_.OutPath)"
 			Write-Verbose "Chapter: $($ChapterMessage)"
 			Write-Verbose "Scale: $($ScaleMessage)"
-			
+
 			# Recompress using HEVC, optionally downscaling when the original is greater than the desired resolution
 			if (($Force.IsPresent -and $Force) -or -not (Test-Path $OutPath) -or $PSCmdlet.ShouldProcess($OutPath, "Overwrite file")) {
 				$OldConfirmPreference = $ConfirmPreference
 				$ConfirmPreference = 'None'	# Disable "Confirm" for operation Tee-Object -Variable
-				
+
 				try {
 					& ffmpeg $Arguments 2>&1 | Out-String -Stream | Tee-Object -Variable FFMPEG_OUT | Foreach-Object {
 						$RxRes = $RxTime.Match($_)
@@ -300,7 +306,7 @@ function Compress-Video {
 								Second      = [int]::Parse(($RxRes.Groups['SECOND'].Value))
 								MilliSecond = [int]::Parse(($RxRes.Groups['MILLISECOND'].Value))
 							}
-							$CurrentDuration = ($CurrentDuration.Hour * 3600000) + ($CurrentDuration.Minute * 60000) + ($CurrentDuration.Second * 1000) + $CurrentDuration.MilliSecond
+							$CurrentDuration = $StartOffset + ($CurrentDuration.Hour * 3600000) + ($CurrentDuration.Minute * 60000) + ($CurrentDuration.Second * 1000) + $CurrentDuration.MilliSecond
 
 							# Write-Warning ($CurrentDuration / $TotalDuration * 100)
 							Write-Progress -Activity "$($Item.Name)" -Status "$($ChapterMessage) | Encoding to HEVC (x265) | $($ScaleMessage)" -CurrentOperation $_ -PercentComplete ($CurrentDuration / $TotalDuration * 100)
@@ -317,7 +323,7 @@ function Compress-Video {
 					# When ffmpeg returns an error, display it and exit
 					Write-Debug "FFMPEG EXITCODE: $LASTEXITCODE"
 					Write-Error ($FFMPEG_OUT | Select-Object -Last 1)
-					
+
 					return
 				}
 
@@ -381,7 +387,7 @@ function Compress-Video {
 				Height = $null
 			}
 			Scale   = @{    # Custom scale, set at runtime
-				Width  = $null  
+				Width  = $null
 				Height = $null
 			}
 		}

@@ -34,6 +34,8 @@ function Compress-Video {
             Downscale to 8K (7680x4320)
         .PARAMETER 10K
             Downscale to 10K (10240x4320)
+		.PARAMETER Chapters
+			If set, produce one distinct output file for each Chapter in the input file
         .EXAMPLE
             # Compress a single video
             Compress-Video -Item C:\MyVideo.MOV
@@ -43,6 +45,9 @@ function Compress-Video {
         .EXAMPLE
             # Compress all videos in a folder, downscale to 640x480
             Get-ChildItem -Recurse C:\Videos | Compress-Video -Width 640 -Height 480
+		.EXAMPLE
+			# Compress all videos in a folder, downscaling to HD, producing one file per Chapter
+			Get-ChildItem -Recurse C:\Videos | Compress-Video -HD -Force -Chapters
 	#>
 	[CmdLetBinding(SupportsShouldProcess, ConfirmImpact = 'Low', DefaultParameterSetName = 'NoScale')]
 	param(
@@ -77,11 +82,13 @@ function Compress-Video {
 		[switch] $Force,
 		[switch] $Test,
 		[switch] $NoMetaData,
-		[switch] $Fast
+		[switch] $Fast,
+		[switch] $Chapters
 	)
 	Process {
 		$InPath = $Item.FullName
 		$OutPath = $Item.FullName -replace '\.([a-z][a-z0-9]+)$', '-compressed.mp4'
+		$ChapterOutPath = $Item.FullName -replace '\.([a-z][a-z0-9]+)$', '-{0}-compressed.mp4'
 		Write-Debug "Source: $InPath"
 		Write-Debug "Destination: $OutPath"
 
@@ -102,17 +109,50 @@ function Compress-Video {
 
 		# Get the total duration of the source video
 		$Duration = $Probe | Select-String '^\s*Duration:' | Foreach-Object {
-			$RxRes = $RxDur.Match($_)
-			if ($RxRes.Success) {
+			$RxResult = $RxDur.Match($_)
+			if ($RxResult.Success) {
 				[pscustomobject]@{
-					Hour        = [int]::Parse(($RxRes.Groups['HOUR'].Value))
-					Minute      = [int]::Parse(($RxRes.Groups['MINUTE'].Value))
-					Second      = [int]::Parse(($RxRes.Groups['SECOND'].Value))
-					MilliSecond = [int]::Parse(($RxRes.Groups['MILLISECOND'].Value))
+					Hour        = [int]::Parse(($RxResult.Groups['HOUR'].Value))
+					Minute      = [int]::Parse(($RxResult.Groups['MINUTE'].Value))
+					Second      = [int]::Parse(($RxResult.Groups['SECOND'].Value))
+					MilliSecond = [int]::Parse(($RxResult.Groups['MILLISECOND'].Value))
 				}
 			}
-		}
+		} | Select-Object -First 1
 		$TotalDuration = ($Duration.Hour * 3600000) + ($Duration.Minute * 60000) + ($Duration.Second * 1000) + $Duration.MilliSecond
+		
+		# Get the original resolution
+		$Resolution = $Probe | Select-String '^\s*Stream #\d\S+: Video: ' | Foreach-Object {
+			$RxResult = $RxRes.Match($_)
+			if ($RxResult.Success) {
+				[pscustomobject]@{
+					String  = ($RxResult.Groups['RESOLUTION'].Value)
+					Width   = [int]::Parse(($RxResult.Groups['WIDTH'].Value))
+					Height  = [int]::Parse(($RxResult.Groups['HEIGHT'].Value))
+					Rate 	= [int]::Parse(($RxResult.Groups['RATE'].Value))
+					FPS 	= [int]::Parse(($RxResult.Groups['FPS'].Value))
+				}
+			}
+		} | Select-Object -First 1
+		
+		# Collect info about the chapters
+		if($Chapters.IsPresent -and $Chapters) {
+			$ChapterList = ffprobe -i $InPath -print_format csv -show_chapters 2>$null | Out-String -Stream | Foreach-Object {
+				$ChapterData = $_ -split ','
+				[pscustomobject]@{
+					Number = $ChapterData[1]
+					Start = $ChapterData[4]
+					End = $ChapterData[6]
+					Title = $ChapterData[7]
+				}
+			}
+			if ($LASTEXITCODE -ne 0) {
+				# When ffprobe returns an error, display it and exit
+				Write-Debug "FFPROBE EXITCODE: $LASTEXITCODE"
+				Write-Error ($Probe | Select-Object -Last 1)
+				return
+			}
+		}
 
 		# FFMPEG Parameters
 		$Arguments = @(
@@ -128,10 +168,20 @@ function Compress-Video {
 		$Width = $Resolutions[$PSCmdlet.ParameterSetName].Width
 		$Height = $Resolutions[$PSCmdlet.ParameterSetName].Height
 		if ($null -ne $Width -and $null -ne $Height) {
-			$ScaleMessage = "Downscaling to $($PSCmdlet.ParameterSetName) ($Width x $Height) - preserving the original aspect ratio"
-			# Scale to desired resolution (preserving aspect ratio), but only if original was bigger than that resolution
-			$Arguments += , "-vf", "scale='if((gt(iw,$Width)+gt(ih,$Height))*gt(iw,ih),$Width,-2)':'if((gt(iw,$Width)+gt(ih,$Height))*gt(iw,ih),-2,$Width)':flags=lanczos"
-
+			if($null -ne $Resolution) {
+				# The original resolution was extracted by ffprobe
+				$ScaleMessage = "Original: $($Resolution.Width) x $($Resolution.Height); Target: $($PSCmdlet.ParameterSetName) ($Width x $Height); "
+				if(([Math]::Max($Resolution.Width,$Resolution.Height) -gt [Math]::Max($Width,$Height)) -or ([Math]::Min($Resolution.Width,$Resolution.Height) -gt [Math]::Min($Width,$Height))) {
+					$ScaleMessage = "Downscaling from $($Resolution.Width) x $($Resolution.Height) to $($PSCmdlet.ParameterSetName) ($Width x $Height), preserving the original aspect ratio!"
+				} else {
+					$ScaleMessage = "Original resolution $($Resolution.Width) x $($Resolution.Height)"
+				}
+			} else {
+				# Couldn't find the original resolution
+				$ScaleMessage = "Possible downscaling to $($PSCmdlet.ParameterSetName) ($Width x $Height)"
+			}
+			
+			$Arguments += , "-vf", "scale='if(gt(max(iw,ih),max($Width,$Height))*gt(min(iw,ih),min($Width,$Height))*gt(iw,ih),$Width,-2)':'if(gt(max(iw,ih),max($Width,$Height))*gt(min(iw,ih),min($Width,$Height))*gt(ih,iw),$Height,-2)':flags=lanczos"
 			<#
 			#"-vf","scale=1920:-2:flags=lanczos"	# Scale to 1920*x (preserving original aspect ratio)
 			#"-vf", "scale=-2:-2:flags=lanczos"		# Scale to: original resolution (using multiples of 2)
@@ -139,7 +189,7 @@ function Compress-Video {
 			#>
 		}
 		else {
-			$ScaleMessage = "Preserving the original resolution"
+			$ScaleMessage = "Downscaling is disabled"
 		}
 
 		# Select the compression preset
@@ -191,53 +241,97 @@ function Compress-Video {
 			$Arguments += , "-movflags", "use_metadata_tags"	# Include MOV (apple) metadata
 		}
 
-		# Set the Output file's path
-		$Arguments += , $OutPath	# Output file
+		# Keep a copy of the arguments (in case we need to use it multiple times, for chapters)
+		$StoredArguments = $Arguments
+		# Create a list of ArgumentList (one single entry in most cases, but can be multiple if -Chapters was set and the input file has chapters)
+		$ArgumentList = @()
+		if($Chapters.IsPresent -and $Chapters -and $ChapterList) {
+			# -Chapters is set, and the input has chapters
+			$ArgumentsList = $ChapterList | Foreach-Object {
+				$FinalOutPath = $ChapterOutPath -f "#$($_.Number)#$($_.Title -replace '\W','_')"	# Output file path
+				$Arguments = $StoredArguments
+				$Arguments += , "-ss", $_.Start
+				$Arguments += , "-to", $_.End
+				$Arguments += , "-map", '0'
+				$Arguments += , "-map_chapters", '-1'
+				$Arguments += , $FinalOutPath	# Output file
+				$ArgumentList += , [pscustomobject]@{
+					Arguments = $Arguments
+					OutPath = $FinalOutPath
+					ChapterMessage = "Chapter #$($_.Number) - $($_.Title)"
+					ScaleMessage = $ScaleMessage
+				} | Write-Output
+			}
+		} else {
+			# Chapters not requested, or not available in input
+			$FinalOutPath = $OutPath 	# Output file path
+			$Arguments = $StoredArguments
+			$Arguments += , $FinalOutPath	# Output file
+			$ArgumentList += , [pscustomobject]@{
+				Arguments = $Arguments
+				OutPath = $FinalOutPath
+				ChapterMessage = "Whole file"
+				ScaleMessage = $ScaleMessage
+			} | Write-Output
+		}
+		
+		# Process each lsit of arguments
+		$ArgumentList | Foreach-Object {
+			$Arguments = $_.Arguments
+			$OutPath = $_.OutPath
+			$ChapterMessage = $_.ChapterMessage
+			
+			Write-Verbose "Writing to: $($_.OutPath)"
+			Write-Verbose "Chapter: $($ChapterMessage)"
+			Write-Verbose "Scale: $($ScaleMessage)"
+			
+			# Recompress using HEVC, optionally downscaling when the original is greater than the desired resolution
+			if (($Force.IsPresent -and $Force) -or -not (Test-Path $OutPath) -or $PSCmdlet.ShouldProcess($OutPath, "Overwrite file")) {
+				$OldConfirmPreference = $ConfirmPreference
+				$ConfirmPreference = 'None'	# Disable "Confirm" for operation Tee-Object -Variable
+				
+				try {
+					& ffmpeg $Arguments 2>&1 | Out-String -Stream | Tee-Object -Variable FFMPEG_OUT | Foreach-Object {
+						$RxRes = $RxTime.Match($_)
+						if ($RxRes.Success) {
+							$CurrentDuration = [pscustomobject]@{
+								Hour        = [int]::Parse(($RxRes.Groups['HOUR'].Value))
+								Minute      = [int]::Parse(($RxRes.Groups['MINUTE'].Value))
+								Second      = [int]::Parse(($RxRes.Groups['SECOND'].Value))
+								MilliSecond = [int]::Parse(($RxRes.Groups['MILLISECOND'].Value))
+							}
+							$CurrentDuration = ($CurrentDuration.Hour * 3600000) + ($CurrentDuration.Minute * 60000) + ($CurrentDuration.Second * 1000) + $CurrentDuration.MilliSecond
 
-		# Recompress using HEVC, optionally downscaling when the original is greater than the desired resolution
-		if (($Force.IsPresent -and $Force) -or -not (Test-Path $OutPath) -or $PSCmdlet.ShouldProcess($OutPath, "Overwrite file")) {
-			$OldConfirmPreference = $ConfirmPreference
-			$ConfirmPreference = $false	# Disable "Confirm" for operation Tee-Object -Variable
-			try {
-				& ffmpeg $Arguments 2>&1 | Out-String -Stream | Tee-Object -Variable FFMPEG_OUT | Foreach-Object {
-					$RxRes = $RxTime.Match($_)
-					if ($RxRes.Success) {
-						$CurrentDuration = [pscustomobject]@{
-							Hour        = [int]::Parse(($RxRes.Groups['HOUR'].Value))
-							Minute      = [int]::Parse(($RxRes.Groups['MINUTE'].Value))
-							Second      = [int]::Parse(($RxRes.Groups['SECOND'].Value))
-							MilliSecond = [int]::Parse(($RxRes.Groups['MILLISECOND'].Value))
+							# Write-Warning ($CurrentDuration / $TotalDuration * 100)
+							Write-Progress -Activity "$($Item.Name)" -Status "$($ChapterMessage) | Encoding to HEVC (x265) | $($ScaleMessage)" -CurrentOperation $_ -PercentComplete ($CurrentDuration / $TotalDuration * 100)
 						}
-						$CurrentDuration = ($CurrentDuration.Hour * 3600000) + ($CurrentDuration.Minute * 60000) + ($CurrentDuration.Second * 1000) + $CurrentDuration.MilliSecond
 
-						# Write-Warning ($CurrentDuration / $TotalDuration * 100)
-						Write-Progress -Activity "$($Item.Name)" -Status "Encoding to HEVC (x.265) $ScaleMessage" -CurrentOperation $_ -PercentComplete ($CurrentDuration / $TotalDuration * 100)
+						$_ | Write-Verbose
 					}
-
-					$_ | Write-Verbose
 				}
-			}
-			finally {
-				$ConfirmPreference = $OldConfirmPreference
-				Write-Progress -Activity "$($Item.Name)" -Status "Done" -Completed
-			}
-			if ($LASTEXITCODE -ne 0) {
-				# When ffmpeg returns an error, display it and exit
-				Write-Debug "FFMPEG EXITCODE: $LASTEXITCODE"
-				Write-Error ($FFMPEG_OUT | Select-Object -Last 1)
-				return
-			}
+				finally {
+					$ConfirmPreference = $OldConfirmPreference
+					Write-Progress -Activity "$($Item.Name)" -Status "Done" -Completed
+				}
+				if ($LASTEXITCODE -ne 0) {
+					# When ffmpeg returns an error, display it and exit
+					Write-Debug "FFMPEG EXITCODE: $LASTEXITCODE"
+					Write-Error ($FFMPEG_OUT | Select-Object -Last 1)
+					
+					return
+				}
 
-			# Copy Last modification date
-			(Get-Item $OutPath).LastWriteTime = $Item.LastWriteTime
+				# Copy Last modification date
+				(Get-Item $OutPath).LastWriteTime = $Item.LastWriteTime
 
-			# Verbose dump the output file information
-			ffprobe -i $OutPath 2>&1 | Out-String -Stream | Write-Verbose
+				# Verbose dump the output file information
+				ffprobe -i $OutPath 2>&1 | Out-String -Stream | Write-Verbose
 
-			# Return the items (Original and Resized)
-			[pscustomobject]@{
-				Original = $Item
-				Resized  = (Get-Item $OutPath)
+				# Return the items (Original and Resized)
+				[pscustomobject]@{
+					Original = $Item
+					Resized  = (Get-Item $OutPath)
+				}
 			}
 		}
 	}
@@ -254,6 +348,7 @@ function Compress-Video {
         # Regex to capture the duration of the video
 		$RxDur = [regex]::new('^\s*Duration:\s*(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+),')
 		$RxTime = [regex]::new('\stime=(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+)\s')
+		$RxRes = [regex]::new("^\s*Stream #\d\S+: Video:.*, (?<RESOLUTION>(?<WIDTH>\d+)x(?<HEIGHT>\d+)), (?<RATE>\d+) kb/s,.*, (?<FPS>\d+) fps,")
 
         # Predefined resolutions
 		$Resolutions = @{

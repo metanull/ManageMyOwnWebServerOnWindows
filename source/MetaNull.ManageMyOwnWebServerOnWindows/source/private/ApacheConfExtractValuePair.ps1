@@ -8,8 +8,9 @@
 .PARAMETER Statement
     The statement to extract the value pair from.
 .EXAMPLE
-    ApacheConfExtractValuePair -Conf $Conf -Statement "ServerRoot"
-    Returns @{ ServerRoot = "C:/Apache24" } if the Apache configuration file contains "ServerRoot ""C:/Apache24""".
+    ApacheConfExtractValuePair -Conf $Conf -Statement "Define"
+
+    Returns @{ SRVROOT = "C:/mwnf-server/xampp/apache" } if the Apache configuration file contains 'Define SRVROOT "C:/mwnf-server/xampp/apache"'
 #>
 [CmdletBinding()]
 param(

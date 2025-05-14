@@ -57,7 +57,7 @@
 		$Item,
 
 		[Parameter(Mandatory, ParameterSetName = 'Scale')]
-		[int]$With,
+		[int]$Width,
 		[Parameter(Mandatory, ParameterSetName = 'Scale')]
 		[int]$Height,
 
@@ -109,7 +109,7 @@
 
 		# Get the total duration of the source video
 		$Duration = $Probe | Select-String '^\s*Duration:' | Foreach-Object {
-			$RxResult = $RxDur.Match($_)
+			$RxResult = $RegexDuration.Match($_)
 			if ($RxResult.Success) {
 				[pscustomobject]@{
 					Hour        = [int]::Parse(($RxResult.Groups['HOUR'].Value))
@@ -123,7 +123,7 @@
 
 		# Get the original resolution
 		$Resolution = $Probe | Select-String '^\s*Stream #\d\S+: Video: ' | Foreach-Object {
-			$RxResult = $RxRes.Match($_)
+			$RxResult = $RegexResolution.Match($_)
 			if ($RxResult.Success) {
 				[pscustomobject]@{
 					String  = ($RxResult.Groups['RESOLUTION'].Value)
@@ -269,14 +269,14 @@
 			$FinalOutPath = $OutPath 	# Output file path
 			$Arguments = $StoredArguments
 			$Arguments += , $FinalOutPath	# Output file
-			$ArgumentList += , [pscustomobject]@{
+			$ArgumentList = , [pscustomobject]@{
 				Arguments = $Arguments
 				OutPath = $FinalOutPath
 				ChapterMessage = "Whole file"
 				ScaleMessage = $ScaleMessage
 				Start = 0
 				End = $TotalDuration
-			} | Write-Output
+			}
 		}
 
 		# Process each lsit of arguments
@@ -298,13 +298,13 @@
 
 				try {
 					& ffmpeg $Arguments 2>&1 | Out-String -Stream | Tee-Object -Variable FFMPEG_OUT | Foreach-Object {
-						$RxRes = $RxTime.Match($_)
-						if ($RxRes.Success) {
+						$RxResult = $RegexTime.Match($_)
+						if ($RxResult.Success) {
 							$CurrentDuration = [pscustomobject]@{
-								Hour        = [int]::Parse(($RxRes.Groups['HOUR'].Value))
-								Minute      = [int]::Parse(($RxRes.Groups['MINUTE'].Value))
-								Second      = [int]::Parse(($RxRes.Groups['SECOND'].Value))
-								MilliSecond = [int]::Parse(($RxRes.Groups['MILLISECOND'].Value))
+								Hour        = [int]::Parse(($RxResult.Groups['HOUR'].Value))
+								Minute      = [int]::Parse(($RxResult.Groups['MINUTE'].Value))
+								Second      = [int]::Parse(($RxResult.Groups['SECOND'].Value))
+								MilliSecond = [int]::Parse(($RxResult.Groups['MILLISECOND'].Value))
 							}
 							$CurrentDuration = $StartOffset + ($CurrentDuration.Hour * 3600000) + ($CurrentDuration.Minute * 60000) + ($CurrentDuration.Second * 1000) + $CurrentDuration.MilliSecond
 
@@ -352,9 +352,9 @@
 		}
 
         # Regex to capture the duration of the video
-		$RxDur = [regex]::new('^\s*Duration:\s*(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+),')
-		$RxTime = [regex]::new('\stime=(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+)\s')
-		$RxRes = [regex]::new("^\s*Stream #\d\S+: Video:.*, (?<RESOLUTION>(?<WIDTH>\d+)x(?<HEIGHT>\d+)), (?<RATE>\d+) kb/s,.*, (?<FPS>\d+) fps,")
+		$RegexDuration = [regex]::new('^\s*Duration:\s*(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+),')
+		$RegexTime = [regex]::new('\stime=(?<HOUR>\d+):(?<MINUTE>\d+):(?<SECOND>\d+)\.(?<MILLISECOND>\d+)\s')
+		$RegexResolution = [regex]::new("^\s*Stream #\d\S+: Video:.*, (?<RESOLUTION>(?<WIDTH>\d+)x(?<HEIGHT>\d+))(?: \[.*?\])?, (?<RATE>\d+) kb/s(?:, .*?)*, (?<FPS>\d+) fps,")
 
         # Predefined resolutions
 		$Resolutions = @{

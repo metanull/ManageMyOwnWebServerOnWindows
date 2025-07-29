@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Invoke a script, defined as an array of strings
 
@@ -345,7 +345,7 @@ Begin {
         .SYNOPSIS
             Detect and expand user defined variables in a string
     #>
-    Function Expand-Variables {
+    Function Expand-Variable {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]

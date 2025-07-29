@@ -1,4 +1,5 @@
 [CmdletBinding(DefaultParameterSetName='Default')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Write-Host is appropriate for colored pipeline output')]
 [OutputType([hashtable])]
 param(
     [Parameter(Mandatory, ValueFromPipeline)]

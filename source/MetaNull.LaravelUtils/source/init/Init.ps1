@@ -10,24 +10,24 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
     $script:UseEmojis = $true
     $script:ModuleIcons = @{
         # Status Icons
-        Rocket = "🚀"
-        CheckMark = "✅"
-        Warning = "⚠️"
-        Info = "ℹ️"
-        Error = "❌"
+        Rocket = "`u1F680"         # 🚀
+        CheckMark = "`u2705"       # ✅
+        Warning = "`u26A0"         # ⚠️
+        Info = "`u2139"            # ℹ️
+        Error = "`u274C"           # ❌
 
         # Application Icons
-        Celebration = "🎉"
-        MobilePhone = "📱"
-        Satellite = "📡"
-        Lightning = "⚡"
+        Celebration = "`u1F389"    # 🎉
+        MobilePhone = "`u1F4F1"    # 📱
+        Satellite = "`u1F4E1"      # 📡
+        Lightning = "`u26A1"       # ⚡
 
         # Tool Icons
-        Wrench = "🔧"
-        Books = "📚"
-        GreenHeart = "💚"
-        Key = "🔑"
-        FloppyDisk = "💾"
+        Wrench = "`u1F527"         # 🔧
+        Books = "`u1F4DA"          # 📚
+        GreenHeart = "`u1F49A"     # 💚
+        Key = "`u1F511"            # 🔑
+        FloppyDisk = "`u1F4BE"     # 💾
 
         # Fallback plain text versions
         PlainText = @{

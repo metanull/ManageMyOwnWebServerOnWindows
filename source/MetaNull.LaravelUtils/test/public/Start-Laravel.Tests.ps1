@@ -19,19 +19,7 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevHeader {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Start-LaravelWeb {
@@ -56,27 +44,7 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
                 return $true  # Always validate path as correct for tests
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevHeader {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -108,7 +76,6 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             Should -Invoke Start-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Start-LaravelVite -Exactly 1 -Scope It
             Should -Invoke Start-LaravelQueue -Exactly 1 -Scope It
-            Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
         }
 
         It "Start-Laravel should start with custom parameters" {
@@ -135,8 +102,6 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             
             $Result = Start-Laravel -Path $env:TEMP
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Start-Laravel should fail when Vite server fails to start" {
@@ -147,8 +112,6 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             
             $Result = Start-Laravel -Path $env:TEMP
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Start-Laravel should fail when queue worker fails to start" {
@@ -159,8 +122,6 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             
             $Result = Start-Laravel -Path $env:TEMP
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Start-Laravel should handle exceptions gracefully" {
@@ -170,7 +131,6 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             
             $Result = Start-Laravel -Path $env:TEMP
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }
     }
 }

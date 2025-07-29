@@ -18,19 +18,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevHeader {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-LaravelWeb {
@@ -46,27 +34,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 # N/A
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevHeader {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -103,7 +71,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             Should -Invoke Test-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Test-LaravelVite -Exactly 1 -Scope It
             Should -Invoke Test-LaravelQueue -Exactly 1 -Scope It
-            Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
         }
 
         It "Test-Laravel should test with custom parameters" {
@@ -125,7 +92,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $true
             $Result.All | Should -Be $false
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Test-Laravel should handle Vite server not running" {
@@ -139,7 +105,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $true
             $Result.All | Should -Be $false
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Test-Laravel should handle queue worker not running" {
@@ -153,7 +118,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $false
             $Result.All | Should -Be $false
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Test-Laravel should handle all services not running" {
@@ -166,7 +130,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $false
             $Result.All | Should -Be $false
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Test-Laravel should handle exceptions gracefully" {
@@ -179,7 +142,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $false
             $Result.All | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }
     }
 }

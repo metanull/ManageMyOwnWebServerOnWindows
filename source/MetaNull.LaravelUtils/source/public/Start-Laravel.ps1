@@ -54,49 +54,49 @@ param(
 )
 
 Begin {
-    Write-DevHeader "Starting Laravel Development Environment"
+    Write-Development -Message "Starting Laravel Development Environment" -Type Header
 
     $success = $true
 
     try {
         # Start Laravel Web Server
-        Write-DevInfo "Starting Laravel web server..."
+        Write-Development -Message "Starting Laravel web server..." -Type Info
         $webResult = Start-LaravelWeb -Path $Path -Port $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
         if (-not $webResult) {
-            Write-DevError "Failed to start Laravel web server"
+            Write-Development -Message "Failed to start Laravel web server" -Type Error
             $success = $false
         }
 
         # Start Vite Development Server
-        Write-DevInfo "Starting Vite development server..."
+        Write-Development -Message "Starting Vite development server..." -Type Info
         $viteResult = Start-LaravelVite -Path $Path -Port $VitePort -LaravelPort $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
         if (-not $viteResult) {
-            Write-DevError "Failed to start Vite development server"
+            Write-Development -Message "Failed to start Vite development server" -Type Error
             $success = $false
         }
 
         # Start Laravel Queue Worker
-        Write-DevInfo "Starting Laravel queue worker..."
+        Write-Development -Message "Starting Laravel queue worker..." -Type Info
         $queueResult = Start-LaravelQueue -Path $Path -Queue $Queue -Force:$Force
         if (-not $queueResult) {
-            Write-DevError "Failed to start Laravel queue worker"
+            Write-Development -Message "Failed to start Laravel queue worker" -Type Error
             $success = $false
         }
 
         if ($success) {
-            Write-DevSuccess "Laravel development environment started successfully!"
-            Write-DevInfo "Services:"
-            Write-DevInfo "  - Web Server: http://localhost:$WebPort"
-            Write-DevInfo "  - Vite Server: http://localhost:$VitePort"
-            Write-DevInfo "  - Queue Worker: $Queue queue"
+            Write-Development -Message "Laravel development environment started successfully!" -Type Success
+            Write-Development -Message "Services:" -Type Info
+            Write-Development -Message "  - Web Server: http://localhost:$WebPort" -Type Info
+            Write-Development -Message "  - Vite Server: http://localhost:$VitePort" -Type Info
+            Write-Development -Message "  - Queue Worker: $Queue queue" -Type Info
         } else {
-            Write-DevWarning "Some Laravel services failed to start. Check the logs above."
+            Write-Development -Message "Some Laravel services failed to start. Check the logs above." -Type Warning
         }
 
         return $success
 
     } catch {
-        Write-DevError "Failed to start Laravel development environment: $($_.Exception.Message)"
+        Write-Development -Message "Failed to start Laravel development environment: $($_.Exception.Message)" -Type Error
         return $false
     }
 }

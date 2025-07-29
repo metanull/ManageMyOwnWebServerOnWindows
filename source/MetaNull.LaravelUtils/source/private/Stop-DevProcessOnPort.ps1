@@ -28,7 +28,7 @@ End {
             if ($processId -and $processId -ne 0) {
                 $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
                 if ($process) {
-                    Write-DevWarning "Stopping process $($process.Name) (PID: $processId) on port $Port"
+                    Write-Development -Message "Stopping process $($process.Name) (PID: $processId) on port $Port" -Type Warning
                     Stop-Process -Id $processId -Force
                     Start-Sleep -Seconds 1
                 }
@@ -36,6 +36,6 @@ End {
         }
     } catch {
         # Ignore errors when stopping processes
-        Write-DevWarning "Could not stop processes on port $Port - they may have already been stopped"
+        Write-Development -Message "Could not stop processes on port $Port - they may have already been stopped" -Type Warning
     }
 }

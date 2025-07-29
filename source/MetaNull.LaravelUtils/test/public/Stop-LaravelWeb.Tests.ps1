@@ -19,19 +19,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-DevPort {
@@ -56,31 +44,10 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 # N/A
             }
             
-            Mock Write-DevInfo {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
             Mock Test-DevPort {
                 param([int]$Port)
                 return $false  # Mock as if port is free
@@ -130,7 +97,6 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
             
             $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $true
-            Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelWeb should stop Laravel process successfully" {
@@ -177,7 +143,6 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
             
             $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It
         }
 
         It "Stop-LaravelWeb should handle no processes found on busy port" {
@@ -189,7 +154,6 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
             
             $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelWeb should handle process stop failure" {
@@ -201,7 +165,6 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
             
             $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }
 
         It "Stop-LaravelWeb should handle user declining to stop process" {

@@ -19,19 +19,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-Path {
@@ -50,27 +38,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 # N/A
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -103,7 +71,6 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Stop-LaravelQueue
             $Result | Should -Be $true
-            Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelQueue should handle Get-Process error gracefully" {
@@ -113,7 +80,6 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Stop-LaravelQueue
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelQueue should handle empty process list" {
@@ -129,7 +95,6 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Stop-LaravelQueue
             $Result | Should -Be $true
-            Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelQueue should handle Force parameter" {

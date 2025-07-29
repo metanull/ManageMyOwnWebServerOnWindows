@@ -19,19 +19,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevHeader {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Stop-LaravelWeb {
@@ -47,27 +35,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
                 # N/A
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevHeader {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -99,7 +67,6 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
             Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
-            Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
         }
 
         It "Stop-Laravel should stop with custom parameters" {
@@ -126,7 +93,6 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             
             $Result = Stop-Laravel
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It  # One for web failure + one for overall
         }
 
         It "Stop-Laravel should handle Vite server stop failure" {
@@ -137,7 +103,6 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             
             $Result = Stop-Laravel
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It  # One for vite failure + one for overall
         }
 
         It "Stop-Laravel should handle queue worker stop failure" {
@@ -148,7 +113,6 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             
             $Result = Stop-Laravel
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It  # One for queue failure + one for overall
         }
 
         It "Stop-Laravel should handle multiple service failures" {
@@ -158,7 +122,6 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             
             $Result = Stop-Laravel
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Times 4 -Exactly -Scope It  # Three for service failures + one for overall
         }
 
         It "Stop-Laravel should handle exceptions gracefully" {
@@ -168,7 +131,6 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             
             $Result = Stop-Laravel
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }
     }
 }

@@ -45,18 +45,18 @@ param(
 )
 
 Begin {
-    Write-DevStep "Starting Laravel Vite server on port $Port..."
+    Write-Development -Message "Starting Laravel Vite server on port $Port..." -Type Step
     
     # Check if port is available
     if (Test-DevPort -Port $Port) {
         if ($Force) {
-            Write-DevWarning "Port $Port is already in use. Force stopping processes..."
+            Write-Development -Message "Port $Port is already in use. Force stopping processes..." -Type Warning
             Stop-DevProcessOnPort -Port $Port
             Start-Sleep -Seconds 2
         }
         
         if (Test-DevPort -Port $Port) {
-            Write-DevError "Unable to free port $Port. Please check what's using it and try again."
+            Write-Development -Message "Unable to free port $Port. Please check what's using it and try again." -Type Error
             return $null
         }
     }
@@ -75,26 +75,26 @@ Begin {
     }
     
     # Wait longer for Vite to start (it takes more time than Laravel)
-    Write-DevInfo "Waiting for Laravel Vite server to start (timeout: $TimeoutSeconds seconds)..."
+    Write-Development -Message "Waiting for Laravel Vite server to start (timeout: $TimeoutSeconds seconds)..." -Type Info
     if (Wait-ForDevPort -Port $Port -TimeoutSeconds $TimeoutSeconds) {
-        Write-DevSuccess "Laravel Vite server running at http://127.0.0.1:$Port"
-        Write-DevInfo "Note: Access your Vue app via Laravel at http://127.0.0.1:$LaravelPort/"
+        Write-Development -Message "Laravel Vite server running at http://127.0.0.1:$Port" -Type Success
+        Write-Development -Message "Note: Access your Vue app via Laravel at http://127.0.0.1:$LaravelPort/" -Type Info
         return $viteJob
     } else {
-        Write-DevError "Failed to start Laravel Vite server within $TimeoutSeconds seconds"
+        Write-Development -Message "Failed to start Laravel Vite server within $TimeoutSeconds seconds" -Type Error
         if ($viteJob) {
             # Get job output for debugging
             Start-Sleep -Seconds 2  # Give job time to produce output
             $jobOutput = Receive-Job $viteJob -ErrorAction SilentlyContinue
             if ($jobOutput) {
-                Write-DevError "Vite job output: $jobOutput"
+                Write-Development -Message "Vite job output: $jobOutput" -Type Error
             }
             
             # Also check job state and errors
             if ($viteJob.State -eq "Failed") {
                 $jobErrors = $viteJob.ChildJobs[0].Error
                 if ($jobErrors) {
-                    Write-DevError "Vite job errors: $jobErrors"
+                    Write-Development -Message "Vite job errors: $jobErrors" -Type Error
                 }
             }
             

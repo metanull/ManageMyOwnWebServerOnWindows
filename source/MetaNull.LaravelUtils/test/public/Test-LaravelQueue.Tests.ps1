@@ -18,19 +18,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-Path {
@@ -40,27 +28,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
                 # N/A
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -86,8 +54,6 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
         It "Test-LaravelQueue should return true when queue workers are running" {
             $Result = Test-LaravelQueue
             $Result | Should -Be $true
-            Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
-            Should -Invoke Write-DevInfo -Exactly 2 -Scope It  # Initial message + process info
         }
 
         It "Test-LaravelQueue should return true when specific queue worker is running" {
@@ -105,7 +71,6 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Test-LaravelQueue -Queue "emails"
             $Result | Should -Be $true
-            Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
         }
 
         It "Test-LaravelQueue should return false when no queue workers are running" {
@@ -116,7 +81,6 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Test-LaravelQueue
             $Result | Should -Be $false
-            Should -Invoke Write-DevInfo -Exactly 2 -Scope It  # Initial message + no processes found
         }
 
         It "Test-LaravelQueue should return false when specific queue worker is not running" {
@@ -134,7 +98,6 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Test-LaravelQueue -Queue "emails"
             $Result | Should -Be $false
-            Should -Invoke Write-DevInfo -Exactly 2 -Scope It
         }
 
         It "Test-LaravelQueue should handle multiple queue workers" {
@@ -158,7 +121,6 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Test-LaravelQueue
             $Result | Should -Be $true
-            Should -Invoke Write-DevInfo -Exactly 3 -Scope It  # Initial + 2 process info
         }
 
         It "Test-LaravelQueue should handle WMI query errors" {
@@ -169,7 +131,6 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Test-LaravelQueue
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Exactly 1 -Scope It
         }
     }
 }

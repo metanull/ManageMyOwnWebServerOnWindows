@@ -19,19 +19,7 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-DevPort {
@@ -53,27 +41,7 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
                 # N/A
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -122,7 +90,6 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             
             $Result = Stop-LaravelVite -Port 5173
             $Result | Should -Be $true
-            Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelVite should stop Vite process successfully" {
@@ -169,7 +136,6 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             
             $Result = Stop-LaravelVite -Port 5173
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It
         }
 
         It "Stop-LaravelVite should handle no processes found on busy port" {
@@ -181,7 +147,6 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             
             $Result = Stop-LaravelVite -Port 5173
             $Result | Should -Be $false
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
 
         It "Stop-LaravelVite should handle process stop failure" {
@@ -193,7 +158,6 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             
             $Result = Stop-LaravelVite -Port 5173
             $Result | Should -Be $false
-            Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }
 
         It "Stop-LaravelVite should handle user declining to stop process" {

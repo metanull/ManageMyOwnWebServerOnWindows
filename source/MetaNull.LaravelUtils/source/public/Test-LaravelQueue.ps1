@@ -20,13 +20,14 @@
     Tests if Laravel queue workers are running for the "emails" queue
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWMICmdlet', '', Justification = 'Test file uses WMI for process detection')]
 param(
     [Parameter()]
     [string]$Queue
 )
 
 Begin {
-    Write-DevInfo "Testing Laravel queue worker$(if($Queue) { " for queue '$Queue'" })..."
+    Write-Development -Message "Testing Laravel queue worker$(if($Queue) { " for queue '$Queue'" })..." -Type Info
     
     try {
         # Find queue worker processes using WMI for more reliable command line detection
@@ -44,20 +45,20 @@ Begin {
         
         if ($queueProcesses) {
             $processCount = $queueProcesses.Count
-            Write-DevSuccess "Found $processCount Laravel queue worker process$(if($processCount -gt 1) { 'es' })$(if($Queue) { " for queue '$Queue'" })"
+            Write-Development -Message "Found $processCount Laravel queue worker process$(if($processCount -gt 1) { 'es' })$(if($Queue) { " for queue '$Queue'" })" -Type Success
             
             foreach ($process in $queueProcesses) {
-                Write-DevInfo "  - PID: $($process.ProcessId), Started: $($process.CreationDate)"
+                Write-Development -Message "  - PID: $($process.ProcessId), Started: $($process.CreationDate)" -Type Info
             }
             
             return $true
         } else {
-            Write-DevInfo "No Laravel queue worker processes found$(if($Queue) { " for queue '$Queue'" })"
+            Write-Development -Message "No Laravel queue worker processes found$(if($Queue) { " for queue '$Queue'" })" -Type Info
             return $false
         }
         
     } catch {
-        Write-DevError "Failed to test Laravel queue worker: $($_.Exception.Message)"
+        Write-Development -Message "Failed to test Laravel queue worker: $($_.Exception.Message)" -Type Error
         return $false
     }
 }

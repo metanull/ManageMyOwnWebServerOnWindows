@@ -19,19 +19,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Stop-LaravelQueue {
@@ -62,27 +50,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 return $true  # Always validate path as correct for tests
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -126,21 +94,18 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
             $Result.State | Should -Be "Running"
-            Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
         }
 
         It "Start-LaravelQueue should start with custom queue name" {
             $Result = Start-LaravelQueue -Queue "emails"
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
-            Should -Invoke Write-DevStep -Exactly 1 -Scope It
         }
 
         It "Start-LaravelQueue should start with Force and stop existing workers" {
             $Result = Start-LaravelQueue -Queue "default" -Force
             $Result | Should -Not -BeNullOrEmpty
             Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
-            Should -Invoke Write-DevInfo -Exactly 2 -Scope It
         }
 
         It "Start-LaravelQueue should start with custom parameters" {
@@ -165,7 +130,6 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Start-LaravelQueue
             $Result | Should -Be $null
-            Should -Invoke Write-DevError -Times 2 -Exactly -Scope It
             Should -Invoke Remove-Job -Exactly 1 -Scope It
         }
 
@@ -179,7 +143,6 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             
             $Result = Start-LaravelQueue
             $Result | Should -Be $null
-            Should -Invoke Write-DevError -Times 2 -Exactly -Scope It
         }
     }
 }

@@ -17,9 +17,6 @@
     .PARAMETER TimeoutSeconds
     How long to wait for the server to start (default: 15)
     
-    .PARAMETER SkipChecks
-    Skip port availability checks and start immediately
-    
     .PARAMETER Force
     Force stop any existing processes on the specified port
     
@@ -29,11 +26,10 @@
 #>
 [CmdletBinding()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Path', Justification = 'Used via $Using:Path in Start-Job ScriptBlock')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Write-Host used for error output display in development utility')]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
+    [Parameter()]
+    [ValidateScript({ Test-LaravelPath -Path $_})]
+    [string]$Path = '.',
     
     [Parameter()]
     [int]$Port = 5173,
@@ -45,32 +41,23 @@ param(
     [int]$TimeoutSeconds = 15,
     
     [Parameter()]
-    [switch]$SkipChecks,
-    
-    [Parameter()]
     [switch]$Force
 )
 
 Begin {
     Write-DevStep "Starting Laravel Vite server on port $Port..."
     
-    if (-not $SkipChecks) {
-        # Check if port is available
+    # Check if port is available
+    if (Test-DevPort -Port $Port) {
+        if ($Force) {
+            Write-DevWarning "Port $Port is already in use. Force stopping processes..."
+            Stop-DevProcessOnPort -Port $Port
+            Start-Sleep -Seconds 2
+        }
+        
         if (Test-DevPort -Port $Port) {
-            if ($Force) {
-                Write-DevWarning "Port $Port is already in use. Force stopping processes..."
-                Stop-DevProcessOnPort -Port $Port
-                Start-Sleep -Seconds 2
-            } else {
-                Write-DevWarning "Port $Port is already in use. Attempting to free it..."
-                Stop-DevProcessOnPort -Port $Port
-                Start-Sleep -Seconds 2
-            }
-            
-            if (Test-DevPort -Port $Port) {
-                Write-DevError "Unable to free port $Port. Please check what's using it and try again."
-                return $null
-            }
+            Write-DevError "Unable to free port $Port. Please check what's using it and try again."
+            return $null
         }
     }
     
@@ -87,12 +74,6 @@ Begin {
         npx vite --host 127.0.0.1 --port $Using:Port --strictPort 2>&1
     }
     
-    if ($SkipChecks) {
-        Write-DevInfo "Laravel Vite server started (checks skipped)"
-        Write-DevInfo "Note: Access your Vue app via Laravel at http://127.0.0.1:$LaravelPort/"
-        return $viteJob
-    }
-    
     # Wait longer for Vite to start (it takes more time than Laravel)
     Write-DevInfo "Waiting for Laravel Vite server to start (timeout: $TimeoutSeconds seconds)..."
     if (Wait-ForDevPort -Port $Port -TimeoutSeconds $TimeoutSeconds) {
@@ -106,18 +87,14 @@ Begin {
             Start-Sleep -Seconds 2  # Give job time to produce output
             $jobOutput = Receive-Job $viteJob -ErrorAction SilentlyContinue
             if ($jobOutput) {
-                Write-DevError "Vite job output:"
-                Write-Host $jobOutput -ForegroundColor Red
+                Write-DevError "Vite job output: $jobOutput"
             }
             
             # Also check job state and errors
             if ($viteJob.State -eq "Failed") {
                 $jobErrors = $viteJob.ChildJobs[0].Error
                 if ($jobErrors) {
-                    Write-DevError "Vite job errors:"
-                    foreach ($err in $jobErrors) {
-                        Write-Host $err -ForegroundColor Red
-                    }
+                    Write-DevError "Vite job errors: $jobErrors"
                 }
             }
             

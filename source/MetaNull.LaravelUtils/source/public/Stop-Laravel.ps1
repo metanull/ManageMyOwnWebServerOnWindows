@@ -21,19 +21,15 @@
     Force stop processes without graceful shutdown
     
     .EXAMPLE
-    Stop-Laravel -Path "C:\path\to\laravel"
+    Stop-Laravel
     Stops all Laravel services with default settings
     
     .EXAMPLE
-    Stop-Laravel -Path "C:\path\to\laravel" -WebPort 8080 -VitePort 3000 -Queue "emails" -Force
+    Stop-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails" -Force
     Forcefully stops Laravel services with custom ports and specific queue
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
-    
     [Parameter()]
     [int]$WebPort = 8000,
     
@@ -55,7 +51,7 @@ Begin {
     try {
         # Stop Laravel Web Server
         Write-DevInfo "Stopping Laravel web server..."
-        $webResult = Stop-LaravelWeb -Path $Path -Port $WebPort -Force:$Force
+        $webResult = Stop-LaravelWeb -Port $WebPort -Force:$Force
         if (-not $webResult) {
             Write-DevWarning "Issues stopping Laravel web server"
             $success = $false
@@ -63,7 +59,7 @@ Begin {
         
         # Stop Vite Development Server
         Write-DevInfo "Stopping Vite development server..."
-        $viteResult = Stop-LaravelVite -Path $Path -Port $VitePort -Force:$Force
+        $viteResult = Stop-LaravelVite -Port $VitePort -Force:$Force
         if (-not $viteResult) {
             Write-DevWarning "Issues stopping Vite development server"
             $success = $false
@@ -72,9 +68,9 @@ Begin {
         # Stop Laravel Queue Worker
         Write-DevInfo "Stopping Laravel queue worker..."
         if ($Queue) {
-            $queueResult = Stop-LaravelQueue -Path $Path -Queue $Queue -Force:$Force
+            $queueResult = Stop-LaravelQueue -Queue $Queue -Force:$Force
         } else {
-            $queueResult = Stop-LaravelQueue -Path $Path -Force:$Force
+            $queueResult = Stop-LaravelQueue -Force:$Force
         }
         if (-not $queueResult) {
             Write-DevWarning "Issues stopping Laravel queue worker"

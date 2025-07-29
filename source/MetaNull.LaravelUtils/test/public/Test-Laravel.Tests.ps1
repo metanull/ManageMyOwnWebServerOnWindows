@@ -45,9 +45,6 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             Function Test-Path {
                 # N/A
             }
-            Function Write-Host {
-                # N/A
-            }
             
             Mock Write-DevInfo {
                 param([string]$Message)
@@ -94,14 +91,11 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 return $true  # Mock as if path exists
             }
             
-            Mock Write-Host {
-                param([string]$Object)
-                # Mock implementation - just return
-            }
+
         }
 
         It "Test-Laravel should return all true when all services are running" {
-            $Result = Test-Laravel -Path $env:TEMP
+            $Result = Test-Laravel
             $Result.Web | Should -Be $true
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $true
@@ -113,7 +107,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
         }
 
         It "Test-Laravel should test with custom parameters" {
-            $Result = Test-Laravel -Path $env:TEMP -WebPort 8080 -VitePort 3000 -Queue "emails"
+            $Result = Test-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails"
             $Result.All | Should -Be $true
             Should -Invoke Test-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Test-LaravelVite -Exactly 1 -Scope It
@@ -126,7 +120,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 return $false  # Mock web server not running
             }
             
-            $Result = Test-Laravel -Path $env:TEMP
+            $Result = Test-Laravel
             $Result.Web | Should -Be $false
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $true
@@ -140,7 +134,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 return $false  # Mock Vite server not running
             }
             
-            $Result = Test-Laravel -Path $env:TEMP
+            $Result = Test-Laravel
             $Result.Web | Should -Be $true
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $true
@@ -154,7 +148,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 return $false  # Mock queue worker not running
             }
             
-            $Result = Test-Laravel -Path $env:TEMP
+            $Result = Test-Laravel
             $Result.Web | Should -Be $true
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $false
@@ -167,7 +161,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             Mock Test-LaravelVite { return $false }
             Mock Test-LaravelQueue { return $false }
             
-            $Result = Test-Laravel -Path $env:TEMP
+            $Result = Test-Laravel
             $Result.Web | Should -Be $false
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $false
@@ -180,7 +174,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 throw "System error"
             }
             
-            $Result = Test-Laravel -Path $env:TEMP
+            $Result = Test-Laravel
             $Result.Web | Should -Be $false
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $false

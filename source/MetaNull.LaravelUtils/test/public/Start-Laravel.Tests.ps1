@@ -46,6 +46,15 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             Function Test-Path {
                 # N/A
             }
+
+            Function Test-LaravelPath {
+                # N/A
+            }
+
+            Mock Test-LaravelPath {
+                param([string]$Path)
+                return $true  # Always validate path as correct for tests
+            }
             
             Mock Write-DevInfo {
                 param([string]$Message)
@@ -73,12 +82,12 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             }
             
             Mock Start-LaravelWeb {
-                param([string]$Path, [int]$Port, [int]$TimeoutSeconds, [switch]$SkipChecks, [switch]$Force)
+                param([string]$Path, [int]$Port, [int]$TimeoutSeconds, [switch]$Force)
                 return [PSCustomObject]@{ Id = 100; State = "Running" }  # Mock successful start
             }
             
             Mock Start-LaravelVite {
-                param([string]$Path, [int]$Port, [int]$LaravelPort, [int]$TimeoutSeconds, [switch]$SkipChecks, [switch]$Force)
+                param([string]$Path, [int]$Port, [int]$LaravelPort, [int]$TimeoutSeconds, [switch]$Force)
                 return [PSCustomObject]@{ Id = 200; State = "Running" }  # Mock successful start
             }
             
@@ -118,17 +127,9 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             Should -Invoke Start-LaravelQueue -Exactly 1 -Scope It
         }
 
-        It "Start-Laravel should handle SkipChecks parameter" {
-            $Result = Start-Laravel -Path $env:TEMP -SkipChecks
-            $Result | Should -Be $true
-            Should -Invoke Start-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelQueue -Exactly 1 -Scope It
-        }
-
         It "Start-Laravel should fail when web server fails to start" {
             Mock Start-LaravelWeb {
-                param([string]$Path, [int]$Port, [int]$TimeoutSeconds, [switch]$SkipChecks, [switch]$Force)
+                param([string]$Path, [int]$Port, [int]$TimeoutSeconds, [switch]$Force)
                 return $null  # Mock failure
             }
             
@@ -140,7 +141,7 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
 
         It "Start-Laravel should fail when Vite server fails to start" {
             Mock Start-LaravelVite {
-                param([string]$Path, [int]$Port, [int]$LaravelPort, [int]$TimeoutSeconds, [switch]$SkipChecks, [switch]$Force)
+                param([string]$Path, [int]$Port, [int]$LaravelPort, [int]$TimeoutSeconds, [switch]$Force)
                 return $null  # Mock failure
             }
             

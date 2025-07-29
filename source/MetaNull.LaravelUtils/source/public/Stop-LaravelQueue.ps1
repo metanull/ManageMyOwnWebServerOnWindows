@@ -15,19 +15,15 @@
     Specific queue name to target (optional)
     
     .EXAMPLE
-    Stop-LaravelQueue -Path "C:\path\to\laravel"
+    Stop-LaravelQueue
     Stops all Laravel queue workers
     
     .EXAMPLE
-    Stop-LaravelQueue -Path "C:\path\to\laravel" -Queue "emails" -Force
+    Stop-LaravelQueue -Queue "emails" -Force
     Force stops Laravel queue workers for the "emails" queue
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
-    
     [Parameter()]
     [switch]$Force,
     
@@ -37,12 +33,6 @@ param(
 
 Begin {
     Write-DevStep "Stopping Laravel queue worker$(if($Queue) { " for queue '$Queue'" })..."
-    
-    # Validate Laravel path
-    if (-not (Test-Path $Path -PathType Container)) {
-        Write-DevError "Laravel path does not exist: $Path"
-        return $false
-    }
     
     try {
         # Find queue worker processes

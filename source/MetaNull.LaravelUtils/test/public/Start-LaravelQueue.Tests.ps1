@@ -52,8 +52,14 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             Function Receive-Job {
                 # N/A
             }
-            Function Write-Host {
+
+            Function Test-LaravelPath {
                 # N/A
+            }
+
+            Mock Test-LaravelPath {
+                param([string]$Path)
+                return $true  # Always validate path as correct for tests
             }
             
             Mock Write-DevInfo {
@@ -113,14 +119,10 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 return "Queue worker started"
             }
             
-            Mock Write-Host {
-                param([string]$Object, [string]$ForegroundColor)
-                # Mock implementation - just return
-            }
         }
 
         It "Start-LaravelQueue should start successfully with default settings" {
-            $Result = Start-LaravelQueue -Path $env:TEMP
+            $Result = Start-LaravelQueue
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
             $Result.State | Should -Be "Running"
@@ -128,27 +130,27 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
         }
 
         It "Start-LaravelQueue should start with custom queue name" {
-            $Result = Start-LaravelQueue -Path $env:TEMP -Queue "emails"
+            $Result = Start-LaravelQueue -Queue "emails"
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
             Should -Invoke Write-DevStep -Exactly 1 -Scope It
         }
 
         It "Start-LaravelQueue should start with Force and stop existing workers" {
-            $Result = Start-LaravelQueue -Path $env:TEMP -Queue "default" -Force
+            $Result = Start-LaravelQueue -Queue "default" -Force
             $Result | Should -Not -BeNullOrEmpty
             Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
             Should -Invoke Write-DevInfo -Exactly 2 -Scope It
         }
 
         It "Start-LaravelQueue should start with custom parameters" {
-            $Result = Start-LaravelQueue -Path $env:TEMP -Queue "notifications" -MaxJobs 500 -MaxTime 1800 -Sleep 5 -Timeout 120
+            $Result = Start-LaravelQueue -Queue "notifications" -MaxJobs 500 -MaxTime 1800 -Sleep 5 -Timeout 120
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
         }
 
         It "Start-LaravelQueue should start with connection name" {
-            $Result = Start-LaravelQueue -Path $env:TEMP -ConnectionName "redis" -Queue "high-priority"
+            $Result = Start-LaravelQueue -ConnectionName "redis" -Queue "high-priority"
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
         }
@@ -161,7 +163,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 }
             }
             
-            $Result = Start-LaravelQueue -Path $env:TEMP
+            $Result = Start-LaravelQueue
             $Result | Should -Be $null
             Should -Invoke Write-DevError -Times 2 -Exactly -Scope It
             Should -Invoke Remove-Job -Exactly 1 -Scope It
@@ -175,7 +177,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 }
             }
             
-            $Result = Start-LaravelQueue -Path $env:TEMP
+            $Result = Start-LaravelQueue
             $Result | Should -Be $null
             Should -Invoke Write-DevError -Times 2 -Exactly -Scope It
         }

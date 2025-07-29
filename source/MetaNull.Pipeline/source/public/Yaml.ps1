@@ -1,4 +1,4 @@
-Function New-YamlDocument {
+﻿Function New-YamlDocument {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType([pscustomobject])]
     param()
@@ -868,7 +868,7 @@ Function ProcessAllLines {
                     $CurrentObject.Add($Value)
                 } elseif($Parsed.IsMapping) {
                     Write-Debug "Yaml line $($k): Item is a mapping"
-                    $CurrentObject = [System.Collections.Hashtable]::new()
+                    $CurrentObject = @{}
                     $CurrentObject.Add($Parsed.Key.Value, $Value)
                 } else {
                     Write-Debug "Yaml line $($k): Item is a scalar"
@@ -1245,7 +1245,7 @@ Function ConvertFrom-Yaml {
 # Example
 # . E:\ManageMyOwnWebServerOnWindows\source\MetaNull.Pipeline\source\public\Yaml.ps1 
 $yml = @('Step:','- Task:','  Name: "Build"','  Path: .','#Next step','- Task:','  Name: "Deploy"','  Script: |','         Get-Date') 
-$yml | ProcessLine | Select Line,Indentation,Depth,Key,Cast,QuotedFlowScalarValue,MultilineQuotedFlowScalarValue,Multiline,BlockScalarStyle,BlockScalarChomp,BlockScalarIndent,MultilineQuotedFlowScalarType | ft
+$yml | ProcessLine | Select-Object Line,Indentation,Depth,Key,Cast,QuotedFlowScalarValue,MultilineQuotedFlowScalarValue,Multiline,BlockScalarStyle,BlockScalarChomp,BlockScalarIndent,MultilineQuotedFlowScalarType | Format-Table
 
 $AllInes = Get-Content z:\t.yaml
 ProcessAllLines -YamlLines $AllInes -Identation 0 -Debug

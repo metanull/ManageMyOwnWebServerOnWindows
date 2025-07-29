@@ -17,15 +17,7 @@ Describe "Testing private module function Invoke-Script" -Tag "UnitTest" {
         }
 
         Function Invoke-VisualStudioOnlineString {
-            param(
-                [Parameter(Mandatory, ValueFromPipeline)]
-                [AllowEmptyString()]
-                [string]$InputString,
-
-                [Parameter(Mandatory = $false)]
-                [ref]$ScriptOutput
-            )
-            throw "Not callable, Mock is used instead."
+            # N/A / Mocked
         }
         Function Get-FakeScriptOutput {
             [pscustomobject]@{

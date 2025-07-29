@@ -67,10 +67,10 @@ param(
 )
 
 Begin {
-    Write-DevStep "Starting Laravel queue worker for queue '$Queue'..."
+    Write-Development -Message "Starting Laravel queue worker for queue '$Queue'..." -Type Step
     
     if ($Force) {
-        Write-DevInfo "Stopping any existing queue workers..."
+        Write-Development -Message "Stopping any existing queue workers..." -Type Info
         Stop-LaravelQueue -Queue $Queue -Force
     }
     
@@ -100,16 +100,16 @@ Begin {
     
     # Check if job is running
     if ($queueJob.State -eq "Running") {
-        Write-DevSuccess "Laravel queue worker started successfully for queue '$Queue'"
-        Write-DevInfo "Worker will process up to $MaxJobs jobs or run for $MaxTime seconds"
+        Write-Development -Message "Laravel queue worker started successfully for queue '$Queue'" -Type Success
+        Write-Development -Message "Worker will process up to $MaxJobs jobs or run for $MaxTime seconds" -Type Info
         return $queueJob
     } else {
-        Write-DevError "Failed to start Laravel queue worker"
+        Write-Development -Message "Failed to start Laravel queue worker" -Type Error
         
         # Get job output for debugging
         $jobOutput = Receive-Job $queueJob -ErrorAction SilentlyContinue
         if ($jobOutput) {
-            Write-DevError "Queue worker output: $jobOutput"
+            Write-Development -Message "Queue worker output: $jobOutput" -Type Error
         }
         
         Remove-Job $queueJob -ErrorAction SilentlyContinue

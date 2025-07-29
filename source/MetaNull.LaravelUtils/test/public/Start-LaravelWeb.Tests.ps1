@@ -19,19 +19,7 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-DevPort {
@@ -63,27 +51,7 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
                 return $true  # Always validate path as correct for tests
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -156,7 +124,6 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
 
         It "Start-LaravelWeb with busy port without Force should fail" {
             Mock Test-DevPort { return $true }  # Port is BUSY (in use) and stays busy
-            Mock Write-DevError { param([string]$Message) }  # Override to capture error
             $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000
             $Result | Should -Be $null
             # Verify that Stop-DevProcessOnPort was called as part of automatic port freeing
@@ -165,7 +132,6 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
 
         It "Start-LaravelWeb with server startup timeout should fail" {
             Mock Wait-ForDevPort { return $false }  # Timeout
-            Mock Write-DevError { param([string]$Message) }  # Override to capture error
             $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000 -TimeoutSeconds 5
             $Result | Should -Be $null
         }

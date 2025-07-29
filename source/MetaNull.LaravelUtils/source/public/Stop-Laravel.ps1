@@ -44,49 +44,49 @@ param(
 )
 
 Begin {
-    Write-DevHeader "Stopping Laravel Development Environment"
+    Write-Development -Message "Stopping Laravel Development Environment" -Type Header
     
     $success = $true
     
     try {
         # Stop Laravel Web Server
-        Write-DevInfo "Stopping Laravel web server..."
+        Write-Development -Message "Stopping Laravel web server..." -Type Info
         $webResult = Stop-LaravelWeb -Port $WebPort -Force:$Force
         if (-not $webResult) {
-            Write-DevWarning "Issues stopping Laravel web server"
+            Write-Development -Message "Issues stopping Laravel web server" -Type Warning
             $success = $false
         }
         
         # Stop Vite Development Server
-        Write-DevInfo "Stopping Vite development server..."
+        Write-Development -Message "Stopping Vite development server..." -Type Info
         $viteResult = Stop-LaravelVite -Port $VitePort -Force:$Force
         if (-not $viteResult) {
-            Write-DevWarning "Issues stopping Vite development server"
+            Write-Development -Message "Issues stopping Vite development server" -Type Warning
             $success = $false
         }
         
         # Stop Laravel Queue Worker
-        Write-DevInfo "Stopping Laravel queue worker..."
+        Write-Development -Message "Stopping Laravel queue worker..." -Type Info
         if ($Queue) {
             $queueResult = Stop-LaravelQueue -Queue $Queue -Force:$Force
         } else {
             $queueResult = Stop-LaravelQueue -Force:$Force
         }
         if (-not $queueResult) {
-            Write-DevWarning "Issues stopping Laravel queue worker"
+            Write-Development -Message "Issues stopping Laravel queue worker" -Type Warning
             $success = $false
         }
         
         if ($success) {
-            Write-DevSuccess "Laravel development environment stopped successfully!"
+            Write-Development -Message "Laravel development environment stopped successfully!" -Type Success
         } else {
-            Write-DevWarning "Some Laravel services may still be running. Check the logs above."
+            Write-Development -Message "Some Laravel services may still be running. Check the logs above." -Type Warning
         }
         
         return $success
         
     } catch {
-        Write-DevError "Failed to stop Laravel development environment: $($_.Exception.Message)"
+        Write-Development -Message "Failed to stop Laravel development environment: $($_.Exception.Message)" -Type Error
         return $false
     }
 }

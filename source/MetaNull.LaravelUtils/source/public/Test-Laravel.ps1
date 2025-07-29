@@ -38,7 +38,7 @@ param(
 )
 
 Begin {
-    Write-DevHeader "Testing Laravel Development Environment"
+    Write-Development -Message "Testing Laravel Development Environment" -Type Header
     
     $webStatus = $false
     $viteStatus = $false
@@ -46,15 +46,15 @@ Begin {
     
     try {
         # Test Laravel Web Server
-        Write-DevInfo "Testing Laravel web server..."
+        Write-Development -Message "Testing Laravel web server..." -Type Info
         $webStatus = Test-LaravelWeb -Port $WebPort
         
         # Test Vite Development Server
-        Write-DevInfo "Testing Vite development server..."
+        Write-Development -Message "Testing Vite development server..." -Type Info
         $viteStatus = Test-LaravelVite -Port $VitePort
 
         # Test Laravel Queue Worker
-        Write-DevInfo "Testing Laravel queue worker..."
+        Write-Development -Message "Testing Laravel queue worker..." -Type Info
         if ($Queue) {
             $queueStatus = Test-LaravelQueue -Queue $Queue
         } else {
@@ -62,19 +62,19 @@ Begin {
         }
         
         # Summary
-        Write-DevInfo ""
-        Write-DevInfo "Laravel Development Environment Status:"
-        Write-DevInfo "  - Web Server (port $WebPort): $(if($webStatus) { 'Running' } else { 'Stopped' })"
-        Write-DevInfo "  - Vite Server (port $VitePort): $(if($viteStatus) { 'Running' } else { 'Stopped' })"
-        Write-DevInfo "  - Queue Worker$(if($Queue) { " ($Queue)" }): $(if($queueStatus) { 'Running' } else { 'Stopped' })"
+        Write-Development -Message "" -Type Info
+        Write-Development -Message "Laravel Development Environment Status:" -Type Info
+        Write-Development -Message "  - Web Server (port $WebPort): $(if($webStatus) { 'Running' } else { 'Stopped' })" -Type Info
+        Write-Development -Message "  - Vite Server (port $VitePort): $(if($viteStatus) { 'Running' } else { 'Stopped' })" -Type Info
+        Write-Development -Message "  - Queue Worker$(if($Queue) { " ($Queue)" }): $(if($queueStatus) { 'Running' } else { 'Stopped' })" -Type Info
         
         $allRunning = $webStatus -and $viteStatus -and $queueStatus
         
         if ($allRunning) {
-            Write-DevSuccess "All Laravel services are running!"
+            Write-Development -Message "All Laravel services are running!" -Type Success
         } else {
             $runningCount = @($webStatus, $viteStatus, $queueStatus) | Where-Object { $_ } | Measure-Object | Select-Object -ExpandProperty Count
-            Write-DevWarning "$runningCount of 3 Laravel services are running"
+            Write-Development -Message "$runningCount of 3 Laravel services are running" -Type Warning
         }
         
         return @{
@@ -85,7 +85,7 @@ Begin {
         }
         
     } catch {
-        Write-DevError "Failed to test Laravel development environment: $($_.Exception.Message)"
+        Write-Development -Message "Failed to test Laravel development environment: $($_.Exception.Message)" -Type Error
         return @{
             Web = $false
             Vite = $false

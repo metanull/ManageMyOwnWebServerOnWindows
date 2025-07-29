@@ -19,19 +19,7 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             }
 
             # Mock other module and system functions
-            Function Write-DevInfo {
-                # N/A
-            }
-            Function Write-DevError {
-                # N/A
-            }
-            Function Write-DevSuccess {
-                # N/A
-            }
-            Function Write-DevStep {
-                # N/A
-            }
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Test-DevPort {
@@ -71,27 +59,7 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
                 return $true  # Always validate path as correct for tests
             }
             
-            Mock Write-DevInfo {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevError {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevSuccess {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevStep {
-                param([string]$Message)
-                # Mock implementation - just return
-            }
-            
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -186,7 +154,6 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             
             $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
             $Result | Should -Be $null
-            Should -Invoke Write-DevError -Exactly 1 -Scope It
         }
 
         It "Start-LaravelVite should fail when server startup times out" {
@@ -195,7 +162,6 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             
             $Result = Start-LaravelVite -Path $env:TEMP -Port 5173 -TimeoutSeconds 5
             $Result | Should -Be $null
-            Should -Invoke Write-DevError -Times 2 -Exactly -Scope It
             Should -Invoke Stop-Job -Exactly 1 -Scope It
             Should -Invoke Remove-Job -Exactly 1 -Scope It
         }

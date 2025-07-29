@@ -22,7 +22,7 @@ Describe "Testing private module function Test-LaravelPath" -Tag "UnitTest" {
             Function Test-Path {
                 # N/A
             }
-            Function Write-DevError {
+            Function Write-Development {
                 # N/A
             }
 
@@ -34,7 +34,7 @@ Describe "Testing private module function Test-LaravelPath" -Tag "UnitTest" {
                 return $true
             }
 
-            Mock Write-DevError {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }

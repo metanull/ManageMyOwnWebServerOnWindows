@@ -32,11 +32,11 @@ param(
 )
 
 Begin {
-    Write-DevStep "Stopping Laravel web server on port $Port..."
+    Write-Development -Message "Stopping Laravel web server on port $Port..." -Type Step
     
     try {
         if (-not (Test-DevPort -Port $Port)) {
-            Write-DevInfo "Laravel web server is not running on port $Port"
+            Write-Development -Message "Laravel web server is not running on port $Port" -Type Info
             return $true
         }
         
@@ -45,7 +45,7 @@ Begin {
                     Select-Object -ExpandProperty OwningProcess -Unique
         
         if (-not $processes) {
-            Write-DevWarning "Port $Port appears to be in use but no processes found"
+            Write-Development -Message "Port $Port appears to be in use but no processes found" -Type Warning
             return $false
         }
         
@@ -63,12 +63,12 @@ Begin {
                         if (-not $Force) {
                             $confirmation = Read-Host "Stop Laravel web process '$($process.Name)' (PID: $processId)? [Y/n]"
                             if ($confirmation -eq "n" -or $confirmation -eq "N") {
-                                Write-DevInfo "Skipping process $processId"
+                                Write-Development -Message "Skipping process $processId" -Type Info
                                 continue
                             }
                         }
                         
-                        Write-DevStep "Stopping Laravel web process '$($process.Name)' (PID: $processId)"
+                        Write-Development -Message "Stopping Laravel web process '$($process.Name)' (PID: $processId)" -Type Step
                         
                         try {
                             # Try graceful stop first
@@ -83,15 +83,15 @@ Begin {
                                 Start-Sleep -Seconds 1
                             }
                             
-                            Write-DevSuccess "Stopped Laravel web server (PID: $processId)"
+                            Write-Development -Message "Stopped Laravel web server (PID: $processId)" -Type Success
                             $stoppedAny = $true
                             
                         } catch {
-                            Write-DevError "Failed to stop process $processId`: $($_.Exception.Message)"
+                            Write-Development -Message "Failed to stop process $processId`: $($_.Exception.Message)" -Type Error
                         }
                     } else {
-                        Write-DevWarning "Process '$($process.Name)' (PID: $processId) on port $Port doesn't appear to be a Laravel web server"
-                        Write-DevInfo "Use -Force to stop it anyway"
+                        Write-Development -Message "Process '$($process.Name)' (PID: $processId) on port $Port doesn't appear to be a Laravel web server" -Type Warning
+                        Write-Development -Message "Use -Force to stop it anyway" -Type Info
                     }
                 }
             }
@@ -101,16 +101,16 @@ Begin {
         Start-Sleep -Seconds 1
         if (-not (Test-DevPort -Port $Port)) {
             if ($stoppedAny) {
-                Write-DevSuccess "Laravel web server stopped successfully"
+                Write-Development -Message "Laravel web server stopped successfully" -Type Success
             }
             return $true
         } else {
-            Write-DevWarning "Laravel web port $Port is still in use after attempting to stop processes"
+            Write-Development -Message "Laravel web port $Port is still in use after attempting to stop processes" -Type Warning
             return $false
         }
         
     } catch {
-        Write-DevError "Failed to stop Laravel web server on port $Port`: $($_.Exception.Message)"
+        Write-Development -Message "Failed to stop Laravel web server on port $Port`: $($_.Exception.Message)" -Type Error
         return $false
     }
 }

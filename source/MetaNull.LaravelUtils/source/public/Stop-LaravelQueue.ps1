@@ -32,7 +32,7 @@ param(
 )
 
 Begin {
-    Write-DevStep "Stopping Laravel queue worker$(if($Queue) { " for queue '$Queue'" })..."
+    Write-Development -Message "Stopping Laravel queue worker$(if($Queue) { " for queue '$Queue'" })..." -Type Step
     
     try {
         # Find queue worker processes
@@ -48,7 +48,7 @@ Begin {
         }
         
         if (-not $queueProcesses) {
-            Write-DevInfo "No Laravel queue worker processes found$(if($Queue) { " for queue '$Queue'" })"
+            Write-Development -Message "No Laravel queue worker processes found$(if($Queue) { " for queue '$Queue'" })" -Type Info
             return $true
         }
         
@@ -58,12 +58,12 @@ Begin {
             if (-not $Force) {
                 $confirmation = Read-Host "Stop Laravel queue worker process (PID: $($process.Id))? [Y/n]"
                 if ($confirmation -eq "n" -or $confirmation -eq "N") {
-                    Write-DevInfo "Skipping process $($process.Id)"
+                    Write-Development -Message "Skipping process $($process.Id)" -Type Info
                     continue
                 }
             }
             
-            Write-DevStep "Stopping Laravel queue worker process (PID: $($process.Id))"
+            Write-Development -Message "Stopping Laravel queue worker process (PID: $($process.Id))" -Type Step
             
             try {
                 # Try graceful stop first
@@ -78,24 +78,24 @@ Begin {
                     Start-Sleep -Seconds 1
                 }
                 
-                Write-DevSuccess "Stopped Laravel queue worker (PID: $($process.Id))"
+                Write-Development -Message "Stopped Laravel queue worker (PID: $($process.Id))" -Type Success
                 $stoppedAny = $true
                 
             } catch {
-                Write-DevError "Failed to stop process $($process.Id)`: $($_.Exception.Message)"
+                Write-Development -Message "Failed to stop process $($process.Id)`: $($_.Exception.Message)" -Type Error
             }
         }
         
         if ($stoppedAny) {
-            Write-DevSuccess "Laravel queue worker$(if($Queue) { "s for queue '$Queue'" }) stopped successfully"
+            Write-Development -Message "Laravel queue worker$(if($Queue) { "s for queue '$Queue'" }) stopped successfully" -Type Success
             return $true
         } else {
-            Write-DevWarning "No Laravel queue workers were stopped"
+            Write-Development -Message "No Laravel queue workers were stopped" -Type Warning
             return $false
         }
         
     } catch {
-        Write-DevError "Failed to stop Laravel queue worker: $($_.Exception.Message)"
+        Write-Development -Message "Failed to stop Laravel queue worker: $($_.Exception.Message)" -Type Error
         return $false
     }
 }

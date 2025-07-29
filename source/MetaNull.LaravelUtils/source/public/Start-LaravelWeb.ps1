@@ -43,18 +43,18 @@ param(
 )
 
 Begin {
-    Write-DevStep "Starting Laravel web server on port $Port..."
+    Write-Development -Message "Starting Laravel web server on port $Port..." -Type Step
     
     # Check if port is available
     if (Test-DevPort -Port $Port) {
         if ($Force) {
-            Write-DevWarning "Port $Port is already in use. Force stopping processes..."
+            Write-Development -Message "Port $Port is already in use. Force stopping processes..." -Type Warning
             Stop-DevProcessOnPort -Port $Port
             Start-Sleep -Seconds 2
         }
         
         if (Test-DevPort -Port $Port) {
-            Write-DevError "Unable to free port $Port. Please check what's using it and try again."
+            Write-Development -Message "Unable to free port $Port. Please check what's using it and try again." -Type Error
             return $null
         }
     }
@@ -66,18 +66,18 @@ Begin {
     }
     
     # Wait for server to start with configurable timeout
-    Write-DevInfo "Waiting for Laravel web server to start (timeout: $TimeoutSeconds seconds)..."
+    Write-Development -Message "Waiting for Laravel web server to start (timeout: $TimeoutSeconds seconds)..." -Type Info
     if (Wait-ForDevPort -Port $Port -TimeoutSeconds $TimeoutSeconds) {
-        Write-DevSuccess "Laravel web server running at http://127.0.0.1:$Port"
+        Write-Development -Message "Laravel web server running at http://127.0.0.1:$Port" -Type Success
         return $laravelJob
     } else {
-        Write-DevError "Failed to start Laravel web server within $TimeoutSeconds seconds"
+        Write-Development -Message "Failed to start Laravel web server within $TimeoutSeconds seconds" -Type Error
         
         # Get job output for debugging
         Start-Sleep -Seconds 1
         $jobOutput = Receive-Job $laravelJob -ErrorAction SilentlyContinue
         if ($jobOutput) {
-            Write-DevError "Laravel job output: $jobOutput"
+            Write-Development -Message "Laravel job output: $jobOutput" -Type Error
         }
         
         if ($laravelJob) {

@@ -20,31 +20,31 @@ param(
 
 Begin {
     if(-Not (Test-Path -Path $Path -PathType Container)) {
-        Write-DevError "The specified path '$Path' does not exist or is not a directory."
+        Write-Development -Message "The specified path '$Path' does not exist or is not a directory." -Type Error
         return $false
     }
     if(-Not (Test-Path -Path (Join-Path -Path $Path -ChildPath 'artisan'))) {
-        Write-DevError "The specified path '$Path' does not contain a Laravel application (missing 'artisan' file)."
+        Write-Development -Message "The specified path '$Path' does not contain a Laravel application (missing 'artisan' file)." -Type Error
         return $false
     }
     if(-Not (Test-Path -Path (Join-Path -Path $Path -ChildPath 'composer.json'))) {
-        Write-DevError "The specified path '$Path' does not contain a Laravel application (missing 'composer.json' file)."
+        Write-Development -Message "The specified path '$Path' does not contain a Laravel application (missing 'composer.json' file)." -Type Error
         return $false
     }
     if(-Not (Test-Path -Path (Join-Path -Path $Path -ChildPath 'vendor'))) {
-        Write-DevError "The specified path '$Path' does not contain a Laravel application (missing 'vendor' directory). Please run 'composer install' first."
+        Write-Development -Message "The specified path '$Path' does not contain a Laravel application (missing 'vendor' directory). Please run 'composer install' first." -Type Error
         return $false
     }
     if(-Not (Test-Path -Path (Join-Path -Path $Path -ChildPath 'package.json'))) {
-        Write-DevError "The specified path '$Path' does not contain a Laravel application (missing 'package.json' file)."
+        Write-Development -Message "The specified path '$Path' does not contain a Laravel application (missing 'package.json' file)." -Type Error
         return $false
     }
     if(-Not (Test-Path -Path (Join-Path -Path $Path -ChildPath 'vite.config.js'))) {
-        Write-DevError "The specified path '$Path' does not contain a Laravel application (missing 'vite.config.js' file)."
+        Write-Development -Message "The specified path '$Path' does not contain a Laravel application (missing 'vite.config.js' file)." -Type Error
         return $false
     }
     if(-Not (Test-Path -Path (Join-Path -Path $Path -ChildPath 'node_modules'))) {
-        Write-DevError "The specified path '$Path' does not contain a Laravel application (missing 'node_modules' directory). Please run 'npm install' first."
+        Write-Development -Message "The specified path '$Path' does not contain a Laravel application (missing 'node_modules' directory). Please run 'npm install' first." -Type Error
         return $false
     }
     return $true

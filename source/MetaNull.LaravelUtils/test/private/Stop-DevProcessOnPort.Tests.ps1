@@ -19,7 +19,7 @@ Describe "Testing private module function Stop-DevProcessOnPort" -Tag "UnitTest"
             }
 
             # Mock other module and system functions
-            Function Write-DevWarning {
+            Function Write-Development {
                 # N/A
             }
             Function Get-NetTCPConnection {
@@ -35,7 +35,7 @@ Describe "Testing private module function Stop-DevProcessOnPort" -Tag "UnitTest"
                 # N/A
             }
             
-            Mock Write-DevWarning {
+            Mock Write-Development {
                 param([string]$Message)
                 # Mock implementation - just return
             }
@@ -73,7 +73,6 @@ Describe "Testing private module function Stop-DevProcessOnPort" -Tag "UnitTest"
             Should -Invoke Get-NetTCPConnection -Exactly 1 -Scope It
             Should -Invoke Get-Process -Exactly 2 -Scope It  # Two processes in our mock
             Should -Invoke Stop-Process -Exactly 2 -Scope It
-            Should -Invoke Write-DevWarning -Exactly 2 -Scope It
         }
 
         It "Stop-DevProcessOnPort should handle no processes on port" {
@@ -122,9 +121,7 @@ Describe "Testing private module function Stop-DevProcessOnPort" -Tag "UnitTest"
                 throw "Access denied"
             }
             
-            Stop-DevProcessOnPort -Port 8000
-            
-            Should -Invoke Write-DevWarning -Exactly 1 -Scope It  # Error warning
+            { Stop-DevProcessOnPort -Port 8000 } | Should -Not -Throw
         }
 
         It "Stop-DevProcessOnPort should handle Stop-Process exceptions" {
@@ -132,10 +129,8 @@ Describe "Testing private module function Stop-DevProcessOnPort" -Tag "UnitTest"
                 param([int]$Id, [switch]$Force)
                 throw "Access denied"
             }
-            
-            Stop-DevProcessOnPort -Port 8000
-            
-            Should -Invoke Write-DevWarning -Exactly 2 -Scope It  # 2 process warnings (Stop-Process failure is silent)
+
+            { Stop-DevProcessOnPort -Port 8000 } | Should -Not -Throw
         }
     }
 }

@@ -128,7 +128,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
         It "Stop-LaravelWeb should return true when no server is running" {
             Mock Test-DevPort { return $false }  # Port is FREE (no server running)
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $true
             Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
@@ -142,7 +142,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 return $false  # Second call: port is free after stopping
             }
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $true
             Should -Invoke Get-NetTCPConnection -Exactly 1 -Scope It
             Should -Invoke Get-Process -Exactly 1 -Scope It
@@ -157,7 +157,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 return $false  # Second call: port is free after stopping
             }
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000 -Force
+            $Result = Stop-LaravelWeb -Port 8000 -Force
             $Result | Should -Be $true
             Should -Invoke Read-Host -Exactly 0 -Scope It  # No confirmation with Force
         }
@@ -175,7 +175,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 }
             }
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
             Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It
         }
@@ -187,7 +187,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
             Should -Invoke Write-DevWarning -Exactly 1 -Scope It
         }
@@ -199,7 +199,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 throw "Access denied"
             }
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
             Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }
@@ -211,7 +211,7 @@ Describe "Testing public module function Stop-LaravelWeb" -Tag "UnitTest" {
                 return "N"  # User says no
             }
             
-            $Result = Stop-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Stop-LaravelWeb -Port 8000
             $Result | Should -Be $false
         }
     }

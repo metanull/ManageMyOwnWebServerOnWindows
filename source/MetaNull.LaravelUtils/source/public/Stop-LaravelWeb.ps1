@@ -15,19 +15,15 @@
     Force stop without confirmation
     
     .EXAMPLE
-    Stop-LaravelWeb -Path "C:\path\to\laravel" -Port 8000
+    Stop-LaravelWeb -Port 8000
     Stops Laravel web server on port 8000
     
     .EXAMPLE
-    Stop-LaravelWeb -Path "C:\path\to\laravel" -Port 8001 -Force
+    Stop-LaravelWeb -Port 8001 -Force
     Force stops Laravel web server on port 8001
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
-    
     [Parameter()]
     [int]$Port = 8000,
     
@@ -37,12 +33,6 @@ param(
 
 Begin {
     Write-DevStep "Stopping Laravel web server on port $Port..."
-    
-    # Validate Laravel path
-    if (-not (Test-Path $Path -PathType Container)) {
-        Write-DevError "Laravel path does not exist: $Path"
-        return $false
-    }
     
     try {
         if (-not (Test-DevPort -Port $Port)) {

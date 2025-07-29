@@ -12,31 +12,21 @@
     Specific queue name to check (optional)
     
     .EXAMPLE
-    Test-LaravelQueue -Path "C:\path\to\laravel"
+    Test-LaravelQueue
     Tests if any Laravel queue workers are running
     
     .EXAMPLE
-    Test-LaravelQueue -Path "C:\path\to\laravel" -Queue "emails"
+    Test-LaravelQueue -Queue "emails"
     Tests if Laravel queue workers are running for the "emails" queue
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
-    
     [Parameter()]
     [string]$Queue
 )
 
 Begin {
     Write-DevInfo "Testing Laravel queue worker$(if($Queue) { " for queue '$Queue'" })..."
-    
-    # Validate Laravel path
-    if (-not (Test-Path $Path -PathType Container)) {
-        Write-DevError "Laravel path does not exist: $Path"
-        return $false
-    }
     
     try {
         # Find queue worker processes using WMI for more reliable command line detection

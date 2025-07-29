@@ -61,8 +61,14 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             Function Receive-Job {
                 # N/A
             }
-            Function Write-Host {
+            
+            Function Test-LaravelPath {
                 # N/A
+            }
+
+            Mock Test-LaravelPath {
+                param([string]$Path)
+                return $true  # Always validate path as correct for tests
             }
             
             Mock Write-DevInfo {
@@ -138,10 +144,6 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
                 return "Vite server started"
             }
             
-            Mock Write-Host {
-                param([string]$Object, [string]$ForegroundColor)
-                # Mock implementation - just return
-            }
         }
 
         It "Start-LaravelVite with free port should start successfully" {
@@ -153,7 +155,18 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
         }
 
-        It "Start-LaravelVite with busy port should free it and start successfully" {
+        It "Start-LaravelVite with busy port should fail without Force" {
+            Mock Test-DevPort { 
+                param([int]$Port)
+                return $true  # Port is busy
+            }
+            
+            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
+            $Result | Should -BeNullOrEmpty
+            Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
+        }
+
+        It "Start-LaravelVite with busy port and -Force should free it and start successfully" {
             Mock Test-DevPort { 
                 param([int]$Port)
                 if ($script:ViteCallCount -eq $null) { $script:ViteCallCount = 0 }
@@ -162,19 +175,10 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
                 return $false  # Second call: port is free after stopping
             }
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
+            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173 -Force
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 456
             Should -Invoke Stop-DevProcessOnPort -Exactly 1 -Scope It
-        }
-
-        It "Start-LaravelVite with SkipChecks should start without port validation" {
-            Mock Test-DevPort { return $true }  # This should be ignored with SkipChecks
-            
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173 -SkipChecks
-            $Result | Should -Not -BeNullOrEmpty
-            Should -Invoke Test-DevPort -Exactly 0 -Scope It
-            Should -Invoke Wait-ForDevPort -Exactly 0 -Scope It
         }
 
         It "Start-LaravelVite should fail when port cannot be freed" {
@@ -217,7 +221,6 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             
             $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
             $Result | Should -Be $null
-            Should -Invoke Write-Host -Times 2 -Exactly -Scope It  # Job output + errors
         }
     }
 }

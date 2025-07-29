@@ -18,20 +18,15 @@
     Queue name for Laravel queue workers (optional - checks all if not specified)
     
     .EXAMPLE
-    Test-Laravel -Path "C:\path\to\laravel"
+    Test-Laravel
     Tests all Laravel services with default settings
     
     .EXAMPLE
-    Test-Laravel -Path "C:\path\to\laravel" -WebPort 8080 -VitePort 3000 -Queue "emails"
+    Test-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails"
     Tests Laravel services with custom ports and specific queue
 #>
 [CmdletBinding()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Write-Host used for status output formatting with spacing in development utility')]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
-    
     [Parameter()]
     [int]$WebPort = 8000,
     
@@ -52,22 +47,22 @@ Begin {
     try {
         # Test Laravel Web Server
         Write-DevInfo "Testing Laravel web server..."
-        $webStatus = Test-LaravelWeb -Path $Path -Port $WebPort
+        $webStatus = Test-LaravelWeb -Port $WebPort
         
         # Test Vite Development Server
         Write-DevInfo "Testing Vite development server..."
-        $viteStatus = Test-LaravelVite -Path $Path -Port $VitePort
-        
+        $viteStatus = Test-LaravelVite -Port $VitePort
+
         # Test Laravel Queue Worker
         Write-DevInfo "Testing Laravel queue worker..."
         if ($Queue) {
-            $queueStatus = Test-LaravelQueue -Path $Path -Queue $Queue
+            $queueStatus = Test-LaravelQueue -Queue $Queue
         } else {
-            $queueStatus = Test-LaravelQueue -Path $Path
+            $queueStatus = Test-LaravelQueue
         }
         
         # Summary
-        Write-Host ""
+        Write-DevInfo ""
         Write-DevInfo "Laravel Development Environment Status:"
         Write-DevInfo "  - Web Server (port $WebPort): $(if($webStatus) { 'Running' } else { 'Stopped' })"
         Write-DevInfo "  - Vite Server (port $VitePort): $(if($viteStatus) { 'Running' } else { 'Stopped' })"

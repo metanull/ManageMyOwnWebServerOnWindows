@@ -84,7 +84,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
         }
 
         It "Test-LaravelQueue should return true when queue workers are running" {
-            $Result = Test-LaravelQueue -Path $env:TEMP
+            $Result = Test-LaravelQueue
             $Result | Should -Be $true
             Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
             Should -Invoke Write-DevInfo -Exactly 2 -Scope It  # Initial message + process info
@@ -103,7 +103,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
                 )
             }
             
-            $Result = Test-LaravelQueue -Path $env:TEMP -Queue "emails"
+            $Result = Test-LaravelQueue -Queue "emails"
             $Result | Should -Be $true
             Should -Invoke Write-DevSuccess -Exactly 1 -Scope It
         }
@@ -114,7 +114,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
                 return @()  # No processes found
             }
             
-            $Result = Test-LaravelQueue -Path $env:TEMP
+            $Result = Test-LaravelQueue
             $Result | Should -Be $false
             Should -Invoke Write-DevInfo -Exactly 2 -Scope It  # Initial message + no processes found
         }
@@ -132,7 +132,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
                 )
             }
             
-            $Result = Test-LaravelQueue -Path $env:TEMP -Queue "emails"
+            $Result = Test-LaravelQueue -Queue "emails"
             $Result | Should -Be $false
             Should -Invoke Write-DevInfo -Exactly 2 -Scope It
         }
@@ -156,7 +156,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
                 )
             }
             
-            $Result = Test-LaravelQueue -Path $env:TEMP
+            $Result = Test-LaravelQueue
             $Result | Should -Be $true
             Should -Invoke Write-DevInfo -Exactly 3 -Scope It  # Initial + 2 process info
         }
@@ -167,7 +167,7 @@ Describe "Testing public module function Test-LaravelQueue" -Tag "UnitTest" {
                 throw "WMI query failed"
             }
             
-            $Result = Test-LaravelQueue -Path $env:TEMP
+            $Result = Test-LaravelQueue
             $Result | Should -Be $false
             Should -Invoke Write-DevError -Exactly 1 -Scope It
         }

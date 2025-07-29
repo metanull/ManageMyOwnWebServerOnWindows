@@ -94,7 +94,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
         }
 
         It "Stop-Laravel should stop all services successfully with defaults" {
-            $Result = Stop-Laravel -Path $env:TEMP
+            $Result = Stop-Laravel
             $Result | Should -Be $true
             Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
@@ -103,7 +103,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
         }
 
         It "Stop-Laravel should stop with custom parameters" {
-            $Result = Stop-Laravel -Path $env:TEMP -WebPort 8080 -VitePort 3000 -Queue "emails"
+            $Result = Stop-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails"
             $Result | Should -Be $true
             Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
@@ -111,7 +111,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
         }
 
         It "Stop-Laravel should handle Force parameter" {
-            $Result = Stop-Laravel -Path $env:TEMP -Force
+            $Result = Stop-Laravel -Force
             $Result | Should -Be $true
             Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
             Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
@@ -124,7 +124,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
                 return $false  # Mock failure
             }
             
-            $Result = Stop-Laravel -Path $env:TEMP
+            $Result = Stop-Laravel
             $Result | Should -Be $false
             Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It  # One for web failure + one for overall
         }
@@ -135,7 +135,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
                 return $false  # Mock failure
             }
             
-            $Result = Stop-Laravel -Path $env:TEMP
+            $Result = Stop-Laravel
             $Result | Should -Be $false
             Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It  # One for vite failure + one for overall
         }
@@ -146,7 +146,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
                 return $false  # Mock failure
             }
             
-            $Result = Stop-Laravel -Path $env:TEMP
+            $Result = Stop-Laravel
             $Result | Should -Be $false
             Should -Invoke Write-DevWarning -Times 2 -Exactly -Scope It  # One for queue failure + one for overall
         }
@@ -156,7 +156,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             Mock Stop-LaravelVite { return $false }
             Mock Stop-LaravelQueue { return $false }
             
-            $Result = Stop-Laravel -Path $env:TEMP
+            $Result = Stop-Laravel
             $Result | Should -Be $false
             Should -Invoke Write-DevWarning -Times 4 -Exactly -Scope It  # Three for service failures + one for overall
         }
@@ -166,7 +166,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
                 throw "System error"
             }
             
-            $Result = Stop-Laravel -Path $env:TEMP
+            $Result = Stop-Laravel
             $Result | Should -Be $false
             Should -Invoke Write-DevError -Times 1 -Exactly -Scope It
         }

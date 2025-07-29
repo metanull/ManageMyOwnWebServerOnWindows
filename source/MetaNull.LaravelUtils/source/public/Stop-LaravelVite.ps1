@@ -15,19 +15,15 @@
     Force stop without confirmation
     
     .EXAMPLE
-    Stop-LaravelVite -Path "C:\path\to\laravel" -Port 5173
+    Stop-LaravelVite -Port 5173
     Stops Laravel Vite server on port 5173
     
     .EXAMPLE
-    Stop-LaravelVite -Path "C:\path\to\laravel" -Force
+    Stop-LaravelVite -Force
     Force stops Laravel Vite server with default port
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
-    
     [Parameter()]
     [int]$Port = 5173,
     
@@ -37,12 +33,6 @@ param(
 
 Begin {
     Write-DevStep "Stopping Laravel Vite server on port $Port..."
-    
-    # Validate Laravel path
-    if (-not (Test-Path $Path -PathType Container)) {
-        Write-DevError "Laravel path does not exist: $Path"
-        return $false
-    }
     
     try {
         if (-not (Test-DevPort -Port $Port)) {

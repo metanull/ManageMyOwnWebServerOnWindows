@@ -20,9 +20,6 @@
     .PARAMETER TimeoutSeconds
     Timeout in seconds for server startup checks (default: 30)
 
-    .PARAMETER SkipChecks
-    Skip port availability checks
-
     .PARAMETER Force
     Force stop any existing processes on the specified ports
 
@@ -36,9 +33,9 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
+    [Parameter()]
+    [ValidateScript({ Test-LaravelPath -Path $_ })]
+    [string]$Path = '.',
 
     [Parameter()]
     [int]$WebPort = 8000,
@@ -53,9 +50,6 @@ param(
     [int]$TimeoutSeconds = 30,
 
     [Parameter()]
-    [switch]$SkipChecks,
-
-    [Parameter()]
     [switch]$Force
 )
 
@@ -67,7 +61,7 @@ Begin {
     try {
         # Start Laravel Web Server
         Write-DevInfo "Starting Laravel web server..."
-        $webResult = Start-LaravelWeb -Path $Path -Port $WebPort -TimeoutSeconds $TimeoutSeconds -SkipChecks:$SkipChecks -Force:$Force
+        $webResult = Start-LaravelWeb -Path $Path -Port $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
         if (-not $webResult) {
             Write-DevError "Failed to start Laravel web server"
             $success = $false
@@ -75,7 +69,7 @@ Begin {
 
         # Start Vite Development Server
         Write-DevInfo "Starting Vite development server..."
-        $viteResult = Start-LaravelVite -Path $Path -Port $VitePort -LaravelPort $WebPort -TimeoutSeconds $TimeoutSeconds -SkipChecks:$SkipChecks -Force:$Force
+        $viteResult = Start-LaravelVite -Path $Path -Port $VitePort -LaravelPort $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
         if (-not $viteResult) {
             Write-DevError "Failed to start Vite development server"
             $success = $false

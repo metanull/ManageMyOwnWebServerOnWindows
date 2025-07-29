@@ -72,7 +72,7 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
                 return @{ StatusCode = 200 }  # Mock successful HTTP response
             }
             
-            $Result = Test-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Test-LaravelWeb -Port 8000
             $Result | Should -Be $true
         }
 
@@ -82,7 +82,7 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
                 return @{ StatusCode = 200 }  # Mock successful HTTP response
             }
             
-            $Result = Test-LaravelWeb -Path $env:TEMP
+            $Result = Test-LaravelWeb
             $Result | Should -Be $true
         }
 
@@ -92,7 +92,7 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
                 return $false  # Mock as if port is not available (server not running)
             }
             
-            $Result = Test-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Test-LaravelWeb -Port 8000
             $Result | Should -Be $false
         }
 
@@ -102,7 +102,7 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
                 throw "Connection failed"  # Mock HTTP request failure
             }
             
-            $Result = Test-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Test-LaravelWeb -Port 8000
             $Result | Should -Be $false
         }
 
@@ -112,7 +112,7 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
                 throw [System.Net.WebException]::new("The operation has timed out")  # Mock timeout
             }
             
-            $Result = Test-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Test-LaravelWeb -Port 8000
             $Result | Should -Be $false
         }
     }

@@ -101,7 +101,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelQueue -Path $env:TEMP
+            $Result = Stop-LaravelQueue
             $Result | Should -Be $true
             Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
@@ -111,7 +111,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 throw "System error"
             }
             
-            $Result = Stop-LaravelQueue -Path $env:TEMP
+            $Result = Stop-LaravelQueue
             $Result | Should -Be $false
             Should -Invoke Write-DevError -Exactly 1 -Scope It
         }
@@ -127,7 +127,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 )
             }
             
-            $Result = Stop-LaravelQueue -Path $env:TEMP
+            $Result = Stop-LaravelQueue
             $Result | Should -Be $true
             Should -Invoke Write-DevInfo -Exactly 1 -Scope It
         }
@@ -137,7 +137,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelQueue -Path $env:TEMP -Force
+            $Result = Stop-LaravelQueue -Force
             $Result | Should -Be $true
             Should -Invoke Read-Host -Exactly 0 -Scope It  # No confirmation with Force
         }
@@ -147,7 +147,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelQueue -Path $env:TEMP -Queue "emails"
+            $Result = Stop-LaravelQueue -Queue "emails"
             $Result | Should -Be $true
         }
     }

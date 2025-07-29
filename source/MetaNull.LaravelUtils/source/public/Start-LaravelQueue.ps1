@@ -38,11 +38,11 @@
     Starts Laravel queue worker for the "emails" queue with max 500 jobs
 #>
 [CmdletBinding()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Write-Host used for debugging output display in development utility')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Path', Justification = 'Used via $Using:Path in Start-Job ScriptBlock')]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string]$Path,
+    [Parameter()]
+    [ValidateScript({ Test-LaravelPath -Path $_ })]
+    [string]$Path = '.',
     
     [Parameter()]
     [string]$Queue = "default",
@@ -71,7 +71,7 @@ Begin {
     
     if ($Force) {
         Write-DevInfo "Stopping any existing queue workers..."
-        Stop-LaravelQueue -Path $Path -Queue $Queue -Force
+        Stop-LaravelQueue -Queue $Queue -Force
     }
     
     # Build the artisan command
@@ -109,8 +109,7 @@ Begin {
         # Get job output for debugging
         $jobOutput = Receive-Job $queueJob -ErrorAction SilentlyContinue
         if ($jobOutput) {
-            Write-DevError "Queue worker output:"
-            Write-Host $jobOutput -ForegroundColor Red
+            Write-DevError "Queue worker output: $jobOutput"
         }
         
         Remove-Job $queueJob -ErrorAction SilentlyContinue

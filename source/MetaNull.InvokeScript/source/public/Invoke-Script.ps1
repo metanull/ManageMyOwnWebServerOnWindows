@@ -115,12 +115,12 @@ Process {
         }
 
         # Add received input environment variables to the process' environment
-        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_CURRENT_DIRECTORY' -Value ([System.Environment]::CurrentDirectory)
-        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_CURRENT_LOCATION' -Value ((Get-Location).Path)
-        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_SCRIPT_ROOT' -Value ($PSScriptRoot)
-        Add-Environment -ScriptOutput $ScriptOutput -Name 'METANULL_WORKING_DIRECTORY' -Value ($ScriptWorkingDirectory | Expand-Variables -ScriptOutput $ScriptOutput)
+        Add-Environment -Name 'METANULL_CURRENT_DIRECTORY' -Value ([System.Environment]::CurrentDirectory)
+        Add-Environment -Name 'METANULL_CURRENT_LOCATION' -Value ((Get-Location).Path)
+        Add-Environment -Name 'METANULL_SCRIPT_ROOT' -Value ($PSScriptRoot)
+        Add-Environment -Name 'METANULL_WORKING_DIRECTORY' -Value ($ScriptWorkingDirectory | Expand-Variables -ScriptOutput $ScriptOutput)
         foreach ($key in $ScriptEnvironment.Keys) {
-            Add-Environment -ScriptOutput $ScriptOutput -Name $key -Value $ScriptEnvironment[$key]
+            Add-Environment -Name $key -Value $ScriptEnvironment[$key]
         }
 
         # Check if the step should run (Condition is true)
@@ -232,6 +232,7 @@ Begin {
     #>
     Function Set-Result {
         [CmdletBinding(DefaultParameterSetName='Succeeded')]
+        [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'This function is for internal use only')]
         param(
             [Parameter(Mandatory)]
             [ref]$ScriptOutput,
@@ -282,9 +283,6 @@ Begin {
     Function Add-Environment {
         [CmdletBinding()]
         param(
-            [Parameter(Mandatory)]
-            [ref]$ScriptOutput,
-
             [Parameter(Mandatory)]
             [string]$Name,
 

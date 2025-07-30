@@ -12,6 +12,7 @@
         Format-PHPLog -Path "C:\Logs\php_errors.log"
 #>
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'This cmdlet is intended for display purposes only')]
 param(
     [Parameter(Mandatory, Position = 0)]
     [ValidateScript({ Get-Item $_ | Test-Path -PathType Leaf })]
@@ -22,6 +23,7 @@ param(
 Process {
     Get-Content -Path $Path -wait | Foreach-Object -Begin {
         $Buffer = ([ref]('VOID'))
+        $Buffer.Value = 'VOID'
     } -End {
         if ($Buffer.Value -ne 'VOID') {
             $Buffer | Write-Output

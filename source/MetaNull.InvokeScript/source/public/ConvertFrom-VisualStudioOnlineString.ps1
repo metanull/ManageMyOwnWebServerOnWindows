@@ -98,17 +98,17 @@ Process {
                 }
                 # Requires property 'variable'
                 if (-not ($Properties.ContainsKey('variable'))) {
-                    Write-Warning "Missing name"
+                    Write-Warning "Property 'variable' is missing"
                     return
                 }
                 # Requires property 'variable' to be not empty
                 if ([string]::IsNullOrEmpty($Properties['variable'])) {
-                    Write-Warning "Null name"
+                    Write-Warning "Property 'variable' is null or empty"
                     return
                 }
                 # Requires property 'variable' to be a valid variable name
-                try { & { Invoke-Expression "`$$($Properties['variable']) = `$null" } } catch {
-                    Write-Warning "Invalid name"
+                if ($Properties['variable'] -notmatch '^[a-zA-Z_][a-zA-Z0-9_]*$') {
+                    Write-Warning "Property 'variable' is not a valid variable name"
                     return
                 }
                 return @{

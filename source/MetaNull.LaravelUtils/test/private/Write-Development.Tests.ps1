@@ -23,7 +23,7 @@ Describe "Testing private module function Write-Development" -Tag "UnitTest" {
             }
 
             Function Write-Host {
-                # N/A - Mocked in tests
+                # Redefined Write-Host to avoid actual console output and to allow mocking
             }
 
             Mock Write-Host {param([string]$Object, [string]$ForegroundColor)}

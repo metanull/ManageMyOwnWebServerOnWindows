@@ -24,7 +24,7 @@ param(
 )
 
 End {
-    if ($Mode -eq "plaintext" -or ($Mode -eq "auto" -and -not $script:UseEmojis)) {
+    if ($Mode -eq "plaintext" ) {
         $PlainText = $true
     }
     elseif ($Mode -eq "unicode") {
@@ -33,12 +33,14 @@ End {
     else {
         $PlainText = $script:UseEmojis -eq $false
     }
+
     if ($PlainText) {
         $IconSet = $script:ModuleIcons.PlainText
     }
     else {
-        $IconSet = $script:ModuleIcons
+        $IconSet = $script:ModuleIcons.Unicode
     }
+    
     if ($IconSet.ContainsKey($IconName)) {
         return $IconSet[$IconName]
     }

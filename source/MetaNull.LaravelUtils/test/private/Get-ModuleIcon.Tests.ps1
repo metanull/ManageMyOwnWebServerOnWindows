@@ -13,15 +13,13 @@ Describe "Testing private module function Get-ModuleIcon" -Tag "UnitTest" {
                 . $FunctionPath @args | write-Output
             }
 
-            # Mock used module and system functions
-            # N/A
-
             # Mock used module's variables
             $script:ModuleIcons = @{
-                "Rocket" = if ($PSVersionTable.PSVersion.Major -ge 7) { "`u{1F680}" } else { "[START]" }
-                "CheckMark" = if ($PSVersionTable.PSVersion.Major -ge 7) { "`u{1F197}" } else { "[OK]" }
-                "UnknownIcon" = "?"
-                "PlainText" = @{
+                Unicode = @{
+                    "Rocket" = "`u{1F680}"
+                    "CheckMark" = "`u{1F197}"
+                }
+                PlainText = @{
                     "Rocket" = "[START]"
                     "CheckMark" = "[OK]"
                 }
@@ -29,31 +27,36 @@ Describe "Testing private module function Get-ModuleIcon" -Tag "UnitTest" {
             $script:UseEmojis = $PSVersionTable.PSVersion.Major -ge 7
         }
 
-        It "Get-ModuleIcon -IconName 'Rocket'" {
-            $Result = Get-ModuleIcon -IconName 'Rocket'
+        It "Get-ModuleIcon -IconName 'Rocket' -Mode 'unicode'" {
+            $Result = Get-ModuleIcon -IconName 'Rocket' -Mode 'unicode'
             $Result | Should -Not -BeNullOrEmpty
-            if ($PSVersionTable.PSVersion.Major -ge 7) {
-                $Result | Should -Be "`u{1F680}"
-            } else {
-                $Result | Should -Be "[START]"
-            }
+            $Result | Should -Be "`u{1F680}"
         }
 
-        It "Get-ModuleIcon 'CheckMark'" {
-            $Result = Get-ModuleIcon 'CheckMark'
+        It "Get-ModuleIcon -IconName 'Rocket' -Mode 'plaintext'" {
+            $Result = Get-ModuleIcon -IconName 'Rocket' -Mode 'plaintext'
             $Result | Should -Not -BeNullOrEmpty
-            if ($PSVersionTable.PSVersion.Major -ge 7) {
-                $Result | Should -Be "`u{1F197}"
-            } else {
-                $Result | Should -Be "[OK]"
-            }
+            $Result | Should -Be "[START]"
+        }
+
+        It "Get-ModuleIcon -IconName 'CheckMark' -Mode 'unicode'" {
+            $Result = Get-ModuleIcon -IconName 'CheckMark' -Mode 'unicode'
+            $Result | Should -Not -BeNullOrEmpty
+            $Result | Should -Be "`u{1F197}"
+        }
+
+        It "Get-ModuleIcon -IconName 'CheckMark' -Mode 'plaintext'" {
+            $Result = Get-ModuleIcon -IconName 'CheckMark' -Mode 'plaintext'
+            $Result | Should -Not -BeNullOrEmpty
+            $Result | Should -Be "[OK]"
         }
 
         It "Returns '?' for an unknown icon: Get-ModuleIcon -IconName 'UnknownIcon'" {
+            Mock Write-Warning {
+                # Hide warning message in test output
+            }
             $Result = Get-ModuleIcon -IconName 'UnknownIcon'
             $Result | Should -Be '?'
         }
-
-
     }
 }

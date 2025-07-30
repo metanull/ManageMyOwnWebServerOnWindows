@@ -79,39 +79,39 @@
 
 .EXAMPLE
     # Write a message
-    'Task completed successfully' | Write-VisualStudioOnlineString -Format 'section'
+    'Task completed successfully' | ConvertTo-VisualStudioOnlineString -Format 'section'
 
 .EXAMPLE
     # Complete a task
-    Write-VisualStudioOnlineString -CompleteTask -Result 'Succeeded' -Message 'Task completed successfully'
+    ConvertTo-VisualStudioOnlineString -CompleteTask -Result 'Succeeded' -Message 'Task completed successfully'
 
 .EXAMPLE
     # Set a task variable
-    Write-VisualStudioOnlineString -SetTaskVariable -Name 'VariableName' -Value 'VariableValue'
+    ConvertTo-VisualStudioOnlineString -SetTaskVariable -Name 'VariableName' -Value 'VariableValue'
 
 .EXAMPLE
     # Set a task secret
-    Write-VisualStudioOnlineString -SetTaskSecret -Value 'SecretValue'
+    ConvertTo-VisualStudioOnlineString -SetTaskSecret -Value 'SecretValue'
 
 .EXAMPLE
     # Prepend a path to the task
-    Write-VisualStudioOnlineString -PrependTaskPath -Path 'C:\Path\To\Prepend'
+    ConvertTo-VisualStudioOnlineString -PrependTaskPath -Path 'C:\Path\To\Prepend'
 
 .EXAMPLE
     # Upload a file to the task
-    Write-VisualStudioOnlineString -UploadTaskFile -Path 'C:\Path\To\Upload'
+    ConvertTo-VisualStudioOnlineString -UploadTaskFile -Path 'C:\Path\To\Upload'
 
 .EXAMPLE
     # Set the task progress
-    Write-VisualStudioOnlineString -SetTaskProgress -Progress 50 -Message 'Task is 50% complete'
+    ConvertTo-VisualStudioOnlineString -SetTaskProgress -Progress 50 -Message 'Task is 50% complete'
 
 .EXAMPLE
     # Log an issue
-    Write-VisualStudioOnlineString -LogIssue -Type 'warning' -Message 'This is a warning'
+    ConvertTo-VisualStudioOnlineString -LogIssue -Type 'warning' -Message 'This is a warning'
 
 .EXAMPLE
     # Add a build tag
-    Write-VisualStudioOnlineString -AddBuildTag -Tag 'tag'
+    ConvertTo-VisualStudioOnlineString -AddBuildTag -Tag 'tag'
 
 .OUTPUTS
     System.String
@@ -121,6 +121,7 @@
 #>
 [CmdletBinding(DefaultParameterSetName='Format')]
 [OutputType([string])]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Parameters are used to define the script''s ParameterSet.')]
 param(
     [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='Format')]
     [Parameter(Mandatory = $false, ValueFromPipeline, ParameterSetName='Command-TaskComplete')]

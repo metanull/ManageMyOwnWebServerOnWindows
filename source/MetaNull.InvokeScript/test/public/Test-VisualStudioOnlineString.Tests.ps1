@@ -1,10 +1,13 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Test file needs to mock built-in cmdlets for isolated testing')]
+param()
+
 Describe "Testing public module function Test-VisualStudioOnlineString" -Tag "UnitTest" {
     BeforeAll {
         $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
         $ScriptName = $PSCommandPath | Split-Path -Leaf
         $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
         $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-        $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
 
         $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
 

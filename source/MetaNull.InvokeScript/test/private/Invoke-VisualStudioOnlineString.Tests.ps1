@@ -1,3 +1,7 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Test file needs to mock built-in cmdlets for isolated testing')]
+param()
+
 Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag "UnitTest" {
 
     BeforeAll {
@@ -5,30 +9,43 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
         $ScriptName = $PSCommandPath | Split-Path -Leaf
         $Visibility = $PSCommandPath | Split-Path -Parent | Split-Path -Leaf
         $SourceDirectory = Resolve-Path (Join-Path $ModuleRoot "source\$Visibility")
-        $TestDirectory = Resolve-Path (Join-Path $ModuleRoot "test\$Visibility")
 
         $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
 
         # Create a Stub for the module function to test
-        Function Invoke-ModuleFunctionStub {
+        Function Invoke-VisualStudioOnlineString {
             . $FunctionPath @args | write-Output
         }
+
+        # Declare mocked functions
+        Function ConvertFrom-VisualStudioOnlineString {
+            # This function is a stub and will be replaced in the tests
+        }
+        Function Write-Host {
+            # This function is a stub and will be replaced in the tests
+        }
+        Mock Write-Host {
+            # Just returns
+        }
+        
+        # Module Variables
+        # N/A
     }
 
     Context "When calling the function" {
         BeforeAll {
-            Function ConvertFrom-VisualStudioOnlineString {
-                return ($args -join ' ')
+            Mock ConvertFrom-VisualStudioOnlineString {
+                # Just returns
             }
         }
 
         It "Should not throw when state is not initialized and input is empty" {
             $State = $null
-            {'' | Invoke-ModuleFunctionStub -InputString '' -ScriptOutput ([ref]$State)} | Should -Not -Throw
+            {'' | Invoke-VisualStudioOnlineString -InputString '' -ScriptOutput ([ref]$State)} | Should -Not -Throw
         }
         It "Should initialize the state variable and input is empty" {
             $State = $null
-            '' | Invoke-ModuleFunctionStub -InputString '' -ScriptOutput ([ref]$State)
+            '' | Invoke-VisualStudioOnlineString -InputString '' -ScriptOutput ([ref]$State)
             $State | Should -Not -BeNullOrEmpty
             $State.Result.Result | Should -Be 'Failed'
             $State.Result.Message | Should -Be 'Not started'
@@ -46,44 +63,39 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should return unmodified input when no processing occures" {
             $State = $null
-            $Result = Invoke-ModuleFunctionStub -InputString 'Unmodified input' -ScriptOutput ([ref]$State)
+            $Result = Invoke-VisualStudioOnlineString -InputString 'Unmodified input' -ScriptOutput ([ref]$State)
             $Result | Should -Be 'Unmodified input'
         }
 
         It "Should obfuscate secrets" {
             $State = $null
-            Invoke-ModuleFunctionStub -InputString '' -ScriptOutput ([ref]$State)
+            Invoke-VisualStudioOnlineString -InputString '' -ScriptOutput ([ref]$State)
             $State.Secret += ,'secret'
-            $Result = Invoke-ModuleFunctionStub -InputString 'whatever secret whatever' -ScriptOutput ([ref]$State)
+            $Result = Invoke-VisualStudioOnlineString -InputString 'whatever secret whatever' -ScriptOutput ([ref]$State)
             $Result | Should -Be 'whatever *** whatever'
         }
     }
 
     Context "When calling the function on a VSO formatted string" {
         BeforeAll {
-
-            Function ConvertFrom-VisualStudioOnlineString {
+            Mock ConvertFrom-VisualStudioOnlineString {
                 @{
                     Format = 'warning'
                     Message = 'message'
                 }
             }
-
-            Mock Write-Host {
-                # Do nothing
-            }
         }
 
         It "Should invoke Write-Host" {
             $State = $null
-            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
+            Invoke-VisualStudioOnlineString -InputString 'whatever' -ScriptOutput ([ref]$State)
             Should -Invoke -CommandName 'Write-Host' -Exactly -Times 1 -Scope It
         }
     }
 
     Context "When calling the function on a VSO command string: task.complete" {
         BeforeAll {
-            Function ConvertFrom-VisualStudioOnlineString {
+            Mock ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.complete'
                     Message = 'Done with test'
@@ -96,7 +108,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
+            Invoke-VisualStudioOnlineString -InputString 'whatever' -ScriptOutput ([ref]$State)
             $State.Result.Result | Should -Be 'Succeeded'
             $State.Result.Message | Should -Be 'Done with test'
         }
@@ -104,7 +116,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO command string: task.setvariable" {
         BeforeAll {
-            Function ConvertFrom-VisualStudioOnlineString {
+            Mock ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.setvariable'
                     Message = 'Done with test'
@@ -121,7 +133,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
+            Invoke-VisualStudioOnlineString -InputString 'whatever' -ScriptOutput ([ref]$State)
             $Result = $State.Variable | Select-Object -First 1
             $Result.Name | Should -Be 'MyVariable'
             $Result.Value | Should -Be 'Hello World'
@@ -133,7 +145,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO command string: task.setsecret" {
         BeforeAll {
-            Function ConvertFrom-VisualStudioOnlineString {
+            Mock ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.setsecret'
                     Message = $null
@@ -146,7 +158,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
+            Invoke-VisualStudioOnlineString -InputString 'whatever' -ScriptOutput ([ref]$State)
             $Result = $State.Secret | Select-Object -First 1
             $Result | Should -Be 'MySecret'
         }
@@ -154,7 +166,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
     Context "When calling the function on a VSO command string: task.prependpath" {
         BeforeAll {
-            Function ConvertFrom-VisualStudioOnlineString {
+            Mock ConvertFrom-VisualStudioOnlineString {
                 @{
                     Command = 'task.prependpath'
                     Message = $null
@@ -167,7 +179,7 @@ Describe "Testing private module function Invoke-VisualStudioOnlineString" -Tag 
 
         It "Should update the State" {
             $State = $null
-            Invoke-ModuleFunctionStub -InputString 'whatever' -ScriptOutput ([ref]$State)
+            Invoke-VisualStudioOnlineString -InputString 'whatever' -ScriptOutput ([ref]$State)
             $Result = $State.Path | Select-Object -First 1
             $Result | Should -Be 'C:\my\directory'
         }

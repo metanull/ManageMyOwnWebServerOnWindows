@@ -18,7 +18,6 @@ param(
     [Parameter(Mandatory = $true)]
     [int]$Port
 )
-
 End {
     try {
         $processes = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue |
@@ -29,7 +28,9 @@ End {
                 $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
                 if ($process) {
                     Write-Development -Message "Stopping process $($process.Name) (PID: $processId) on port $Port" -Type Warning
-                    Stop-Process -Id $processId -Force
+                    if ($PSCmdlet.ShouldProcess("Process $($process.Name) (PID: $processId)", "Stop")) {
+                        Stop-Process -Id $processId -Force
+                    }
                     Start-Sleep -Seconds 1
                 }
             }

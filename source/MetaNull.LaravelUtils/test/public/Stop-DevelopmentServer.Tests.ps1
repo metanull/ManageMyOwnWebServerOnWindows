@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
+Describe "Testing public module function Stop-DevelopmentServer" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Stop-Laravel {
+            Function Stop-DevelopmentServer {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -22,13 +22,13 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             Function Write-Development {
                 # N/A
             }
-            Function Stop-LaravelWeb {
+            Function Stop-WorkerWeb {
                 # N/A
             }
-            Function Stop-LaravelVite {
+            Function Stop-WorkerVite {
                 # N/A
             }
-            Function Stop-LaravelQueue {
+            Function Stop-WorkerQueue {
                 # N/A
             }
             Function Test-Path {
@@ -40,17 +40,17 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
                 # Mock implementation - just return
             }
             
-            Mock Stop-LaravelWeb {
+            Mock Stop-WorkerWeb {
                 param([string]$Path, [int]$Port, [switch]$Force)
                 return $true  # Mock successful stop
             }
             
-            Mock Stop-LaravelVite {
+            Mock Stop-WorkerVite {
                 param([string]$Path, [int]$Port, [switch]$Force)
                 return $true  # Mock successful stop
             }
             
-            Mock Stop-LaravelQueue {
+            Mock Stop-WorkerQueue {
                 param([string]$Path, [string]$Queue, [switch]$Force)
                 return $true  # Mock successful stop
             }
@@ -61,75 +61,75 @@ Describe "Testing public module function Stop-Laravel" -Tag "UnitTest" {
             }
         }
 
-        It "Stop-Laravel should stop all services successfully with defaults" {
-            $Result = Stop-Laravel
+        It "Stop-DevelopmentServer should stop all services successfully with defaults" {
+            $Result = Stop-DevelopmentServer
             $Result | Should -Be $true
-            Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Stop-Laravel should stop with custom parameters" {
-            $Result = Stop-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails"
+        It "Stop-DevelopmentServer should stop with custom parameters" {
+            $Result = Stop-DevelopmentServer -WebPort 8080 -VitePort 3000 -Queue "emails"
             $Result | Should -Be $true
-            Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Stop-Laravel should handle Force parameter" {
-            $Result = Stop-Laravel -Force
+        It "Stop-DevelopmentServer should handle Force parameter" {
+            $Result = Stop-DevelopmentServer -Force
             $Result | Should -Be $true
-            Should -Invoke Stop-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Stop-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Stop-Laravel should handle web server stop failure" {
-            Mock Stop-LaravelWeb {
+        It "Stop-DevelopmentServer should handle web server stop failure" {
+            Mock Stop-WorkerWeb {
                 param([string]$Path, [int]$Port, [switch]$Force)
                 return $false  # Mock failure
             }
             
-            $Result = Stop-Laravel
+            $Result = Stop-DevelopmentServer
             $Result | Should -Be $false
         }
 
-        It "Stop-Laravel should handle Vite server stop failure" {
-            Mock Stop-LaravelVite {
+        It "Stop-DevelopmentServer should handle Vite server stop failure" {
+            Mock Stop-WorkerVite {
                 param([string]$Path, [int]$Port, [switch]$Force)
                 return $false  # Mock failure
             }
             
-            $Result = Stop-Laravel
+            $Result = Stop-DevelopmentServer
             $Result | Should -Be $false
         }
 
-        It "Stop-Laravel should handle queue worker stop failure" {
-            Mock Stop-LaravelQueue {
+        It "Stop-DevelopmentServer should handle queue worker stop failure" {
+            Mock Stop-WorkerQueue {
                 param([string]$Path, [string]$Queue, [switch]$Force)
                 return $false  # Mock failure
             }
             
-            $Result = Stop-Laravel
+            $Result = Stop-DevelopmentServer
             $Result | Should -Be $false
         }
 
-        It "Stop-Laravel should handle multiple service failures" {
-            Mock Stop-LaravelWeb { return $false }
-            Mock Stop-LaravelVite { return $false }
-            Mock Stop-LaravelQueue { return $false }
+        It "Stop-DevelopmentServer should handle multiple service failures" {
+            Mock Stop-WorkerWeb { return $false }
+            Mock Stop-WorkerVite { return $false }
+            Mock Stop-WorkerQueue { return $false }
             
-            $Result = Stop-Laravel
+            $Result = Stop-DevelopmentServer
             $Result | Should -Be $false
         }
 
-        It "Stop-Laravel should handle exceptions gracefully" {
-            Mock Stop-LaravelWeb {
+        It "Stop-DevelopmentServer should handle exceptions gracefully" {
+            Mock Stop-WorkerWeb {
                 throw "System error"
             }
             
-            $Result = Stop-Laravel
+            $Result = Stop-DevelopmentServer
             $Result | Should -Be $false
         }
     }

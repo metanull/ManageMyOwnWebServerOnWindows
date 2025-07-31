@@ -18,14 +18,15 @@
     Force stop any existing processes on the specified port
     
     .EXAMPLE
-    Start-LaravelWeb -Path "C:\path\to\laravel" -Port 8000
+    Start-WorkerWeb -Path "C:\path\to\laravel" -Port 8000
     Starts Laravel web server on port 8000
     
     .EXAMPLE
-    Start-LaravelWeb -Path "C:\path\to\laravel" -Port 8001 -TimeoutSeconds 15
+    Start-WorkerWeb -Path "C:\path\to\laravel" -Port 8001 -TimeoutSeconds 15
     Starts Laravel web server on port 8001 with 15 second timeout
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Start-WorkerWeb does not modify state but starts services')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Path', Justification = 'Used via $Using:Path in Start-Job ScriptBlock')]
 param(
     [Parameter()]

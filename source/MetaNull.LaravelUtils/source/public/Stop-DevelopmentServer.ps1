@@ -21,14 +21,16 @@
     Force stop processes without graceful shutdown
     
     .EXAMPLE
-    Stop-Laravel
+    Stop-DevelopmentServer
     Stops all Laravel services with default settings
     
     .EXAMPLE
-    Stop-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails" -Force
+    Stop-DevelopmentServer -WebPort 8080 -VitePort 3000 -Queue "emails" -Force
     Forcefully stops Laravel services with custom ports and specific queue
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Stop-DevelopmentServer does not modify state but stops services')]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [int]$WebPort = 8000,
@@ -51,7 +53,7 @@ Begin {
     try {
         # Stop Laravel Web Server
         Write-Development -Message "Stopping Laravel web server..." -Type Info
-        $webResult = Stop-LaravelWeb -Port $WebPort -Force:$Force
+        $webResult = Stop-WorkerWeb -Port $WebPort -Force:$Force
         if (-not $webResult) {
             Write-Development -Message "Issues stopping Laravel web server" -Type Warning
             $success = $false
@@ -59,7 +61,7 @@ Begin {
         
         # Stop Vite Development Server
         Write-Development -Message "Stopping Vite development server..." -Type Info
-        $viteResult = Stop-LaravelVite -Port $VitePort -Force:$Force
+        $viteResult = Stop-WorkerVite -Port $VitePort -Force:$Force
         if (-not $viteResult) {
             Write-Development -Message "Issues stopping Vite development server" -Type Warning
             $success = $false
@@ -68,9 +70,9 @@ Begin {
         # Stop Laravel Queue Worker
         Write-Development -Message "Stopping Laravel queue worker..." -Type Info
         if ($Queue) {
-            $queueResult = Stop-LaravelQueue -Queue $Queue -Force:$Force
+            $queueResult = Stop-WorkerQueue -Queue $Queue -Force:$Force
         } else {
-            $queueResult = Stop-LaravelQueue -Force:$Force
+            $queueResult = Stop-WorkerQueue -Force:$Force
         }
         if (-not $queueResult) {
             Write-Development -Message "Issues stopping Laravel queue worker" -Type Warning

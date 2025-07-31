@@ -24,14 +24,16 @@
     Force stop any existing processes on the specified ports
 
     .EXAMPLE
-    Start-Laravel -Path "C:\path\to\laravel"
+    Start-DevelopmentServer -Path "C:\path\to\laravel"
     Starts Laravel with default settings (web on 8000, vite on 5173, default queue)
 
     .EXAMPLE
-    Start-Laravel -Path "C:\path\to\laravel" -WebPort 8080 -VitePort 3000 -Queue "emails" -Force
+    Start-DevelopmentServer -Path "C:\path\to\laravel" -WebPort 8080 -VitePort 3000 -Queue "emails" -Force
     Starts Laravel with custom ports and queue, forcing stop of existing processes
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Start-DevelopmentServer does not modify state but starts services')]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [ValidateScript({ Test-LaravelPath -Path $_ })]
@@ -61,7 +63,7 @@ Begin {
     try {
         # Start Laravel Web Server
         Write-Development -Message "Starting Laravel web server..." -Type Info
-        $webResult = Start-LaravelWeb -Path $Path -Port $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
+        $webResult = Start-WorkerWeb -Path $Path -Port $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
         if (-not $webResult) {
             Write-Development -Message "Failed to start Laravel web server" -Type Error
             $success = $false
@@ -69,7 +71,7 @@ Begin {
 
         # Start Vite Development Server
         Write-Development -Message "Starting Vite development server..." -Type Info
-        $viteResult = Start-LaravelVite -Path $Path -Port $VitePort -LaravelPort $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
+        $viteResult = Start-WorkerVite -Path $Path -Port $VitePort -LaravelPort $WebPort -TimeoutSeconds $TimeoutSeconds -Force:$Force
         if (-not $viteResult) {
             Write-Development -Message "Failed to start Vite development server" -Type Error
             $success = $false
@@ -77,7 +79,7 @@ Begin {
 
         # Start Laravel Queue Worker
         Write-Development -Message "Starting Laravel queue worker..." -Type Info
-        $queueResult = Start-LaravelQueue -Path $Path -Queue $Queue -Force:$Force
+        $queueResult = Start-WorkerQueue -Path $Path -Queue $Queue -Force:$Force
         if (-not $queueResult) {
             Write-Development -Message "Failed to start Laravel queue worker" -Type Error
             $success = $false

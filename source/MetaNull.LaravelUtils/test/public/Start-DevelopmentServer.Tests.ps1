@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
+Describe "Testing public module function Start-DevelopmentServer" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Start-Laravel {
+            Function Start-DevelopmentServer {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -22,13 +22,13 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             Function Write-Development {
                 # N/A
             }
-            Function Start-LaravelWeb {
+            Function Start-WorkerWeb {
                 # N/A
             }
-            Function Start-LaravelVite {
+            Function Start-WorkerVite {
                 # N/A
             }
-            Function Start-LaravelQueue {
+            Function Start-WorkerQueue {
                 # N/A
             }
             Function Test-Path {
@@ -49,17 +49,17 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
                 # Mock implementation - just return
             }
             
-            Mock Start-LaravelWeb {
+            Mock Start-WorkerWeb {
                 param([string]$Path, [int]$Port, [int]$TimeoutSeconds, [switch]$Force)
                 return [PSCustomObject]@{ Id = 100; State = "Running" }  # Mock successful start
             }
             
-            Mock Start-LaravelVite {
+            Mock Start-WorkerVite {
                 param([string]$Path, [int]$Port, [int]$LaravelPort, [int]$TimeoutSeconds, [switch]$Force)
                 return [PSCustomObject]@{ Id = 200; State = "Running" }  # Mock successful start
             }
             
-            Mock Start-LaravelQueue {
+            Mock Start-WorkerQueue {
                 param([string]$Path, [string]$Queue, [switch]$Force)
                 return [PSCustomObject]@{ Id = 300; State = "Running" }  # Mock successful start
             }
@@ -70,66 +70,66 @@ Describe "Testing public module function Start-Laravel" -Tag "UnitTest" {
             }
         }
 
-        It "Start-Laravel should start all services successfully with defaults" {
-            $Result = Start-Laravel -Path $env:TEMP
+        It "Start-DevelopmentServer should start all services successfully with defaults" {
+            $Result = Start-DevelopmentServer -Path $env:TEMP
             $Result | Should -Be $true
-            Should -Invoke Start-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Start-Laravel should start with custom parameters" {
-            $Result = Start-Laravel -Path $env:TEMP -WebPort 8080 -VitePort 3000 -Queue "emails" -TimeoutSeconds 60
+        It "Start-DevelopmentServer should start with custom parameters" {
+            $Result = Start-DevelopmentServer -Path $env:TEMP -WebPort 8080 -VitePort 3000 -Queue "emails" -TimeoutSeconds 60
             $Result | Should -Be $true
-            Should -Invoke Start-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Start-Laravel should handle Force parameter" {
-            $Result = Start-Laravel -Path $env:TEMP -Force
+        It "Start-DevelopmentServer should handle Force parameter" {
+            $Result = Start-DevelopmentServer -Path $env:TEMP -Force
             $Result | Should -Be $true
-            Should -Invoke Start-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Start-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Start-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Start-Laravel should fail when web server fails to start" {
-            Mock Start-LaravelWeb {
+        It "Start-DevelopmentServer should fail when web server fails to start" {
+            Mock Start-WorkerWeb {
                 param([string]$Path, [int]$Port, [int]$TimeoutSeconds, [switch]$Force)
                 return $null  # Mock failure
             }
             
-            $Result = Start-Laravel -Path $env:TEMP
+            $Result = Start-DevelopmentServer -Path $env:TEMP
             $Result | Should -Be $false
         }
 
-        It "Start-Laravel should fail when Vite server fails to start" {
-            Mock Start-LaravelVite {
+        It "Start-DevelopmentServer should fail when Vite server fails to start" {
+            Mock Start-WorkerVite {
                 param([string]$Path, [int]$Port, [int]$LaravelPort, [int]$TimeoutSeconds, [switch]$Force)
                 return $null  # Mock failure
             }
             
-            $Result = Start-Laravel -Path $env:TEMP
+            $Result = Start-DevelopmentServer -Path $env:TEMP
             $Result | Should -Be $false
         }
 
-        It "Start-Laravel should fail when queue worker fails to start" {
-            Mock Start-LaravelQueue {
+        It "Start-DevelopmentServer should fail when queue worker fails to start" {
+            Mock Start-WorkerQueue {
                 param([string]$Path, [string]$Queue, [switch]$Force)
                 return $null  # Mock failure
             }
             
-            $Result = Start-Laravel -Path $env:TEMP
+            $Result = Start-DevelopmentServer -Path $env:TEMP
             $Result | Should -Be $false
         }
 
-        It "Start-Laravel should handle exceptions gracefully" {
-            Mock Start-LaravelWeb {
+        It "Start-DevelopmentServer should handle exceptions gracefully" {
+            Mock Start-WorkerWeb {
                 throw "System error"
             }
             
-            $Result = Start-Laravel -Path $env:TEMP
+            $Result = Start-DevelopmentServer -Path $env:TEMP
             $Result | Should -Be $false
         }
     }

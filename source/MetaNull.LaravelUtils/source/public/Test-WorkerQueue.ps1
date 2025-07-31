@@ -12,14 +12,15 @@
     Specific queue name to check (optional)
     
     .EXAMPLE
-    Test-LaravelQueue
+    Test-WorkerQueue
     Tests if any Laravel queue workers are running
     
     .EXAMPLE
-    Test-LaravelQueue -Queue "emails"
+    Test-WorkerQueue -Queue "emails"
     Tests if Laravel queue workers are running for the "emails" queue
 #>
 [CmdletBinding()]
+[OutputType([System.Boolean])]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWMICmdlet', '', Justification = 'Test file uses WMI for process detection')]
 param(
     [Parameter()]

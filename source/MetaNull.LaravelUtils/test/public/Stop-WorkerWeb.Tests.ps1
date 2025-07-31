@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
+Describe "Testing public module function Stop-WorkerWeb" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Stop-LaravelVite {
+            Function Stop-WorkerWeb {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -23,6 +23,9 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
                 # N/A
             }
             Function Test-DevPort {
+                # N/A
+            }
+            Function Test-Path {
                 # N/A
             }
             Function Get-NetTCPConnection {
@@ -45,16 +48,20 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
                 param([string]$Message)
                 # Mock implementation - just return
             }
-            
             Mock Test-DevPort {
                 param([int]$Port)
                 return $false  # Mock as if port is free
             }
             
+            Mock Test-Path {
+                param([string]$Path, [string]$PathType)
+                return $true  # Mock as if path exists
+            }
+            
             Mock Get-NetTCPConnection {
                 param([int]$LocalPort, [string]$ErrorAction)
                 return @(
-                    [PSCustomObject]@{ OwningProcess = 5678 }
+                    [PSCustomObject]@{ OwningProcess = 1234 }
                 )
             }
             
@@ -62,9 +69,9 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
                 param([int]$Id, [string]$ErrorAction)
                 return [PSCustomObject]@{
                     Id = $Id
-                    Name = "node"
-                    ProcessName = "node"
-                    CommandLine = "node node_modules/vite/bin/vite.js"
+                    Name = "php"
+                    ProcessName = "php"
+                    CommandLine = "php artisan serve --port=8000"
                     CloseMainWindow = { return $true }
                 }
             }
@@ -85,89 +92,89 @@ Describe "Testing public module function Stop-LaravelVite" -Tag "UnitTest" {
             }
         }
 
-        It "Stop-LaravelVite should return true when no server is running" {
+        It "Stop-WorkerWeb should return true when no server is running" {
             Mock Test-DevPort { return $false }  # Port is FREE (no server running)
             
-            $Result = Stop-LaravelVite -Port 5173
+            $Result = Stop-WorkerWeb -Port 8000
             $Result | Should -Be $true
         }
 
-        It "Stop-LaravelVite should stop Vite process successfully" {
+        It "Stop-WorkerWeb should stop Laravel process successfully" {
             Mock Test-DevPort { 
                 param([int]$Port)
-                if ($script:ViteStopCallCount -eq $null) { $script:ViteStopCallCount = 0 }
-                $script:ViteStopCallCount++
-                if ($script:ViteStopCallCount -eq 1) { return $true }   # First call: port is busy
+                if ($script:CallCount -eq $null) { $script:CallCount = 0 }
+                $script:CallCount++
+                if ($script:CallCount -eq 1) { return $true }   # First call: port is busy
                 return $false  # Second call: port is free after stopping
             }
             
-            $Result = Stop-LaravelVite -Port 5173
+            $Result = Stop-WorkerWeb -Port 8000
             $Result | Should -Be $true
             Should -Invoke Get-NetTCPConnection -Exactly 1 -Scope It
             Should -Invoke Get-Process -Exactly 1 -Scope It
         }
 
-        It "Stop-LaravelVite should stop Vite process with Force" {
+        It "Stop-WorkerWeb should stop Laravel process with Force" {
             Mock Test-DevPort { 
                 param([int]$Port)
-                if ($script:ViteStopCallCount2 -eq $null) { $script:ViteStopCallCount2 = 0 }
-                $script:ViteStopCallCount2++
-                if ($script:ViteStopCallCount2 -eq 1) { return $true }   # First call: port is busy
+                if ($script:CallCount2 -eq $null) { $script:CallCount2 = 0 }
+                $script:CallCount2++
+                if ($script:CallCount2 -eq 1) { return $true }   # First call: port is busy
                 return $false  # Second call: port is free after stopping
             }
             
-            $Result = Stop-LaravelVite -Port 5173 -Force
+            $Result = Stop-WorkerWeb -Port 8000 -Force
             $Result | Should -Be $true
             Should -Invoke Read-Host -Exactly 0 -Scope It  # No confirmation with Force
         }
 
-        It "Stop-LaravelVite should handle non-Vite process without Force" {
+        It "Stop-WorkerWeb should handle non-Laravel process without Force" {
             Mock Test-DevPort { return $true }  # Port is busy
             Mock Get-Process {
                 param([int]$Id, [string]$ErrorAction)
                 return [PSCustomObject]@{
                     Id = $Id
-                    Name = "chrome"
-                    ProcessName = "chrome"
-                    CommandLine = "chrome.exe"
+                    Name = "notepad"
+                    ProcessName = "notepad"
+                    CommandLine = "notepad.exe"
                     CloseMainWindow = { return $true }
                 }
             }
             
-            $Result = Stop-LaravelVite -Port 5173
+            $Result = Stop-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
 
-        It "Stop-LaravelVite should handle no processes found on busy port" {
+        It "Stop-WorkerWeb should handle no processes found on busy port" {
             Mock Test-DevPort { return $true }  # Port is busy
             Mock Get-NetTCPConnection {
                 param([int]$LocalPort, [string]$ErrorAction)
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelVite -Port 5173
+            $Result = Stop-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
 
-        It "Stop-LaravelVite should handle process stop failure" {
+        It "Stop-WorkerWeb should handle process stop failure" {
             Mock Test-DevPort { return $true }  # Port is busy and stays busy
             Mock Stop-Process {
                 param([int]$Id, [switch]$Force)
                 throw "Access denied"
             }
             
-            $Result = Stop-LaravelVite -Port 5173
+            $Result = Stop-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
 
-        It "Stop-LaravelVite should handle user declining to stop process" {
+        It "Stop-WorkerWeb should handle user declining to stop process" {
             Mock Test-DevPort { return $true }  # Port is busy and stays busy
             Mock Read-Host {
                 param([string]$Prompt)
                 return "N"  # User says no
             }
             
-            $Result = Stop-LaravelVite -Port 5173
+            $Result = Stop-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
     }

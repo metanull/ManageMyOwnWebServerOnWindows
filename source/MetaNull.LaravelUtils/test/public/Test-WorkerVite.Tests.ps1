@@ -2,7 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Test file needs to mock built-in cmdlets for isolated testing')]
 param()
 
-Describe "Testing public module function Test-LaravelVite" -Tag "UnitTest" {
+Describe "Testing public module function Test-WorkerVite" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -13,7 +13,7 @@ Describe "Testing public module function Test-LaravelVite" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Test-LaravelVite {
+            Function Test-WorkerVite {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -40,41 +40,41 @@ Describe "Testing public module function Test-LaravelVite" -Tag "UnitTest" {
 
             }
 
-        It "Test-LaravelVite with running server should return true" {
+        It "Test-WorkerVite with running server should return true" {
             Mock Invoke-WebRequest { 
                 return [PSCustomObject]@{ StatusCode = 200; Content = "vite" }
             }
-            $Result = Test-LaravelVite -Port 5173
+            $Result = Test-WorkerVite -Port 5173
             $Result | Should -Be $true
         }
 
-        It "Test-LaravelVite with non-running server should return false" {
+        It "Test-WorkerVite with non-running server should return false" {
             Mock Test-DevPort { return $false }  # Port not listening
-            $Result = Test-LaravelVite -Port 5173
+            $Result = Test-WorkerVite -Port 5173
             $Result | Should -Be $false
         }
 
-        It "Test-LaravelVite with HTTP response should return true regardless of content" {
+        It "Test-WorkerVite with HTTP response should return true regardless of content" {
             Mock Invoke-WebRequest { 
                 return [PSCustomObject]@{ StatusCode = 200; Content = "not vite" }
             }
-            $Result = Test-LaravelVite -Port 5173
+            $Result = Test-WorkerVite -Port 5173
             $Result | Should -Be $true  # Function doesn't check content, just HTTP response
         }
 
-        It "Test-LaravelVite with web request timeout should return false" {
+        It "Test-WorkerVite with web request timeout should return false" {
             Mock Invoke-WebRequest { 
                 throw [System.Net.WebException]::new("The operation has timed out")
             }
-            $Result = Test-LaravelVite -Port 5173
+            $Result = Test-WorkerVite -Port 5173
             $Result | Should -Be $false
         }
 
-        It "Test-LaravelVite with default port should work" {
+        It "Test-WorkerVite with default port should work" {
             Mock Invoke-WebRequest { 
                 return [PSCustomObject]@{ StatusCode = 200; Content = "vite" }
             }
-            $Result = Test-LaravelVite
+            $Result = Test-WorkerVite
             $Result | Should -Be $true
         }
     }

@@ -2,7 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Test file needs to mock built-in cmdlets for isolated testing')]
 param()
 
-Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
+Describe "Testing public module function Test-WorkerWeb" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -13,7 +13,7 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Test-LaravelWeb {
+            Function Test-WorkerWeb {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -50,53 +50,53 @@ Describe "Testing public module function Test-LaravelWeb" -Tag "UnitTest" {
             # N/A for this function
         }
 
-        It "Test-LaravelWeb with running server should return true" {
+        It "Test-WorkerWeb with running server should return true" {
             Mock Invoke-WebRequest {
                 param([string]$Uri, [string]$Method, [int]$TimeoutSec, [string]$ErrorAction)
                 return @{ StatusCode = 200 }  # Mock successful HTTP response
             }
             
-            $Result = Test-LaravelWeb -Port 8000
+            $Result = Test-WorkerWeb -Port 8000
             $Result | Should -Be $true
         }
 
-        It "Test-LaravelWeb with default port should return true when server is running" {
+        It "Test-WorkerWeb with default port should return true when server is running" {
             Mock Invoke-WebRequest {
                 param([string]$Uri, [string]$Method, [int]$TimeoutSec, [string]$ErrorAction)
                 return @{ StatusCode = 200 }  # Mock successful HTTP response
             }
             
-            $Result = Test-LaravelWeb
+            $Result = Test-WorkerWeb
             $Result | Should -Be $true
         }
 
-        It "Test-LaravelWeb should return false when server is not responding" {
+        It "Test-WorkerWeb should return false when server is not responding" {
             Mock Test-DevPort {
                 param([int]$Port)
                 return $false  # Mock as if port is not available (server not running)
             }
             
-            $Result = Test-LaravelWeb -Port 8000
+            $Result = Test-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
 
-        It "Test-LaravelWeb should return false when HTTP request fails" {
+        It "Test-WorkerWeb should return false when HTTP request fails" {
             Mock Invoke-WebRequest {
                 param([string]$Uri, [string]$Method, [int]$TimeoutSec, [string]$ErrorAction)
                 throw "Connection failed"  # Mock HTTP request failure
             }
             
-            $Result = Test-LaravelWeb -Port 8000
+            $Result = Test-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
 
-        It "Test-LaravelWeb should return false when HTTP request times out" {
+        It "Test-WorkerWeb should return false when HTTP request times out" {
             Mock Invoke-WebRequest {
                 param([string]$Uri, [string]$Method, [int]$TimeoutSec, [string]$ErrorAction)
                 throw [System.Net.WebException]::new("The operation has timed out")  # Mock timeout
             }
             
-            $Result = Test-LaravelWeb -Port 8000
+            $Result = Test-WorkerWeb -Port 8000
             $Result | Should -Be $false
         }
     }

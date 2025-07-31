@@ -15,14 +15,16 @@
     Force stop without confirmation
     
     .EXAMPLE
-    Stop-LaravelVite -Port 5173
+    Stop-WorkerVite -Port 5173
     Stops Laravel Vite server on port 5173
     
     .EXAMPLE
-    Stop-LaravelVite -Force
+    Stop-WorkerVite -Force
     Force stops Laravel Vite server with default port
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Stop-WorkerVite does not modify state but stops services')]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [int]$Port = 5173,

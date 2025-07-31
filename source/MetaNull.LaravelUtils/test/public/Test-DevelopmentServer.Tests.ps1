@@ -2,7 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Test file needs to mock built-in cmdlets for isolated testing')]
 param()
 
-Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
+Describe "Testing public module function Test-DevelopmentServer" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -13,7 +13,7 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Test-Laravel {
+            Function Test-DevelopmentServer {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -21,13 +21,13 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
             Function Write-Development {
                 # N/A
             }
-            Function Test-LaravelWeb {
+            Function Test-WorkerWeb {
                 # N/A
             }
-            Function Test-LaravelVite {
+            Function Test-WorkerVite {
                 # N/A
             }
-            Function Test-LaravelQueue {
+            Function Test-WorkerQueue {
                 # N/A
             }
             Function Test-Path {
@@ -39,17 +39,17 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
                 # Mock implementation - just return
             }
             
-            Mock Test-LaravelWeb {
+            Mock Test-WorkerWeb {
                 param([string]$Path, [int]$Port)
                 return $true  # Mock successful test
             }
             
-            Mock Test-LaravelVite {
+            Mock Test-WorkerVite {
                 param([string]$Path, [int]$Port)
                 return $true  # Mock successful test
             }
             
-            Mock Test-LaravelQueue {
+            Mock Test-WorkerQueue {
                 param([string]$Path, [string]$Queue)
                 return $true  # Mock successful test
             }
@@ -62,82 +62,82 @@ Describe "Testing public module function Test-Laravel" -Tag "UnitTest" {
 
         }
 
-        It "Test-Laravel should return all true when all services are running" {
-            $Result = Test-Laravel
+        It "Test-DevelopmentServer should return all true when all services are running" {
+            $Result = Test-DevelopmentServer
             $Result.Web | Should -Be $true
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $true
             $Result.All | Should -Be $true
-            Should -Invoke Test-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Test-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Test-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Test-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Test-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Test-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Test-Laravel should test with custom parameters" {
-            $Result = Test-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails"
+        It "Test-DevelopmentServer should test with custom parameters" {
+            $Result = Test-DevelopmentServer -WebPort 8080 -VitePort 3000 -Queue "emails"
             $Result.All | Should -Be $true
-            Should -Invoke Test-LaravelWeb -Exactly 1 -Scope It
-            Should -Invoke Test-LaravelVite -Exactly 1 -Scope It
-            Should -Invoke Test-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Test-WorkerWeb -Exactly 1 -Scope It
+            Should -Invoke Test-WorkerVite -Exactly 1 -Scope It
+            Should -Invoke Test-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Test-Laravel should handle web server not running" {
-            Mock Test-LaravelWeb {
+        It "Test-DevelopmentServer should handle web server not running" {
+            Mock Test-WorkerWeb {
                 param([string]$Path, [int]$Port)
                 return $false  # Mock web server not running
             }
             
-            $Result = Test-Laravel
+            $Result = Test-DevelopmentServer
             $Result.Web | Should -Be $false
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $true
             $Result.All | Should -Be $false
         }
 
-        It "Test-Laravel should handle Vite server not running" {
-            Mock Test-LaravelVite {
+        It "Test-DevelopmentServer should handle Vite server not running" {
+            Mock Test-WorkerVite {
                 param([string]$Path, [int]$Port)
                 return $false  # Mock Vite server not running
             }
             
-            $Result = Test-Laravel
+            $Result = Test-DevelopmentServer
             $Result.Web | Should -Be $true
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $true
             $Result.All | Should -Be $false
         }
 
-        It "Test-Laravel should handle queue worker not running" {
-            Mock Test-LaravelQueue {
+        It "Test-DevelopmentServer should handle queue worker not running" {
+            Mock Test-WorkerQueue {
                 param([string]$Path, [string]$Queue)
                 return $false  # Mock queue worker not running
             }
             
-            $Result = Test-Laravel
+            $Result = Test-DevelopmentServer
             $Result.Web | Should -Be $true
             $Result.Vite | Should -Be $true
             $Result.Queue | Should -Be $false
             $Result.All | Should -Be $false
         }
 
-        It "Test-Laravel should handle all services not running" {
-            Mock Test-LaravelWeb { return $false }
-            Mock Test-LaravelVite { return $false }
-            Mock Test-LaravelQueue { return $false }
+        It "Test-DevelopmentServer should handle all services not running" {
+            Mock Test-WorkerWeb { return $false }
+            Mock Test-WorkerVite { return $false }
+            Mock Test-WorkerQueue { return $false }
             
-            $Result = Test-Laravel
+            $Result = Test-DevelopmentServer
             $Result.Web | Should -Be $false
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $false
             $Result.All | Should -Be $false
         }
 
-        It "Test-Laravel should handle exceptions gracefully" {
-            Mock Test-LaravelWeb {
+        It "Test-DevelopmentServer should handle exceptions gracefully" {
+            Mock Test-WorkerWeb {
                 throw "System error"
             }
             
-            $Result = Test-Laravel
+            $Result = Test-DevelopmentServer
             $Result.Web | Should -Be $false
             $Result.Vite | Should -Be $false
             $Result.Queue | Should -Be $false

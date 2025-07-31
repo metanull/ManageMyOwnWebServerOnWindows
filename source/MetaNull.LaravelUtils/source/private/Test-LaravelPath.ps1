@@ -13,9 +13,10 @@
     Tests if the specified path is a Laravel application root
 #>
 [CmdletBinding()]
+[OutputType([System.Boolean])]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [string]$Path = '.'
+    [string]$Path
 )
 
 Begin {

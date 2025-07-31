@@ -21,10 +21,11 @@
     Force stop any existing processes on the specified port
     
     .EXAMPLE
-    Start-LaravelVite -Path "C:\path\to\laravel" -Port 5173 -LaravelPort 8000
+    Start-WorkerVite -Path "C:\path\to\laravel" -Port 5173 -LaravelPort 8000
     Starts Vite server on port 5173 integrated with Laravel on port 8000
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Start-WorkerVite does not modify state but starts services')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Path', Justification = 'Used via $Using:Path in Start-Job ScriptBlock')]
 param(
     [Parameter()]

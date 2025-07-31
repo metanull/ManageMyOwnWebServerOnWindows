@@ -55,3 +55,5 @@ Set-Variable -Name "ModuleColorError" -Value "Red" -Option Constant
 Set-Variable -Name "ModuleColorInfo" -Value "Cyan" -Option Constant
 Set-Variable -Name "ModuleColorStep" -Value "Magenta" -Option Constant
 Set-Variable -Name "ModuleColorHeader" -Value "White" -Option Constant
+
+Set-Variable -Name "ModuleLaravelLogFile" -Value 'storage/logs/laravel.log' -Option Constant

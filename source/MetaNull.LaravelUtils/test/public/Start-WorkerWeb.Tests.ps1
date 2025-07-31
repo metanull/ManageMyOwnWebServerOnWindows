@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
+Describe "Testing public module function Start-WorkerWeb" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Start-LaravelWeb {
+            Function Start-WorkerWeb {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -87,22 +87,22 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
             }
         }
 
-        It "Start-LaravelWeb with free port should start successfully" {
+        It "Start-WorkerWeb with free port should start successfully" {
             Mock Test-DevPort { return $false }  # Port is FREE (not in use)
-            $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Start-WorkerWeb -Path $env:TEMP -Port 8000
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 123
             Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
         }
 
-        It "Start-LaravelWeb with busy port and Force should start successfully" {
+        It "Start-WorkerWeb with busy port and Force should start successfully" {
             Mock Test-DevPort { return $false }  # Port is FREE (not in use)
-            $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000 -Force
+            $Result = Start-WorkerWeb -Path $env:TEMP -Port 8000 -Force
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 123
         }
 
-        It "Start-LaravelWeb with Force should call Stop-DevProcessOnPort on busy port" {
+        It "Start-WorkerWeb with Force should call Stop-DevProcessOnPort on busy port" {
             # Mock Test-DevPort to return true first (busy), then false (free) after Stop-DevProcessOnPort is called
             $script:portCheckCount = 0
             Mock Test-DevPort { 
@@ -110,29 +110,29 @@ Describe "Testing public module function Start-LaravelWeb" -Tag "UnitTest" {
                 if ($script:portCheckCount -eq 1) { return $true }  # First check: Port is BUSY
                 return $false  # Subsequent checks: Port is FREE after Stop-DevProcessOnPort
             }
-            $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000 -Force
+            $Result = Start-WorkerWeb -Path $env:TEMP -Port 8000 -Force
             $Result | Should -Not -BeNullOrEmpty
             Should -Invoke Stop-DevProcessOnPort -Exactly 1 -Scope It
         }
 
-        It "Start-LaravelWeb with Force should not call Stop-DevProcessOnPort on free port" {
+        It "Start-WorkerWeb with Force should not call Stop-DevProcessOnPort on free port" {
             Mock Test-DevPort { return $false }  # Port is FREE (not in use)
-            $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000 -Force
+            $Result = Start-WorkerWeb -Path $env:TEMP -Port 8000 -Force
             $Result | Should -Not -BeNullOrEmpty
             Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
         }
 
-        It "Start-LaravelWeb with busy port without Force should fail" {
+        It "Start-WorkerWeb with busy port without Force should fail" {
             Mock Test-DevPort { return $true }  # Port is BUSY (in use) and stays busy
-            $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000
+            $Result = Start-WorkerWeb -Path $env:TEMP -Port 8000
             $Result | Should -Be $null
             # Verify that Stop-DevProcessOnPort was called as part of automatic port freeing
             Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
         }
 
-        It "Start-LaravelWeb with server startup timeout should fail" {
+        It "Start-WorkerWeb with server startup timeout should fail" {
             Mock Wait-ForDevPort { return $false }  # Timeout
-            $Result = Start-LaravelWeb -Path $env:TEMP -Port 8000 -TimeoutSeconds 5
+            $Result = Start-WorkerWeb -Path $env:TEMP -Port 8000 -TimeoutSeconds 5
             $Result | Should -Be $null
         }
     }

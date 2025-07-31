@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
+Describe "Testing public module function Start-WorkerVite" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Start-LaravelVite {
+            Function Start-WorkerVite {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -114,27 +114,27 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
             
         }
 
-        It "Start-LaravelVite with free port should start successfully" {
+        It "Start-WorkerVite with free port should start successfully" {
             Mock Test-DevPort { return $false }  # Port is FREE (not in use)
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 5173
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 456
             Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
         }
 
-        It "Start-LaravelVite with busy port should fail without Force" {
+        It "Start-WorkerVite with busy port should fail without Force" {
             Mock Test-DevPort { 
                 param([int]$Port)
                 return $true  # Port is busy
             }
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 5173
             $Result | Should -BeNullOrEmpty
             Should -Invoke Stop-DevProcessOnPort -Exactly 0 -Scope It
         }
 
-        It "Start-LaravelVite with busy port and -Force should free it and start successfully" {
+        It "Start-WorkerVite with busy port and -Force should free it and start successfully" {
             Mock Test-DevPort { 
                 param([int]$Port)
                 if ($script:ViteCallCount -eq $null) { $script:ViteCallCount = 0 }
@@ -143,38 +143,38 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
                 return $false  # Second call: port is free after stopping
             }
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173 -Force
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 5173 -Force
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 456
             Should -Invoke Stop-DevProcessOnPort -Exactly 1 -Scope It
         }
 
-        It "Start-LaravelVite should fail when port cannot be freed" {
+        It "Start-WorkerVite should fail when port cannot be freed" {
             Mock Test-DevPort { return $true }  # Port remains busy after stop attempt
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 5173
             $Result | Should -Be $null
         }
 
-        It "Start-LaravelVite should fail when server startup times out" {
+        It "Start-WorkerVite should fail when server startup times out" {
             Mock Test-DevPort { return $false }  # Port is free
             Mock Wait-ForDevPort { return $false }  # Timeout
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173 -TimeoutSeconds 5
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 5173 -TimeoutSeconds 5
             $Result | Should -Be $null
             Should -Invoke Stop-Job -Exactly 1 -Scope It
             Should -Invoke Remove-Job -Exactly 1 -Scope It
         }
 
-        It "Start-LaravelVite should start with custom ports" {
+        It "Start-WorkerVite should start with custom ports" {
             Mock Test-DevPort { return $false }  # Port is free
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 3000 -LaravelPort 8080
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 3000 -LaravelPort 8080
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 456
         }
 
-        It "Start-LaravelVite should handle failed job state" {
+        It "Start-WorkerVite should handle failed job state" {
             Mock Test-DevPort { return $false }  # Port is free
             Mock Wait-ForDevPort { return $false }  # Timeout
             Mock Start-Job {
@@ -185,7 +185,7 @@ Describe "Testing public module function Start-LaravelVite" -Tag "UnitTest" {
                 }
             }
             
-            $Result = Start-LaravelVite -Path $env:TEMP -Port 5173
+            $Result = Start-WorkerVite -Path $env:TEMP -Port 5173
             $Result | Should -Be $null
         }
     }

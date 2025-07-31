@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
+Describe "Testing public module function Stop-WorkerQueue" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Stop-LaravelQueue {
+            Function Stop-WorkerQueue {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -64,25 +64,25 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
             }
         }
 
-        It "Stop-LaravelQueue should return true when no queue workers are running" {
+        It "Stop-WorkerQueue should return true when no queue workers are running" {
             Mock Get-Process {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelQueue
+            $Result = Stop-WorkerQueue
             $Result | Should -Be $true
         }
 
-        It "Stop-LaravelQueue should handle Get-Process error gracefully" {
+        It "Stop-WorkerQueue should handle Get-Process error gracefully" {
             Mock Get-Process {
                 throw "System error"
             }
             
-            $Result = Stop-LaravelQueue
+            $Result = Stop-WorkerQueue
             $Result | Should -Be $false
         }
 
-        It "Stop-LaravelQueue should handle empty process list" {
+        It "Stop-WorkerQueue should handle empty process list" {
             Mock Get-Process {
                 # Return processes but they won't match the filter due to missing CommandLine
                 return @(
@@ -93,26 +93,26 @@ Describe "Testing public module function Stop-LaravelQueue" -Tag "UnitTest" {
                 )
             }
             
-            $Result = Stop-LaravelQueue
+            $Result = Stop-WorkerQueue
             $Result | Should -Be $true
         }
 
-        It "Stop-LaravelQueue should handle Force parameter" {
+        It "Stop-WorkerQueue should handle Force parameter" {
             Mock Get-Process {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelQueue -Force
+            $Result = Stop-WorkerQueue -Force
             $Result | Should -Be $true
             Should -Invoke Read-Host -Exactly 0 -Scope It  # No confirmation with Force
         }
 
-        It "Stop-LaravelQueue should handle Queue parameter" {
+        It "Stop-WorkerQueue should handle Queue parameter" {
             Mock Get-Process {
                 return @()  # No processes found
             }
             
-            $Result = Stop-LaravelQueue -Queue "emails"
+            $Result = Stop-WorkerQueue -Queue "emails"
             $Result | Should -Be $true
         }
     }

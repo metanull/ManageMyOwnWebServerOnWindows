@@ -15,14 +15,16 @@
     Specific queue name to target (optional)
     
     .EXAMPLE
-    Stop-LaravelQueue
+    Stop-WorkerQueue
     Stops all Laravel queue workers
     
     .EXAMPLE
-    Stop-LaravelQueue -Queue "emails" -Force
+    Stop-WorkerQueue -Queue "emails" -Force
     Force stops Laravel queue workers for the "emails" queue
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Stop-WorkerQueue does not modify state but stops services')]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [switch]$Force,

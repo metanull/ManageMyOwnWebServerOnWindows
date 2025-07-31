@@ -9,10 +9,11 @@
     The port number to test (default: 5173)
     
     .EXAMPLE
-    Test-LaravelVite -Port 5173
+    Test-WorkerVite -Port 5173
     Tests if Laravel Vite server is running on port 5173
 #>
 [CmdletBinding()]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [int]$Port = 5173
@@ -40,4 +41,5 @@ Begin {
         Write-Development -Message "Laravel Vite server is not running on port $Port" -Type Info
         return $false
     }
+    return $false
 }

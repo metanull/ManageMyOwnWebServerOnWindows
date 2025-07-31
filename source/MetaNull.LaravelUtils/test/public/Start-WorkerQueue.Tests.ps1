@@ -3,7 +3,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Test file contains mock functions with intentionally unused parameters')]
 param()
 
-Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
+Describe "Testing public module function Start-WorkerQueue" -Tag "UnitTest" {
     Context "General context" {
         BeforeAll {
             $ModuleRoot = $PSCommandPath | Split-Path -Parent | Split-Path -Parent | Split-Path -Parent
@@ -14,7 +14,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             $FunctionPath = Join-Path $SourceDirectory ($ScriptName -replace '\.Tests\.ps1$', '.ps1')
     
             # Create a Stub for the one module function to test
-            Function Start-LaravelQueue {
+            Function Start-WorkerQueue {
                 . $FunctionPath @args | Write-Output
             }
 
@@ -22,7 +22,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             Function Write-Development {
                 # N/A
             }
-            Function Stop-LaravelQueue {
+            Function Stop-WorkerQueue {
                 # N/A
             }
             Function Test-Path {
@@ -55,7 +55,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 # Mock implementation - just return
             }
             
-            Mock Stop-LaravelQueue {
+            Mock Stop-WorkerQueue {
                 param([string]$Path, [string]$Queue, [switch]$Force)
                 # Mock implementation - just return
             }
@@ -89,38 +89,38 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
             
         }
 
-        It "Start-LaravelQueue should start successfully with default settings" {
-            $Result = Start-LaravelQueue
+        It "Start-WorkerQueue should start successfully with default settings" {
+            $Result = Start-WorkerQueue
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
             $Result.State | Should -Be "Running"
         }
 
-        It "Start-LaravelQueue should start with custom queue name" {
-            $Result = Start-LaravelQueue -Queue "emails"
+        It "Start-WorkerQueue should start with custom queue name" {
+            $Result = Start-WorkerQueue -Queue "emails"
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
         }
 
-        It "Start-LaravelQueue should start with Force and stop existing workers" {
-            $Result = Start-LaravelQueue -Queue "default" -Force
+        It "Start-WorkerQueue should start with Force and stop existing workers" {
+            $Result = Start-WorkerQueue -Queue "default" -Force
             $Result | Should -Not -BeNullOrEmpty
-            Should -Invoke Stop-LaravelQueue -Exactly 1 -Scope It
+            Should -Invoke Stop-WorkerQueue -Exactly 1 -Scope It
         }
 
-        It "Start-LaravelQueue should start with custom parameters" {
-            $Result = Start-LaravelQueue -Queue "notifications" -MaxJobs 500 -MaxTime 1800 -Sleep 5 -Timeout 120
-            $Result | Should -Not -BeNullOrEmpty
-            $Result.Id | Should -Be 789
-        }
-
-        It "Start-LaravelQueue should start with connection name" {
-            $Result = Start-LaravelQueue -ConnectionName "redis" -Queue "high-priority"
+        It "Start-WorkerQueue should start with custom parameters" {
+            $Result = Start-WorkerQueue -Queue "notifications" -MaxJobs 500 -MaxTime 1800 -Sleep 5 -Timeout 120
             $Result | Should -Not -BeNullOrEmpty
             $Result.Id | Should -Be 789
         }
 
-        It "Start-LaravelQueue should fail when job fails to start" {
+        It "Start-WorkerQueue should start with connection name" {
+            $Result = Start-WorkerQueue -ConnectionName "redis" -Queue "high-priority"
+            $Result | Should -Not -BeNullOrEmpty
+            $Result.Id | Should -Be 789
+        }
+
+        It "Start-WorkerQueue should fail when job fails to start" {
             Mock Start-Job {
                 return [PSCustomObject]@{ 
                     Id = 789; 
@@ -128,12 +128,12 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 }
             }
             
-            $Result = Start-LaravelQueue
+            $Result = Start-WorkerQueue
             $Result | Should -Be $null
             Should -Invoke Remove-Job -Exactly 1 -Scope It
         }
 
-        It "Start-LaravelQueue should handle job that stops immediately" {
+        It "Start-WorkerQueue should handle job that stops immediately" {
             Mock Start-Job {
                 return [PSCustomObject]@{ 
                     Id = 789; 
@@ -141,7 +141,7 @@ Describe "Testing public module function Start-LaravelQueue" -Tag "UnitTest" {
                 }
             }
             
-            $Result = Start-LaravelQueue
+            $Result = Start-WorkerQueue
             $Result | Should -Be $null
         }
     }

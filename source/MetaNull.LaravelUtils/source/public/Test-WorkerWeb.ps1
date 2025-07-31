@@ -12,10 +12,11 @@
     The port number to test (default: 8000)
     
     .EXAMPLE
-    Test-LaravelWeb -Port 8000
+    Test-WorkerWeb -Port 8000
     Tests if Laravel web server is running on port 8000
 #>
 [CmdletBinding()]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [int]$Port = 8000
@@ -43,4 +44,5 @@ Begin {
         Write-Development -Message "Laravel web server is not running on port $Port" -Type Info
         return $false
     }
+    return $false
 }

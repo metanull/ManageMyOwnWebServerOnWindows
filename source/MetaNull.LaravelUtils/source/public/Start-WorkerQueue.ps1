@@ -30,14 +30,15 @@
     Force stop any existing queue workers
     
     .EXAMPLE
-    Start-LaravelQueue -Path "C:\path\to\laravel"
+    Start-WorkerQueue -Path "C:\path\to\laravel"
     Starts Laravel queue worker with default settings
     
     .EXAMPLE
-    Start-LaravelQueue -Path "C:\path\to\laravel" -Queue "emails" -MaxJobs 500
+    Start-WorkerQueue -Path "C:\path\to\laravel" -Queue "emails" -MaxJobs 500
     Starts Laravel queue worker for the "emails" queue with max 500 jobs
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Start-WorkerQueue does not modify state but starts services')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Path', Justification = 'Used via $Using:Path in Start-Job ScriptBlock')]
 param(
     [Parameter()]
@@ -71,7 +72,7 @@ Begin {
     
     if ($Force) {
         Write-Development -Message "Stopping any existing queue workers..." -Type Info
-        Stop-LaravelQueue -Queue $Queue -Force
+        Stop-WorkerQueue -Queue $Queue -Force
     }
     
     # Build the artisan command

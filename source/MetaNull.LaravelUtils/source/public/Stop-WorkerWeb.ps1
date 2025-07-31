@@ -15,14 +15,16 @@
     Force stop without confirmation
     
     .EXAMPLE
-    Stop-LaravelWeb -Port 8000
+    Stop-WorkerWeb -Port 8000
     Stops Laravel web server on port 8000
     
     .EXAMPLE
-    Stop-LaravelWeb -Port 8001 -Force
+    Stop-WorkerWeb -Port 8001 -Force
     Force stops Laravel web server on port 8001
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Stop-WorkerWeb does not modify state but stops services')]
+[OutputType([System.Boolean])]
 param(
     [Parameter()]
     [int]$Port = 8000,

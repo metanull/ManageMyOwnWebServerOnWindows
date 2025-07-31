@@ -1,12 +1,9 @@
 <#
     .SYNOPSIS
-    Tests if the complete Laravel development environment is running
+    Tests if the complete Laravel development environment is running (Web, Vite, Queue)
     
     .DESCRIPTION
-    Checks if all Laravel development components are active: Web server, Vite, and Queue workers
-    
-    .PARAMETER Path
-    The root directory of the Laravel application
+    Checks if all Laravel development components are active: Web server, Vite, and Queue workers. This function replaces Test-Worker.
     
     .PARAMETER WebPort
     Port for the Laravel web server (default: 8000)
@@ -18,14 +15,15 @@
     Queue name for Laravel queue workers (optional - checks all if not specified)
     
     .EXAMPLE
-    Test-Laravel
+    Test-DevelopmentServer
     Tests all Laravel services with default settings
     
     .EXAMPLE
-    Test-Laravel -WebPort 8080 -VitePort 3000 -Queue "emails"
+    Test-DevelopmentServer -WebPort 8080 -VitePort 3000 -Queue "emails"
     Tests Laravel services with custom ports and specific queue
 #>
 [CmdletBinding()]
+[OutputType([System.Collections.Hashtable])]
 param(
     [Parameter()]
     [int]$WebPort = 8000,
@@ -47,18 +45,18 @@ Begin {
     try {
         # Test Laravel Web Server
         Write-Development -Message "Testing Laravel web server..." -Type Info
-        $webStatus = Test-LaravelWeb -Port $WebPort
+        $webStatus = Test-WorkerWeb -Port $WebPort
         
         # Test Vite Development Server
         Write-Development -Message "Testing Vite development server..." -Type Info
-        $viteStatus = Test-LaravelVite -Port $VitePort
+        $viteStatus = Test-WorkerVite -Port $VitePort
 
         # Test Laravel Queue Worker
         Write-Development -Message "Testing Laravel queue worker..." -Type Info
         if ($Queue) {
-            $queueStatus = Test-LaravelQueue -Queue $Queue
+            $queueStatus = Test-WorkerQueue -Queue $Queue
         } else {
-            $queueStatus = Test-LaravelQueue
+            $queueStatus = Test-WorkerQueue
         }
         
         # Summary

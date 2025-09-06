@@ -12,6 +12,7 @@
         The output of the step.
 #>
 [CmdletBinding(DefaultParameterSetName='Default')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Write-Host is appropriate for colored pipeline output')]
 [OutputType([string])]
 param(
     [Parameter(Mandatory, ValueFromPipeline)]

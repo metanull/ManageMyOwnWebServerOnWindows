@@ -61,14 +61,12 @@ Process {
             }
             Write-Host -NoNewline ' '
             Write-Host -ForegroundColor DarkYellow  $_.Message
-            >>
             Write-Host -NoNewline '   > '
             Write-Host -NoNewLine -ForegroundColor DarkCyan $_.Time
             Write-Host -NoNewline ' | '
             Write-Host -NoNewLine -ForegroundColor DarkCyan $_.File
             Write-Host -NoNewline ' | '
             Write-Host -ForegroundColor DarkCyan $_.Line
-            >>
             $_.Extra | Foreach-Object {
                 Write-Host -ForegroundColor DarkGray "   > $_"
             }

@@ -157,16 +157,16 @@ if (-not ("$($_)" -as [Type])) {
 }
 
 "@
-        $ImportScript | Add-Content -Path $Build.InitScriptPath
+        $ImportScript | Add-Content -Path $Build.InitScriptPath -Encoding UTF8BOM
     }
 
     # Register module dependencies
     Write-Debug "Processing module dependencies"
     $Build.ModuleDependencies | ForEach-Object {
-        "#Requires -Module $($_)" | Add-Content -Path $Build.ModulePath
+        "#Requires -Module $($_)" | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
 
         # Add the constraint also to the init script
-        "#Requires -Module $($_)" | Add-Content -Path $Build.InitScriptPath
+        "#Requires -Module $($_)" | Add-Content -Path $Build.InitScriptPath -Encoding UTF8BOM
     }
 
     # 1. Build the Module's code file
@@ -183,7 +183,7 @@ if (-not ("$($_)" -as [Type])) {
     Get-ChildItem -Path (Join-Path -Path $Build.Source -ChildPath 'init') -File -Filter '*.ps1' | Foreach-Object {
         if([System.IO.Path]::GetExtension($_) -eq '.ps1' ) {
             Write-Debug "Adding code from $($_)"
-            Get-Content -Path $_.FullName | Add-Content -Path $Build.ModulePath
+            Get-Content -Path $_.FullName | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
         }
     }
     # 1.2 Add private functions (not exposed by the module)
@@ -191,9 +191,9 @@ if (-not ("$($_)" -as [Type])) {
         if([System.IO.Path]::GetExtension($_) -eq '.ps1' ) {
             $FunctionName  = $_.Name -replace '\.ps1$'
             Write-Debug "Adding private function $($FunctionName) from $($_)"
-            "Function $($FunctionName) {" | Add-Content -Path $Build.ModulePath
-            Get-Content -Path $_.FullName | Add-Content -Path $Build.ModulePath
-            '}' | Add-Content -Path $Build.ModulePath
+            "Function $($FunctionName) {" | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
+            Get-Content -Path $_.FullName | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
+            '}' | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
         }
     }
     # 1.3 Add public functions (exposed by the module)
@@ -201,9 +201,9 @@ if (-not ("$($_)" -as [Type])) {
         if([System.IO.Path]::GetExtension($_) -eq '.ps1' ) {
             $FunctionName  = $_.Name -replace '\.ps1$'
             Write-Debug "Adding public function $($FunctionName) from $($_)"
-            "Function $($FunctionName) {" | Add-Content -Path $Build.ModulePath
-            Get-Content -Path $_.FullName | Add-Content -Path $Build.ModulePath
-            '}' | Add-Content -Path $Build.ModulePath
+            "Function $($FunctionName) {" | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
+            Get-Content -Path $_.FullName | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
+            '}' | Add-Content -Path $Build.ModulePath -Encoding UTF8BOM
             $FunctionsToExport += $FunctionName
         }
     }
@@ -212,13 +212,13 @@ if (-not ("$($_)" -as [Type])) {
     Get-ChildItem -Path (Join-Path -Path $Build.Source -ChildPath 'class') -File -Filter '*.ps1' | Foreach-Object {
         if([System.IO.Path]::GetExtension($_) -eq '.ps1' ) {
             Write-Debug "Adding class code from $($_)"
-            Get-Content -Path $_.FullName | Add-Content -Path $Build.ClassScriptPath
+            Get-Content -Path $_.FullName | Add-Content -Path $Build.ClassScriptPath -Encoding UTF8BOM
         }
     }
     # # 1.4.b Add Init code to make the class modules available to the calling process when they use Import-Module
     # if( Get-ChildItem -Path (Join-Path -Path $Build.Source -ChildPath 'class') -File -Filter '*.ps1' | Where-Object {[System.IO.Path]::GetExtension($_) -eq '.ps1' }) {
-    #     # "# using module $($Build.ModulePath)" | Add-Content -Path $Build.InitScriptPath
-    #     "# using module $($Build.Name)" | Add-Content -Path $Build.InitScriptPath
+    #     # "# using module $($Build.ModulePath)" | Add-Content -Path $Build.InitScriptPath -Encoding UTF8BOM
+    #     "# using module $($Build.Name)" | Add-Content -Path $Build.InitScriptPath -Encoding UTF8BOM
     # }
 
     # 1.4.b Copy "TypesData" file to the module's root directory

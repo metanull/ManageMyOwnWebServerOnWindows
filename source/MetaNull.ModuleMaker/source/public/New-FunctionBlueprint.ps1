@@ -39,20 +39,25 @@ Process {
     $BackupErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Stop'
     try {
-        $DummyName = "Get-Dummy"
         $ModulePath = $BlueprintPath | Split-Path -Parent
         $ResourcePath = Get-BlueprintResourcePath
 
+        # Determine the target directories (public or private)
         $Visibility = if($Private) { 'private' } else { 'public' }
         $TargetSourceDirectory = Join-Path (Join-Path $ModulePath source) $Visibility -Resolve
         $TargetTestDirectory = Join-Path (Join-Path $ModulePath test) $Visibility -Resolve
 
+        # Determine the dummy function name
+        $DummyName = if($Private) { 'Set-Dummy' } else { 'Get-Dummy' }
+
+        # Create the Function's source file from the dummy template
         $TemplateFunction = Join-Path $ResourcePath "dummy\source\public\$DummyName.ps1" -Resolve
         $TargetFunction = Join-Path $TargetSourceDirectory "$Name.ps1"
         Copy-Item -Path $TemplateFunction -Destination $TargetFunction | Out-Null
         $Content = Get-Content -LiteralPath $TemplateFunction -Raw
         $Content -replace $DummyName, $Name | Set-Content -LiteralPath $TargetFunction
         
+        # Create the Function's test file from the dummy template
         $TemplateTest = Join-Path $ResourcePath "dummy\test\public\$DummyName.Tests.ps1" -Resolve
         $TargetTest = Join-Path $TargetTestDirectory "$Name.Tests.ps1"
         Copy-Item -Path $TemplateTest -Destination $TargetTest | Out-Null
